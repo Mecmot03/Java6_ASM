@@ -2,7 +2,7 @@ package nhomhoinuong.java6_asm.service;
 
 import java.util.List;
 
-import nhomhoinuong.java6_asm.model.Product;
+import nhomhoinuong.java6_asm.bean.Product;
 
 public interface ProductService {
 

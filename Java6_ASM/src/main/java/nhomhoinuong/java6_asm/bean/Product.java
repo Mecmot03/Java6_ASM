@@ -1,4 +1,4 @@
-package nhomhoinuong.java6_asm.model;
+package nhomhoinuong.java6_asm.bean;
 
 import java.math.BigDecimal;
 import lombok.Data;

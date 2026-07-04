@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import nhomhoinuong.java6_asm.model.Product;
+import nhomhoinuong.java6_asm.bean.Product;
 import nhomhoinuong.java6_asm.service.ProductService;
 
 @RestController

@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import nhomhoinuong.java6_asm.bean.Product;
 import nhomhoinuong.java6_asm.dao.ProductDAO;
-import nhomhoinuong.java6_asm.model.Product;
 import nhomhoinuong.java6_asm.service.ProductService;
 
 @Service
