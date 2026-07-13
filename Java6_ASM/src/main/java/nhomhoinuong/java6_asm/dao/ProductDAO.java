@@ -1,14 +1,12 @@
 package nhomhoinuong.java6_asm.dao;
 
-import java.util.List;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import nhomhoinuong.java6_asm.bean.Product;
 
-public interface ProductDAO {
-
-    List<Product> findAll();
-
-    Product findById(Long id);
+@Repository
+public interface ProductDAO extends JpaRepository<Product, Long> {
 
 }
 

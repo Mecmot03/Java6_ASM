@@ -1,6 +1,7 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getProductById(Long id) {
-        return productDAO.findById(id);
+        return productDAO.findById(id).orElse(null);
     }
 
 }
