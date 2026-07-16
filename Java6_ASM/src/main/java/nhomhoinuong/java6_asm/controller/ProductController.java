@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import nhomhoinuong.java6_asm.bean.Product;
 import nhomhoinuong.java6_asm.service.ProductService;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -24,5 +25,4 @@ public class ProductController {
     public Product getProduct(@PathVariable Long id) {
         return productService.getProductById(id);
     }
-
 }
