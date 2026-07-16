@@ -1,20 +1,19 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Product;
 import nhomhoinuong.java6_asm.dao.ProductDAO;
 import nhomhoinuong.java6_asm.service.ProductService;
 
 @Service
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    @Autowired
-    private ProductDAO productDAO;
+    private final ProductDAO productDAO;
 
     @Override
     public List<Product> getAllProducts() {

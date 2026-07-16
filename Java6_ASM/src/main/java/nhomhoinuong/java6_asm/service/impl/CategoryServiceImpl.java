@@ -1,17 +1,19 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Category;
 import nhomhoinuong.java6_asm.dao.CategoryDAO;
 import nhomhoinuong.java6_asm.service.CategoryService;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
 
-    @Autowired
-    private CategoryDAO categoryDAO;
+    private final CategoryDAO categoryDAO;
 
     @Override
     public List<Category> findAll() {
@@ -37,4 +39,5 @@ public class CategoryServiceImpl implements CategoryService {
     public void delete(Long id) {
         categoryDAO.deleteById(id);
     }
+
 }
