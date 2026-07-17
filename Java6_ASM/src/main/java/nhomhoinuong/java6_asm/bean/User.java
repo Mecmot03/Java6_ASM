@@ -3,6 +3,8 @@ package nhomhoinuong.java6_asm.bean;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,6 +59,7 @@ public class User {
     @Column(name = "UpdatedAt")
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
