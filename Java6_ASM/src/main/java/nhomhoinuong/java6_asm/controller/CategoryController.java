@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import nhomhoinuong.java6_asm.bean.Category;
 import nhomhoinuong.java6_asm.service.CategoryService;
 
-@CrossOrigin("*") 
+@CrossOrigin(origins = "http://localhost:5173") // <-- THÊM DÒNG NÀY VÀO ĐẦU CẢ 2 CONTROLLER
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {

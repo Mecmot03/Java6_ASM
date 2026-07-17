@@ -156,7 +156,7 @@ code {
   }
 }
 
-#app {
+/* #app {
   width: 1126px;
   max-width: 100%;
   margin: 0 auto;
@@ -166,8 +166,13 @@ code {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
-
+} */
+#body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+} 
 #center {
   display: flex;
   flex-direction: column;
