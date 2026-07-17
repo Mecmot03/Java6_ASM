@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
 import lombok.Data;
 
 @Entity 
@@ -14,8 +16,9 @@ import lombok.Data;
 @NoArgsConstructor
 @AllArgsConstructor
 
-@Entity
-@Table(name = "Products")
+//@Entity
+//@Table(name = "Products")
+
 public class Product implements Serializable {
 
     private static final long serialVersionUID = 1L;
