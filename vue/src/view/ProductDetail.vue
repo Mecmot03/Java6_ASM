@@ -1,194 +1,224 @@
 <template>
-    <div class="container mt-4">
 
-        <div class="row">
+<div class="container mt-4">
 
-            <!-- Ảnh sản phẩm -->
-            <div class="col-md-5">
+    <div class="row">
 
-                <!-- Ảnh lớn -->
-                <div class="card shadow-sm mb-3">
+        <!-- ================= ẢNH SẢN PHẨM ================= -->
 
-                    <img
-                        :src="getImage(product.images[selectedImage])"
-                        class="img-fluid p-4 main-image"
-                    >
+        <div class="col-lg-5">
 
-                </div>
+            <!-- Ảnh lớn -->
 
-                <!-- Ảnh nhỏ -->
-                <div class="d-flex justify-content-between">
+            <div class="card shadow-sm mb-3">
 
-                    <img
-                        v-for="(image,index) in product.images"
-                        :key="index"
-                        :src="getImage(image)"
-                        class="thumbnail"
-                        :class="{active:index===selectedImage}"
-                        @click="selectedImage=index"
-                    >
-
-                </div>
+                <img
+                    :src="getImage(displayImages[selectedImage])"
+                    class="img-fluid p-4 main-image"
+                    :alt="product.name"
+                >
 
             </div>
 
-            <!-- Thông tin -->
+            <!-- 4 ảnh nhỏ -->
 
-            <div class="col-md-7">
+            <div class="d-flex justify-content-between">
 
-                <h2 class="fw-bold">
+                <img
 
-                    {{ product.name }}
+                    v-for="(image,index) in displayImages"
 
-                </h2>
+                    :key="index"
 
-                <hr>
+                    :src="getImage(image)"
 
-                <p><strong>Thương hiệu:</strong> {{ product.brand }}</p>
+                    class="thumbnail"
 
-                <p><strong>Danh mục:</strong> {{ product.category }}</p>
+                    :class="{active:index===selectedImage}"
 
-                <h2 class="text-danger fw-bold">
+                    @click="selectedImage=index"
 
-                    {{ formatPrice(product.price) }}
-
-                </h2>
-
-                <p>
-
-                    <strong>Số lượng còn:</strong>
-
-                    {{ product.quantity }}
-
-                </p>
-
-                <p>
-
-                    <strong>Giảm giá:</strong>
-
-                    {{ product.discount }}
-
-                </p>
-
-                <hr>
-
-                <h5>Mô tả sản phẩm</h5>
-
-                <p class="text-secondary">
-
-                    {{ product.description }}
-
-                </p>
-
-                <!-- Chọn số lượng -->
-
-                <div class="d-flex align-items-center mt-4">
-
-                    <button
-                        class="btn btn-outline-secondary"
-                        @click="decrease"
-                    >
-
-                        -
-
-                    </button>
-
-                    <input
-                        class="form-control mx-2 text-center"
-                        style="width:70px"
-                        v-model="buyQuantity"
-                        readonly
-                    >
-
-                    <button
-                        class="btn btn-outline-secondary"
-                        @click="increase"
-                    >
-
-                        +
-
-                    </button>
-
-                </div>
-
-                <div class="mt-4">
-
-                    <button
-                        class="btn btn-warning btn-lg me-3"
-                        @click="addToCart"
-                    >
-
-                        <i class="bi bi-cart-plus"></i>
-
-                        Thêm vào giỏ
-
-                    </button>
-
-                    <button
-                        class="btn btn-outline-danger btn-lg"
-                    >
-
-                        ❤ Yêu thích
-
-                    </button>
-
-                </div>
+                >
 
             </div>
 
+        </div>
 
-            <!--  -->
-            <hr class="my-5">
+        <!-- ================= THÔNG TIN ================= -->
 
-<h3 class="fw-bold mb-4">
+        <div class="col-lg-7">
 
-Các sản phẩm liên quan
+            <h2 class="fw-bold">
 
-</h3>
+                {{ product.name }}
 
-<div class="row">
+            </h2>
 
-    <div
+            <hr>
 
-        class="col-lg-3 col-md-4"
+            <p>
 
-        v-for="item in relatedProducts"
+                <strong>Thương hiệu:</strong>
 
-        :key="item.id"
+                {{ product.brand }}
 
-    >
+            </p>
+
+            <p>
+
+                <strong>Danh mục:</strong>
+
+                {{ product.category?.name }}
+
+            </p>
+
+            <h2 class="text-danger fw-bold">
+
+                {{ formatPrice(product.price) }}
+
+            </h2>
+
+            <p>
+
+                <strong>Số lượng còn:</strong>
+
+                {{ product.quantity }}
+
+            </p>
+
+            <hr>
+
+            <h5>Mô tả sản phẩm</h5>
+
+            <p class="text-secondary">
+
+                {{ product.description }}
+
+            </p>
+
+            <!-- Chọn số lượng -->
+
+            <div class="d-flex align-items-center mt-4">
+
+                <button
+                    class="btn btn-outline-secondary"
+                    @click="decrease"
+                >
+                    -
+                </button>
+
+                <input
+                    class="form-control mx-2 text-center"
+                    style="width:70px"
+                    v-model="buyQuantity"
+                    readonly
+                >
+
+                <button
+                    class="btn btn-outline-secondary"
+                    @click="increase"
+                >
+                    +
+                </button>
+
+            </div>
+
+            <!-- Button -->
+
+            <div class="mt-4">
+
+                <button
+                    class="btn btn-warning btn-lg me-3"
+                    @click="addToCart"
+                >
+
+                    <i class="bi bi-cart-plus"></i>
+
+                    Thêm vào giỏ
+
+                </button>
+
+                <button
+                    class="btn btn-outline-danger btn-lg"
+                >
+
+                    ❤ Yêu thích
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= SẢN PHẨM LIÊN QUAN ================= -->
+
+    <hr class="my-5">
+
+    <h3 class="fw-bold mb-4">
+
+        Các sản phẩm liên quan
+
+    </h3>
+
+    <div class="row g-4">
 
         <div
 
-            class="card shadow-sm h-100 product-card"
+            class="col-lg-3 col-md-4 col-sm-6"
 
-            @click="viewProduct(item.id)"
+            v-for="item in relatedProducts"
+
+            :key="item.id"
 
         >
 
-            <img
+            <div
 
-                :src="getImage(item.images[0])"
+                class="card h-100 shadow-sm product-card"
 
-                class="card-img-top p-3"
-
-                style="height:220px;object-fit:contain"
+                @click="viewProduct(item.id)"
 
             >
 
-            <div class="card-body">
+                <div
+                    class="p-3 text-center"
+                >
 
-                <h6>
+                    <img
 
-                    {{ item.name }}
+                        :src="getImage(item.image)"
 
-                </h6>
+                        class="card-img-top"
 
-                <h5 class="text-danger">
+                        style="height:220px;object-fit:contain"
 
-                    {{ formatPrice(item.price) }}
+                    >
 
-                </h5>
+                </div>
+
+                <div class="card-body">
+
+                    <h6 class="fw-bold">
+
+                        {{ item.name }}
+
+                    </h6>
+
+                    <p class="text-muted mb-2">
+
+                        {{ item.brand }}
+
+                    </p>
+
+                    <h5 class="text-danger">
+
+                        {{ formatPrice(item.price) }}
+
+                    </h5>
+
+                </div>
 
             </div>
 
@@ -197,260 +227,256 @@ Các sản phẩm liên quan
     </div>
 
 </div>
-            <!--  -->
-        </div>
 
-    </div>
 </template>
 
 <script setup>
 
-import { ref, computed } from "vue"
-import { useRoute } from "vue-router"
-// 
-import { useRouter } from "vue-router"
-// 
+import { ref, computed, onMounted, watch } from "vue"
+import axios from "axios"
+import { useRoute, useRouter } from "vue-router"
 
 const route = useRoute()
-// 
 const router = useRouter()
-// 
-const buyQuantity = ref(1)
+
+const product = ref({})
+const products = ref([])
 
 const selectedImage = ref(0)
+const buyQuantity = ref(1)
 
-const products = ref([
+/* ===============================
+   Lấy chi tiết sản phẩm
+================================ */
 
-{
+const fetchProduct = async () => {
 
-id:1,
+    try {
 
-name:"iPhone 16 Pro",
+        const response = await axios.get(
 
-brand:"Apple",
+            `http://localhost:8080/api/products/${route.params.id}`
 
-category:"Điện thoại",
+        )
 
-price:32990000,
+        product.value = response.data
 
-quantity:20,
+        selectedImage.value = 0
 
-discount:"10%",
+        buyQuantity.value = 1
 
-description:"Điện thoại Apple cao cấp với chip A18 Pro, camera 48MP và màn hình Super Retina XDR.",
+    }
 
-images:[
-"iphone16_1.jpg",
-"iphone16_2.jpg",
-"iphone16_3.jpg",
-"iphone16_4.jpg"
-]
+    catch (error) {
 
-},
+        console.error("Lỗi tải sản phẩm:", error)
 
-{
-
-id:2,
-
-name:"Samsung Galaxy S26",
-
-brand:"Samsung",
-
-category:"Điện thoại",
-
-price:26990000,
-
-quantity:30,
-
-discount:"20%",
-
-description:"Galaxy S26 với AI thông minh, màn hình Dynamic AMOLED và camera zoom quang học.",
-
-images:[
-"s26_1.jpg",
-"s26_2.jpg",
-"s26_3.jpg",
-"s26_4.jpg"
-]
-
-},
-
-{
-
-id:3,
-
-name:"MacBook Air M5",
-
-brand:"Apple",
-
-category:"Laptop",
-
-price:32990000,
-
-quantity:15,
-
-discount:"Không",
-
-description:"Laptop Apple M5 siêu mỏng nhẹ, pin hơn 18 giờ.",
-
-images:[
-"macbook_1.jpg",
-"macbook_2.jpg",
-"macbook_3.jpg",
-"macbook_4.jpg"
-]
-
-},
-
-{
-
-id:4,
-
-name:"Asus ROG Zephyrus",
-
-brand:"Asus",
-
-category:"Laptop Gaming",
-
-price:39990000,
-
-quantity:10,
-
-discount:"Không",
-
-description:"Laptop Gaming RTX mới nhất, màn hình 240Hz.",
-
-images:[
-"rog_1.jpg",
-"rog_2.jpg",
-"rog_3.jpg",
-"rog_4.jpg"
-]
-
-},
-
-{
-
-id:5,
-
-name:"AirPods Pro 3",
-
-brand:"Apple",
-
-category:"Tai nghe",
-
-price:6990000,
-
-quantity:50,
-
-discount:"Không",
-
-description:"Tai nghe chống ồn chủ động, âm thanh không gian.",
-
-images:[
-"airpods_1.jpg",
-"airpods_2.jpg",
-"airpods_3.jpg",
-"airpods_4.jpg"
-]
+    }
 
 }
 
-])
+/* ===============================
+   Lấy toàn bộ sản phẩm
+================================ */
 
-const product = computed(() => {
+const fetchProducts = async () => {
 
-    const id = Number(route.params.id)
+    try {
 
-    return products.value.find(
-        p => p.id === id
-    ) || products.value[0]
+        const response = await axios.get(
+
+            "http://localhost:8080/api/products"
+
+        )
+
+        products.value = response.data
+
+    }
+
+    catch (error) {
+
+        console.error("Lỗi tải danh sách:", error)
+
+    }
+
+}
+
+/* ===============================
+   Sinh 4 ảnh
+================================ */
+
+const displayImages = computed(() => {
+
+    if (!product.value.image) {
+
+        return []
+
+    }
+
+    const fileName = product.value.image
+
+    const dot = fileName.lastIndexOf(".")
+
+    const ext = fileName.substring(dot)
+
+    const name = fileName.substring(0, dot)
+
+    return [
+
+        name + ext,
+
+        name + "_2" + ext,
+
+        name + "_3" + ext,
+
+        name + "_4" + ext
+
+    ]
 
 })
 
+/* ===============================
+   Sản phẩm liên quan
+================================ */
 
-// 
 const relatedProducts = computed(() => {
 
-    return products.value.filter(p =>
+    if (!product.value.category) {
 
-        p.category === product.value.category
+        return []
+
+    }
+
+    return products.value.filter(item =>
+
+        item.category?.id === product.value.category.id
 
         &&
 
-        p.id !== product.value.id
+        item.id !== product.value.id
 
     )
 
 })
 
-const viewProduct=(id)=>{
+/* ===============================
+   Chuyển sản phẩm
+================================ */
 
-    selectedImage.value=0
+const viewProduct = (id) => {
 
-    buyQuantity.value=1
-
-    router.push("/product/"+id)
-
-}
-
-// 
-
-const formatPrice=(price)=>{
-
-return new Intl.NumberFormat(
-
-"vi-VN",
-
-{
-
-style:"currency",
-
-currency:"VND"
+    router.push("/product/" + id)
 
 }
 
-).format(price)
+/* ===============================
+   Theo dõi URL
+================================ */
 
-}
+watch(
 
-const getImage=(image)=>{
+    () => route.params.id,
 
-return "/images/"+image
+    () => {
 
-}
+        fetchProduct()
 
-const increase=()=>{
-
-buyQuantity.value++
-
-}
-
-const decrease=()=>{
-
-if(buyQuantity.value>1){
-
-buyQuantity.value--
-
-}
-
-}
-
-const addToCart=()=>{
-
-alert(
-
-"Đã thêm "+buyQuantity.value+" sản phẩm vào giỏ hàng."
+    }
 
 )
 
+/* ===============================
+   Format giá
+================================ */
+
+const formatPrice = (price) => {
+
+    if (!price) return ""
+
+    return new Intl.NumberFormat(
+
+        "vi-VN",
+
+        {
+
+            style: "currency",
+
+            currency: "VND"
+
+        }
+
+    ).format(price)
+
 }
+
+/* ===============================
+   Đường dẫn ảnh
+================================ */
+
+const getImage = (image) => {
+
+    if (!image) {
+
+        return "https://via.placeholder.com/400"
+
+    }
+
+    return "/images/" + image
+
+}
+
+/* ===============================
+   Quantity
+================================ */
+
+const increase = () => {
+
+    buyQuantity.value++
+
+}
+
+const decrease = () => {
+
+    if (buyQuantity.value > 1) {
+
+        buyQuantity.value--
+
+    }
+
+}
+
+/* ===============================
+   Cart
+================================ */
+
+const addToCart = () => {
+
+    alert(
+
+        "Đã thêm " +
+
+        buyQuantity.value +
+
+        " sản phẩm vào giỏ hàng."
+
+    )
+
+}
+
+/* ===============================
+   Mounted
+================================ */
+
+onMounted(() => {
+
+    fetchProducts()
+
+    fetchProduct()
+
+})
 
 </script>
 
-<!--  -->
-<!--  -->
-<!--  -->
 <style scoped>
 
 /* =========================
@@ -458,17 +484,20 @@ alert(
 ========================= */
 
 .main-image{
+
     width:100%;
     height:450px;
     object-fit:contain;
-    transition:0.3s;
+    transition:.3s;
     cursor:pointer;
+
 }
 
 .main-image:hover{
-    transform:scale(1.03);
-}
 
+    transform:scale(1.03);
+
+}
 
 /* =========================
    Ảnh nhỏ
@@ -477,9 +506,7 @@ alert(
 .thumbnail{
 
     width:80px;
-
     height:80px;
-
     object-fit:contain;
 
     background:#fff;
@@ -510,7 +537,6 @@ alert(
 
 }
 
-
 /* =========================
    Tiêu đề
 ========================= */
@@ -519,8 +545,9 @@ h2{
 
     color:#222;
 
-}
+    font-weight:700;
 
+}
 
 /* =========================
    Giá
@@ -532,17 +559,15 @@ h2{
 
 }
 
-
 /* =========================
    Mô tả
 ========================= */
 
 .text-secondary{
 
-    line-height:1.7;
+    line-height:1.8;
 
 }
-
 
 /* =========================
    Input số lượng
@@ -553,7 +578,6 @@ input{
     font-weight:bold;
 
 }
-
 
 /* =========================
    Button
@@ -573,7 +597,6 @@ input{
 
 }
 
-
 .btn-outline-danger{
 
     transition:.25s;
@@ -586,9 +609,8 @@ input{
 
 }
 
-
 /* =========================
-   Card ảnh
+   Card
 ========================= */
 
 .card{
@@ -599,6 +621,37 @@ input{
 
 }
 
+/* =========================
+   Product liên quan
+========================= */
+
+.product-card{
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.product-card:hover{
+
+    transform:translateY(-6px);
+
+    box-shadow:0 10px 20px rgba(0,0,0,.15);
+
+}
+
+.product-card img{
+
+    transition:.3s;
+
+}
+
+.product-card:hover img{
+
+    transform:scale(1.05);
+
+}
 
 /* =========================
    Responsive
@@ -627,23 +680,5 @@ input{
     }
 
 }
-
-/*  */
-.product-card{
-
-    cursor:pointer;
-
-    transition:.3s;
-
-}
-
-.product-card:hover{
-
-    transform:translateY(-6px);
-
-    box-shadow:0 10px 20px rgba(0,0,0,.15);
-
-}
-/*  */
 
 </style>
