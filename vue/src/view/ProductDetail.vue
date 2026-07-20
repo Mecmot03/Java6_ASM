@@ -245,6 +245,326 @@ const products = ref([])
 const selectedImage = ref(0)
 const buyQuantity = ref(1)
 
+
+const productImages = {
+
+    "iphone16.jpg": [
+        "iphone16.jpg",
+        "iphone16_2.jpg",
+        "iphone16_3.jpg",
+        "iphone16_4.jpg"
+    ],
+
+    "s26.jpg": [
+        "s26.jpg",
+        "s26_2.jpg",
+        "s26_3.jpg",
+        "s26_4.jpg"
+    ],
+
+    "macbook.jpg": [
+        "macbook.jpg",
+        "macbook_2.jpg",
+        "macbook_3.jpg",
+        "macbook_4.jpg"
+    ],
+
+    "rog.jpg": [
+        "rog.jpg",
+        "rog_2.jpg",
+        "rog_3.jpg",
+        "rog_4.jpg"
+    ],
+
+    "airpods.jpg": [
+        "airpods.jpg",
+        "airpods_2.jpg",
+        "airpods_3.jpg",
+        "airpods_4.jpg"
+    ],
+
+    "iphone16_black.jpg": [
+        "iphone16_black.jpg",
+        "iphone16_black_2.jpg",
+        "iphone16_black_3.jpg",
+        "iphone16_black_4.jpg"
+    ],
+
+    "iphone16_plus.jpg": [
+        "iphone16_plus.jpg",
+        "iphone16_plus_2.jpg",
+        "iphone16_plus_3.jpg",
+        "iphone16_plus_4.jpg"
+    ],
+
+    "a57.jpg": [
+        "a57.jpg",
+        "a57_2.jpg",
+        "a57_3.jpg",
+        "a57_4.jpg"
+    ],
+
+    "xiaomi16.jpg": [
+        "xiaomi16.jpg",
+        "xiaomi16_2.jpg",
+        "xiaomi16_3.jpg",
+        "xiaomi16_4.jpg"
+    ],
+
+    "reno16.jpg": [
+        "reno16.jpg",
+        "reno16_2.jpg",
+        "reno16_3.jpg",
+        "reno16_4.jpg"
+    ],
+
+    "xps15.jpg": [
+        "xps15.jpg",
+        "xps15_2.jpg",
+        "xps15_3.jpg",
+        "xps15_4.jpg"
+    ],
+
+    "hppavilion15.jpg": [
+        "hppavilion15.jpg",
+        "hppavilion15_2.jpg",
+        "hppavilion15_3.jpg",
+        "hppavilion15_4.jpg"
+    ],
+
+    "legion5.jpg": [
+        "legion5.jpg",
+        "legion5_2.jpg",
+        "legion5_3.jpg",
+        "legion5_4.jpg"
+    ],
+
+    "katana17.jpg": [
+        "katana17.jpg",
+        "katana17_2.jpg",
+        "katana17_3.jpg",
+        "katana17_4.jpg"
+    ],
+
+    "nitrov.jpg": [
+        "nitrov.jpg",
+        "nitrov_2.jpg",
+        "nitrov_3.jpg",
+        "nitrov_4.jpg"
+    ],
+
+    "ipadairm3.jpg": [
+        "ipadairm3.jpg",
+        "ipadairm3_2.jpg",
+        "ipadairm3_3.jpg",
+        "ipadairm3_4.jpg"
+    ],
+
+    "ipadprom4.jpg": [
+        "ipadprom4.jpg",
+        "ipadprom4_2.jpg",
+        "ipadprom4_3.jpg",
+        "ipadprom4_4.jpg"
+    ],
+
+    "tabs11.jpg": [
+        "tabs11.jpg",
+        "tabs11_2.jpg",
+        "tabs11_3.jpg",
+        "tabs11_4.jpg"
+    ],
+
+    "pad8.jpg": [
+        "pad8.jpg",
+        "pad8_2.jpg",
+        "pad8_3.jpg",
+        "pad8_4.jpg"
+    ],
+
+    "tabp12.jpg": [
+        "tabp12.jpg",
+        "tabp12_2.jpg",
+        "tabp12_3.jpg",
+        "tabp12_4.jpg"
+    ],
+
+    "sonyxm6.jpg": [
+        "sonyxm6.jpg",
+        "sonyxm6_2.jpg",
+        "sonyxm6_3.jpg",
+        "sonyxm6_4.jpg"
+    ],
+
+    "buds4pro.jpg": [
+        "buds4pro.jpg",
+        "buds4pro_2.jpg",
+        "buds4pro_3.jpg",
+        "buds4pro_4.jpg"
+    ],
+
+    "jbl770.jpg": [
+        "jbl770.jpg",
+        "jbl770_2.jpg",
+        "jbl770_3.jpg",
+        "jbl770_4.jpg"
+    ],
+
+    "gprox.jpg": [
+        "gprox.jpg",
+        "gprox_2.jpg",
+        "gprox_3.jpg",
+        "gprox_4.jpg"
+    ],
+
+    "blacksharkv2.jpg": [
+        "blacksharkv2.jpg",
+        "blacksharkv2_2.jpg",
+        "blacksharkv2_3.jpg",
+        "blacksharkv2_4.jpg"
+    ],
+
+    "watch11.jpg": [
+        "watch11.jpg",
+        "watch11_2.jpg",
+        "watch11_3.jpg",
+        "watch11_4.jpg"
+    ],
+
+    "watch8.jpg": [
+        "watch8.jpg",
+        "watch8_2.jpg",
+        "watch8_3.jpg",
+        "watch8_4.jpg"
+    ],
+
+    "garmin975.jpg": [
+        "garmin975.jpg",
+        "garmin975_2.jpg",
+        "garmin975_3.jpg",
+        "garmin975_4.jpg"
+    ],
+
+    "gt6.jpg": [
+        "gt6.jpg",
+        "gt6_2.jpg",
+        "gt6_3.jpg",
+        "gt6_4.jpg"
+    ],
+
+    "balance2.jpg": [
+        "balance2.jpg",
+        "balance2_2.jpg",
+        "balance2_3.jpg",
+        "balance2_4.jpg"
+    ],
+
+    "k8pro.jpg": [
+        "k8pro.jpg",
+        "k8pro_2.jpg",
+        "k8pro_3.jpg",
+        "k8pro_4.jpg"
+    ],
+
+    "5075b.jpg": [
+        "075b.jpg",
+        "075b_2.jpg",
+        "075b_3.jpg",
+        "075b_4.jpg"
+    ],
+
+    "mxkeys.jpg": [
+        "mxkeys.jpg",
+        "mxkeys_2.jpg",
+        "mxkeys_3.jpg",
+        "mxkeys_4.jpg"
+    ],
+
+    "blackwidowv4.jpg": [
+        "blackwidowv4.jpg",
+        "blackwidowv4_2.jpg",
+        "blackwidowv4_3.jpg",
+        "blackwidowv4_4.jpg"
+    ],
+
+    "rk84.jpg": [
+        "rk84.jpg",
+        "rk84_2.jpg",
+        "rk84_3.jpg",
+        "rk84_4.jpg"
+    ],
+
+    "gprox2.jpg": [
+        "gprox2.jpg",
+        "gprox2_2.jpg",
+        "gprox2_3.jpg",
+        "gprox2_4.jpg"
+    ],
+
+    "viperv3.jpg": [
+        "viperv3.jpg",
+        "viperv3_2.jpg",
+        "viperv3_3.jpg",
+        "viperv3_4.jpg"
+    ],
+
+    "mxmaster3s.jpg": [
+        "mxmaster3s.jpg",
+        "mxmaster3s_2.jpg",
+        "mxmaster3s_3.jpg",
+        "mxmaster3s_4.jpg"
+    ],
+
+    "x2h.jpg": [
+        "x2h.jpg",
+        "x2h_2.jpg",
+        "x2h_3.jpg",
+        "x2h_4.jpg"
+    ],
+
+    "attacksharkx6.jpg": [
+        "attacksharkx6.jpg",
+        "attacksharkx6_2.jpg",
+        "attacksharkx6_3.jpg",
+        "attacksharkx6_4.jpg"
+    ],
+
+    "anker100w.jpg": [
+        "anker100w.jpg",
+        "anker100w_2.jpg",
+        "anker100w_3.jpg",
+        "anker100w_4.jpg"
+    ],
+
+    "ugreen100w.jpg": [
+        "ugreen100w.jpg",
+        "ugreen100w_2.jpg",
+        "ugreen100w_3.jpg",
+        "ugreen100w_4.jpg"
+    ],
+
+    "baseuspd.jpg": [
+        "baseuspd.jpg",
+        "baseuspd_2.jpg",
+        "baseuspd_3.jpg",
+        "baseuspd_4.jpg"
+    ],
+
+    "applecable.jpg": [
+        "applecable.jpg",
+        "applecable_2.jpg",
+        "applecable_3.jpg",
+        "applecable_4.jpg"
+    ],
+
+    "samsungcable.jpg": [
+        "samsungcable.jpg",
+        "samsungcable_2.jpg",
+        "samsungcable_3.jpg",
+        "samsungcable_4.jpg"
+    ]
+
+}
+
 /* ===============================
    Lấy chi tiết sản phẩm
 ================================ */
@@ -313,23 +633,9 @@ const displayImages = computed(() => {
 
     }
 
-    const fileName = product.value.image
+    return productImages[product.value.image] || [
 
-    const dot = fileName.lastIndexOf(".")
-
-    const ext = fileName.substring(dot)
-
-    const name = fileName.substring(0, dot)
-
-    return [
-
-        name + ext,
-
-        name + "_2" + ext,
-
-        name + "_3" + ext,
-
-        name + "_4" + ext
+        product.value.image
 
     ]
 
