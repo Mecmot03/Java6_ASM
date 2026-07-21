@@ -1,26 +1,18 @@
 <template>
   <div class="container py-4">
-    <!-- BANNER SLIDER (CHUYỂN 2 ANH DEAL & THOAI) -->
-    <div id="mainBannerCarousel" class="carousel slide mb-4 rounded-4 overflow-hidden shadow-sm border-0"
-      data-bs-ride="carousel" data-bs-interval="4000">
-      <!-- Nút chấm chuyển trang bên dưới -->
+    <!-- BANNER SLIDER -->
+    <div id="mainBannerCarousel" class="carousel slide mb-4 rounded-4 overflow-hidden shadow-sm border-0" data-bs-ride="carousel" data-bs-interval="4000">
       <div class="carousel-indicators mb-2">
-        <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="0"
-          class="active custom-indicator"></button>
-        <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="1"
-          class="custom-indicator"></button>
+        <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="0" class="active custom-indicator"></button>
+        <button type="button" data-bs-target="#mainBannerCarousel" data-bs-slide-to="1" class="custom-indicator"></button>
       </div>
 
-      <!-- Danh sách Banner -->
       <div class="carousel-inner">
-        <!-- Banner 1: thoai.png -->
         <div class="carousel-item active">
           <router-link to="/">
             <img src="/images/thoai.png" class="d-block w-100 banner-img" alt="Khuyến mãi Điện thoại" />
           </router-link>
         </div>
-
-        <!-- Banner 2: deal.jpg -->
         <div class="carousel-item">
           <router-link to="/">
             <img src="/images/deal.jpg" class="d-block w-100 banner-img" alt="Deal hot giá sốc" />
@@ -28,7 +20,6 @@
         </div>
       </div>
 
-      <!-- Nút chuyển sang Trái / Phải -->
       <button class="carousel-control-prev" type="button" data-bs-target="#mainBannerCarousel" data-bs-slide="prev">
         <span class="carousel-control-prev-icon rounded-circle p-3 bg-dark bg-opacity-50" aria-hidden="true"></span>
       </button>
@@ -36,21 +27,13 @@
         <span class="carousel-control-next-icon rounded-circle p-3 bg-dark bg-opacity-50" aria-hidden="true"></span>
       </button>
     </div>
-    <!-- KHU VỰC BỘ LỌC THƯƠNG HIỆU & SẮP XẾP -->
-    <div class="filter-section mb-4 p-3 p-md-4 bg-white rounded-4 shadow-sm border-0">
 
-      <!-- Hàng 1: Nút lọc theo Thương hiệu -->
+    <!-- FILTER SECTION -->
+    <div class="filter-section mb-4 p-3 p-md-4 bg-white rounded-4 shadow-sm border-0">
       <div class="d-flex align-items-center gap-2 overflow-auto pb-3 border-bottom no-scrollbar">
         <span class="fw-bold text-dark me-2 flex-shrink-0 small text-uppercase tracking-wider">
           <i class="bi bi-tags-fill me-1 text-warning"></i>Thương hiệu:
         </span>
-        <!-- <button 
-          class="btn btn-filter btn-sm rounded-pill flex-shrink-0 px-3 py-1 fw-medium" 
-          :class="selectedBrand === '' ? 'active' : ''"
-          @click="selectBrand('')"
-        >
-          Tất cả
-        </button> -->
         <button v-for="brand in availableBrands" :key="brand"
           class="btn btn-filter btn-sm rounded-pill flex-shrink-0 px-3 py-1 fw-medium"
           :class="selectedBrand === brand ? 'active' : ''" @click="selectBrand(brand)">
@@ -58,13 +41,11 @@
         </button>
       </div>
 
-      <!-- Hàng 2: Lựa chọn Sắp xếp (Đã gộp về chung 1 bên) -->
       <div class="d-flex align-items-center gap-2 pt-3 flex-wrap">
         <span class="fw-bold text-dark me-1 small text-uppercase tracking-wider flex-shrink-0">
           <i class="bi bi-sort-down me-1 text-warning"></i>Sắp xếp:
         </span>
 
-        <!-- Cụm nút Nổi bật / Mới nhất -->
         <div class="sort-pill-group p-1 bg-light rounded-pill d-inline-flex border flex-shrink-0">
           <button class="btn btn-sort-pill btn-sm rounded-pill px-3 fw-medium"
             :class="sortBy === 'default' ? 'active' : ''" @click="selectSort('default')">
@@ -76,10 +57,8 @@
           </button>
         </div>
 
-        <!-- Ô chọn Giá đặt ngay sát bên cạnh -->
         <div class="flex-shrink-0">
-          <select
-            class="form-select form-select-sm rounded-pill ps-3 pe-5 py-1 border-light-subtle bg-light shadow-none fw-medium text-secondary custom-price-select"
+          <select class="form-select form-select-sm rounded-pill ps-3 pe-5 py-1 border-light-subtle bg-light shadow-none fw-medium text-secondary custom-price-select"
             v-model="priceSort" @change="onPriceSortChange">
             <option value="">Giá: Mặc định</option>
             <option value="price_asc">Giá: Thấp đến Cao</option>
@@ -87,16 +66,14 @@
           </select>
         </div>
       </div>
-
     </div>
 
-    <!-- TIÊU ĐỀ THAY ĐỔI ĐỘNG -->
+    <!-- DANH SÁCH SẢN PHẨM -->
     <div class="row g-4">
       <div class="col-12 d-flex align-items-center justify-content-between">
         <h4 class="fw-bold text-dark mb-0 position-relative section-title">
           <span v-if="keyword">Kết quả tìm kiếm: <span class="text-black">"{{ keyword }}"</span></span>
-          <span v-else-if="selectedCategoryName">Danh mục: <span class="text-black">{{ selectedCategoryName
-          }}</span></span>
+          <span v-else-if="selectedCategoryName">Danh mục: <span class="text-black">{{ selectedCategoryName }}</span></span>
           <span v-else>Tất cả sản phẩm</span>
         </h4>
         <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-normal">
@@ -109,37 +86,33 @@
         <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào phù hợp!</p>
       </div>
 
-      <!-- DANH SÁCH SẢN PHẨM -->
-      <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+      <!-- PRODUCT CARD -->
+      <div v-for="product in products" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
         <div class="card h-100 shadow-sm border-0 rounded-4 product-card overflow-hidden">
           <div class="product-img-container p-3 d-flex align-items-center justify-content-center position-relative">
-            <span v-if="product.discountId"
-              class="badge bg-danger rounded-pill position-absolute top-0 start-0 m-3 px-2 py-1">
+            <span v-if="product.discountId || product.DiscountId" class="badge bg-danger rounded-pill position-absolute top-0 start-0 m-3 px-2 py-1">
               Giảm giá
             </span>
-            <img :src="product.image ? '/images/' + product.image : 'https://via.placeholder.com/200'"
-              class="card-img-top product-hover-zoom" :alt="product.name">
+            <img :src="getProductImage(product)" class="card-img-top product-hover-zoom" :alt="getProductName(product)">
           </div>
 
           <div class="card-body d-flex flex-column justify-content-between pt-2 px-3 pb-3">
             <div>
               <div class="mb-1">
-                <span class="badge bg-light text-secondary border rounded-pill small">{{ product.brand }}</span>
+                <span class="badge bg-light text-secondary border rounded-pill small">{{ getProductBrand(product) }}</span>
               </div>
-              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="product.name">
-                {{ product.name }}
+              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="getProductName(product)">
+                {{ getProductName(product) }}
               </h6>
             </div>
 
             <div>
-              <h5 class="text-danger fw-bold mb-3">{{ formatPrice(product.price) }}</h5>
+              <h5 class="text-danger fw-bold mb-3">{{ formatPrice(product.price ?? product.Price) }}</h5>
               <div class="d-flex gap-2">
-                <button class="btn btn-light btn-sm flex-grow-1 rounded-pill fw-medium text-secondary"
-                  @click="viewDetail(product.id)">
+                <button class="btn btn-light btn-sm flex-grow-1 rounded-pill fw-medium text-secondary" @click="viewDetail(product.id || product.Id)">
                   <i class="bi bi-eye"></i> Xem
                 </button>
-                <button class="btn btn-warning btn-sm flex-grow-1 rounded-pill fw-bold text-dark"
-                  @click="addToCart(product.id)">
+                <button class="btn btn-warning btn-sm flex-grow-1 rounded-pill fw-bold text-dark" @click="addToCart(product.id || product.Id)">
                   <i class="bi bi-cart-plus me-1"></i> Mua
                 </button>
               </div>
@@ -148,7 +121,6 @@
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -179,7 +151,20 @@ const fetchFilteredProducts = async () => {
     if (sortBy.value) params.sortBy = sortBy.value
 
     const response = await axios.get('http://localhost:8080/api/products/filter', { params })
-    products.value = response.data
+    
+    console.log("DỮ LIỆU THỰC TẾ:", response.data)
+
+    // 🔴 SỬA TẠI ĐÂY: Nếu Backend trả về Object chứa mảng (ví dụ response.data.content hoặc response.data.data)
+    if (Array.isArray(response.data)) {
+      products.value = response.data
+    } else if (response.data && response.data.content) {
+      products.value = response.data.content // Dành cho Page<Product>
+    } else if (response.data && response.data.data) {
+      products.value = response.data.data
+    } else {
+      products.value = []
+    }
+
   } catch (error) {
     console.error("Lỗi tải sản phẩm:", error)
     products.value = []
@@ -193,11 +178,19 @@ const fetchCategoryName = async (catId) => {
   }
   try {
     const res = await axios.get('http://localhost:8080/api/categories')
-    const found = res.data.find(c => c.id == catId)
-    if (found) selectedCategoryName.value = found.name
+    const found = res.data.find(c => (c.id || c.Id) == catId)
+    if (found) selectedCategoryName.value = found.name || found.Name
   } catch (e) {
     console.error("Lỗi lấy thông tin danh mục:", e)
   }
+}
+
+// Các hàm Helper lấy giá trị an toàn
+const getProductName = (p) => p.name || p.Name || 'Sản phẩm'
+const getProductBrand = (p) => p.brand || p.Brand || 'Khác'
+const getProductImage = (p) => {
+  const img = p.image || p.Image
+  return img ? '/images/' + img : 'https://via.placeholder.com/200'
 }
 
 watch(
@@ -219,7 +212,11 @@ watch(
 )
 
 const selectBrand = (brand) => {
-  selectedBrand.value = brand
+  if (selectedBrand.value === brand) {
+    selectedBrand.value = ''
+  } else {
+    selectedBrand.value = brand
+  }
   fetchFilteredProducts()
 }
 
@@ -237,6 +234,7 @@ const onPriceSortChange = () => {
 }
 
 const formatPrice = (price) => {
+  if (price === undefined || price === null || isNaN(price)) return '0 đ'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
@@ -254,119 +252,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Custom Banner Carousel */
-#mainBannerCarousel {
-  background-color: #f8f9fa;
-  cursor: pointer;
-}
-
-.banner-img {
-  object-fit: cover;
-  transition: transform 0.3s ease;
-}
-
-#mainBannerCarousel:hover .banner-img {
-  transform: scale(1.01);
-}
-
-/* Tùy chỉnh thanh chỉ số (dots) bên dưới banner */
-.custom-indicator {
-  width: 12px !important;
-  height: 12px !important;
-  border-radius: 50% !important;
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  border: none !important;
-  margin: 0 4px !important;
-}
-
-.custom-indicator.active {
-  background-color: #ffd400 !important; /* Màu vàng thương hiệu TGDĐ */
-  width: 28px !important;
-  border-radius: 10px !important;
-}
-
-/* Bo góc mượt & Shadow cho Filter Container */
-.filter-section {
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important;
-  border: 1px solid #f1f3f5 !important;
-}
-
-/* Custom nút Thương hiệu */
-.btn-filter {
-  background-color: #f8f9fa;
-  color: #495057;
-  border: 1px solid #e9ecef;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.btn-filter:hover {
-  background-color: #e9ecef;
-  color: #212529;
-}
-
-.btn-filter.active {
-  background-color: #000000;
-  color: #ffd400;
-  border-color: #000000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Segmented Control cho Sắp xếp */
-.sort-pill-group {
-  background-color: #f1f3f5 !important;
-}
-
-.btn-sort-pill {
-  color: #6c757d;
-  border: none;
-  transition: all 0.2s ease;
-}
-
-.btn-sort-pill.active {
-  background-color: #ffffff;
-  color: #000000;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
-
-/* Product Card Styling */
-.product-card {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #f1f3f5 !important;
-}
-
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
-}
-
-.product-img-container {
-  height: 200px;
-  background-color: #fafafa;
-}
-
-.product-hover-zoom {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-}
-
-.product-card:hover .product-hover-zoom {
-  transform: scale(1.06);
-}
-
-/* Utility Class giấu thanh cuộn ngang */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.tracking-wider {
-  letter-spacing: 0.03em;
-}
+#mainBannerCarousel { background-color: #f8f9fa; cursor: pointer; }
+.banner-img { object-fit: cover; transition: transform 0.3s ease; }
+#mainBannerCarousel:hover .banner-img { transform: scale(1.01); }
+.custom-indicator { width: 12px !important; height: 12px !important; border-radius: 50% !important; background-color: rgba(255, 255, 255, 0.7) !important; border: none !important; margin: 0 4px !important; }
+.custom-indicator.active { background-color: #ffd400 !important; width: 28px !important; border-radius: 10px !important; }
+.filter-section { background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; border: 1px solid #f1f3f5 !important; }
+.btn-filter { background-color: #f8f9fa; color: #495057; border: 1px solid #e9ecef; transition: all 0.25s ease; }
+.btn-filter:hover { background-color: #e9ecef; color: #212529; }
+.btn-filter.active { background-color: #000000; color: #ffd400; border-color: #000000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
+.sort-pill-group { background-color: #f1f3f5 !important; }
+.btn-sort-pill { color: #6c757d; border: none; transition: all 0.2s ease; }
+.btn-sort-pill.active { background-color: #ffffff; color: #000000; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
+.product-card { transition: all 0.3s ease; border: 1px solid #f1f3f5 !important; }
+.product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important; }
+.product-img-container { height: 200px; background-color: #fafafa; }
+.product-hover-zoom { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.3s ease; }
+.product-card:hover .product-hover-zoom { transform: scale(1.06); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.tracking-wider { letter-spacing: 0.03em; }
 </style>
