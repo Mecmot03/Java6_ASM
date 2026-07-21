@@ -1,7 +1,6 @@
 package nhomhoinuong.java6_asm.controller;
 
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +20,14 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @GetMapping("/filter")
+    public List<Product> filterProducts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String sortBy) {
+        return productService.filterProducts(keyword, categoryId, brand, sortBy);
+    }
     @GetMapping("/{id}")
     public Product getProduct(@PathVariable Long id) {
         return productService.getProductById(id);
