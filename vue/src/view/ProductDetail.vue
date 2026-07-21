@@ -561,6 +561,62 @@ const productImages = {
         "samsungcable_2.jpg",
         "samsungcable_3.jpg",
         "samsungcable_4.jpg"
+    ],
+
+    "x1carbon14.jpg": [
+        "x1carbon14.jpg",
+        "x1carbon14_2.jpg",
+        "x1carbon14_3.jpg",
+        "x1carbon14_4.jpg"
+    ],
+
+    "zenbook14.jpg": [
+        "zenbook14.jpg",
+        "zenbook14_2.jpg",
+        "zenbook14_3.jpg",
+        "zenbook14_4.jpg"
+    ],
+
+    "omen16.jpg": [
+        "omen16.jpg",
+        "omen16_2.jpg",
+        "omen16_3.jpg",
+        "omen16_4.jpg"
+    ],
+
+    "ipadmini8.jpg": [
+        "ipadmini8.jpg",
+        "ipadmini8_2.jpg",
+        "ipadmini8_3.jpg",
+        "ipadmini8_4.jpg"
+    ],
+
+    "matepad13.jpg": [
+        "matepad13.jpg",
+        "matepad13_2.jpg",
+        "matepad13_3.jpg",
+        "matepad13_4.jpg"
+    ],
+
+    "honorpadx10.jpg": [
+        "honorpadx10.jpg",
+        "honorpadx10_2.jpg",
+        "honorpadx10_3.jpg",
+        "honorpadx10_4.jpg"
+    ],
+
+    "redmipadpro.jpg": [
+        "redmipadpro.jpg",
+        "redmipadpro_2.jpg",
+        "redmipadpro_3.jpg",
+        "redmipadpro_4.jpg"
+    ],
+
+    "oppopad4.jpg": [
+        "oppopad4.jpg",
+        "oppopad4_2.jpg",
+        "oppopad4_3.jpg",
+        "oppopad4_4.jpg"
     ]
 
 }
