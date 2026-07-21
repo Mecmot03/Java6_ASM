@@ -45,6 +45,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 // =========================
 import Home from '../view/Home.vue'
 import ProductDetail from '../view/ProductDetail.vue'
+import Login from '../view/Login.vue'       // 👈 THÊM DÒNG NÀY
+import Register from '../view/Register.vue' // 👈 THÊM DÒNG NÀY
+import FlashSale from '../view/FlashSale.vue' // 1. Import component Flash Sale
 
 // =========================
 // Admin
