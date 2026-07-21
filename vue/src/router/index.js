@@ -53,8 +53,8 @@ import FlashSale from '../view/FlashSale.vue' // 1. Import component Flash Sale
 // Admin
 // =========================
 import ProductManagement from '../view/admin/ProductManagement.vue'
-import ProductCreate from '../view/admin/ProductCreate.vue'
-import ProductEdit from '../view/admin/ProductEdit.vue'
+// import ProductCreate from '../view/admin/ProductCreate.vue'
+// import ProductEdit from '../view/admin/ProductEdit.vue'
 
 const routes = [
 
@@ -85,18 +85,18 @@ const routes = [
         component: ProductManagement
     },
 
-    {
-        path: '/admin/products/create',
-        name: 'ProductCreate',
-        component: ProductCreate
-    },
+    // {
+    //     path: '/admin/products/create',
+    //     name: 'ProductCreate',
+    //     component: ProductCreate
+    // },
 
-    {
-        path: '/admin/products/edit/:id',
-        name: 'ProductEdit',
-        component: ProductEdit,
-        props: true
-    }
+    // {
+    //     path: '/admin/products/edit/:id',
+    //     name: 'ProductEdit',
+    //     component: ProductEdit,
+    //     props: true
+    // }
 
 ]
 

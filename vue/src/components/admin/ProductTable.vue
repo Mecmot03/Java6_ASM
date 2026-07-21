@@ -39,8 +39,11 @@
                 <tbody>
 
                     <tr
+
                         v-for="product in products"
+
                         :key="product.id"
+
                     >
 
                         <td>
@@ -52,8 +55,11 @@
                         <td>
 
                             <img
+
                                 :src="getImage(product.image)"
+
                                 class="product-image"
+
                             >
 
                         </td>
@@ -95,8 +101,11 @@
                         <td>
 
                             <span
+
                                 v-if="product.status"
+
                                 class="badge bg-success"
+
                             >
 
                                 Đang bán
@@ -104,8 +113,11 @@
                             </span>
 
                             <span
+
                                 v-else
+
                                 class="badge bg-danger"
+
                             >
 
                                 Ngừng bán
@@ -116,18 +128,28 @@
 
                         <td class="text-center">
 
-                            <router-link
-                                :to="'/admin/products/edit/' + product.id"
+                            <!-- Sửa -->
+
+                            <button
+
                                 class="btn btn-warning btn-sm me-2"
+
+                                @click="$emit('edit', product)"
+
                             >
 
                                 <i class="bi bi-pencil-square"></i>
 
-                            </router-link>
+                            </button>
+
+                            <!-- Xóa -->
 
                             <button
+
                                 class="btn btn-danger btn-sm"
+
                                 @click="openDeleteModal(product.id)"
+
                             >
 
                                 <i class="bi bi-trash"></i>
@@ -139,12 +161,17 @@
                     </tr>
 
                     <tr
+
                         v-if="products.length==0"
+
                     >
 
                         <td
+
                             colspan="9"
+
                             class="text-center text-muted py-4"
+
                         >
 
                             Không có dữ liệu
@@ -161,7 +188,7 @@
 
     </div>
 
-    <!-- Modal xác nhận xóa -->
+    <!-- Modal -->
 
     <DeleteModal
 
@@ -181,7 +208,7 @@ import { ref } from "vue"
 
 import DeleteModal from "./DeleteModal.vue"
 
-const props = defineProps({
+defineProps({
 
     products:{
 
@@ -195,6 +222,8 @@ const props = defineProps({
 
 const emit = defineEmits([
 
+    "edit",
+
     "delete"
 
 ])
@@ -203,7 +232,7 @@ const showDelete = ref(false)
 
 const deleteId = ref(null)
 
-const openDeleteModal = (id)=>{
+const openDeleteModal=(id)=>{
 
     deleteId.value=id
 
@@ -211,7 +240,7 @@ const openDeleteModal = (id)=>{
 
 }
 
-const confirmDelete = ()=>{
+const confirmDelete=()=>{
 
     emit("delete",deleteId.value)
 
@@ -219,7 +248,7 @@ const confirmDelete = ()=>{
 
 }
 
-const closeDelete = ()=>{
+const closeDelete=()=>{
 
     showDelete.value=false
 

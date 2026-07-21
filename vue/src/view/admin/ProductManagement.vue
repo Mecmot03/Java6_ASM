@@ -1,6 +1,6 @@
 <template>
 
-    <div class="container-fluid">
+   <div class="container-fluid product-page">
 
         <!-- Tiêu đề -->
 
@@ -12,20 +12,33 @@
 
             </h2>
 
-            <router-link
-                to="/admin/products/create"
-                class="btn btn-success"
-            >
+            <!-- <button
+    class="btn btn-success"
+    @click="newProduct"
+>
 
                 <i class="bi bi-plus-circle me-2"></i>
 
                 Thêm sản phẩm
 
-            </router-link>
+            </button> -->
 
         </div>
 
-        <!-- Thanh tìm kiếm -->
+
+
+        
+
+        <!-- Bảng -->
+
+        <ProductForm
+    :product="selectedProduct"
+    @save="saveProduct"
+    @cancel="cancelEdit"
+/>
+
+
+<!-- Thanh tìm kiếm -->
 
         <div class="card shadow-sm border-0 mb-4">
 
@@ -78,12 +91,19 @@
 
         </div>
 
-        <!-- Bảng -->
 
-        <ProductTable
+        <!-- <ProductTable
             :products="products"
             @delete="deleteProduct"
-        />
+        /> -->
+
+        <ProductTable
+    :products="products"
+    @edit="editProduct"
+    @delete="deleteProduct"
+/>
+
+
 
     </div>
 
@@ -97,9 +117,13 @@ import ProductService from '../../services/ProductService'
 
 import ProductTable from '../../components/admin/ProductTable.vue'
 
+import ProductForm from '../../components/admin/ProductForm.vue'
+
 const products = ref([])
 
 const keyword = ref('')
+
+const selectedProduct = ref({})
 
 const loadProducts = async () => {
 
@@ -153,6 +177,55 @@ const deleteProduct = async (id) => {
 
 }
 
+
+const newProduct = () => {
+
+    selectedProduct.value = {}
+
+}
+
+const editProduct = (product) => {
+
+    selectedProduct.value = { ...product }
+
+}
+
+const cancelEdit = () => {
+
+    selectedProduct.value = {}
+
+}
+
+const saveProduct = async(product)=>{
+
+    try{
+
+        if(product.id){
+
+            await ProductService.updateProduct(product.id,product)
+
+        }else{
+
+            await ProductService.createProduct(product)
+
+        }
+
+        selectedProduct.value={}
+
+        loadProducts()
+
+    }
+
+    catch(error){
+
+        alert("Lưu sản phẩm thất bại!")
+
+    }
+
+}
+
+
+
 onMounted(() => {
 
     loadProducts()
@@ -167,6 +240,12 @@ onMounted(() => {
 
     border-radius:12px;
 
+}
+
+.product-page{
+    background:#f5f6fa;
+    min-height:100vh;
+    padding:25px;
 }
 
 </style>
