@@ -15,21 +15,47 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    // =========================
+    // Lấy danh sách
+    // =========================
     @GetMapping
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
     }
 
-    @GetMapping("/filter")
-    public List<Product> filterProducts(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String brand,
-            @RequestParam(required = false) String sortBy) {
-        return productService.filterProducts(keyword, categoryId, brand, sortBy);
-    }
+    // =========================
+    // Chi tiết
+    // =========================
     @GetMapping("/{id}")
     public Product getProduct(@PathVariable Long id) {
         return productService.getProductById(id);
     }
+
+    // =========================
+    // Thêm
+    // =========================
+    @PostMapping
+    public Product createProduct(@RequestBody Product product) {
+        return productService.createProduct(product);
+    }
+
+    // =========================
+    // Sửa
+    // =========================
+    @PutMapping("/{id}")
+    public Product updateProduct(
+            @PathVariable Long id,
+            @RequestBody Product product) {
+
+        return productService.updateProduct(id, product);
+    }
+
+    // =========================
+    // Xóa
+    // =========================
+    @DeleteMapping("/{id}")
+    public void deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+    }
+
 }
