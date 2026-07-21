@@ -617,7 +617,169 @@ const productImages = {
         "oppopad4_2.jpg",
         "oppopad4_3.jpg",
         "oppopad4_4.jpg"
+    ],
+
+    "boseultra.jpg": [
+        "boseultra.jpg",
+        "boseultra_2.jpg",
+        "boseultra_3.jpg",
+        "boseultra_4.jpg"
+    ],
+
+    "nova7.jpg": [
+        "nova7.jpg",
+        "nova7_2.jpg",
+        "nova7_3.jpg",
+        "nova7_4.jpg"
+    ],
+
+    "cloud3.jpg": [
+        "cloud3.jpg",
+        "cloud3_2.jpg",
+        "cloud3_3.jpg",
+        "cloud3_4.jpg"
+    ],
+
+    "w820nb.jpg": [
+        "w820nb.jpg",
+        "w820nb_2.jpg",
+        "w820nb_3.jpg",
+        "w820nb_4.jpg"
+    ],
+
+    "ultra3.jpg": [
+        "ultra3.jpg",
+        "ultra3_2.jpg",
+        "ultra3_3.jpg",
+        "ultra3_4.jpg"
+    ],
+
+    "fenix8.jpg": [
+        "fenix8.jpg",
+        "fenix8_2.jpg",
+        "fenix8_3.jpg",
+        "fenix8_4.jpg"
+    ],
+
+    "pace4.jpg": [
+        "pace4.jpg",
+        "pace4_2.jpg",
+        "pace4_3.jpg",
+        "pace4_4.jpg"
+    ],
+
+    "watchs5.jpg": [
+        "watchs5.jpg",
+        "watchs5_2.jpg",
+        "watchs5_3.jpg",
+        "watchs5_4.jpg"
+    ],
+
+    "cmfwatch3.jpg": [
+        "cmfwatch3.jpg",
+        "cmfwatch3_2.jpg",
+        "cmfwatch3_3.jpg",
+        "cmfwatch3_4.jpg"
+    ],
+
+    "q1max.jpg": [
+        "q1max.jpg",
+        "q1max_2.jpg",
+        "q1max_3.jpg",
+        "q1max_4.jpg"
+    ],
+
+    "mod007he.jpg": [
+        "mod007he.jpg",
+        "mod007he_2.jpg",
+        "mod007he_3.jpg",
+        "mod007he_4.jpg"
+    ],
+
+    "air75v3.jpg": [
+        "air75v3.jpg",
+        "air75v3_2.jpg",
+        "air75v3_3.jpg",
+        "air75v3_4.jpg"
+    ],
+
+    "k70max.jpg": [
+        "k70max.jpg",
+        "k70max_2.jpg",
+        "k70max_3.jpg",
+        "k70max_4.jpg"
+    ],
+
+    "zx75.jpg": [
+        "zx75.jpg",
+        "zx75_2.jpg",
+        "zx75_3.jpg",
+        "zx75_4.jpg"
+    ],
+
+    "beastxmax.jpg": [
+        "beastxmax.jpg",
+        "beastxmax_2.jpg",
+        "beastxmax_3.jpg",
+        "beastxmax_4.jpg"
+    ],
+
+    "mayax.jpg": [
+        "mayax.jpg",
+        "mayax_2.jpg",
+        "mayax_3.jpg",
+        "mayax_4.jpg"
+    ],
+
+    "op18k.jpg": [
+        "op18k.jpg",
+        "op18k_2.jpg",
+        "op18k_3.jpg",
+        "op18k_4.jpg"
+    ],
+
+    "g502x.jpg": [
+        "g502x.jpg",
+        "g502x_2.jpg",
+        "g502x_3.jpg",
+        "g502x_4.jpg"
+    ],
+
+    "dav4pro.jpg": [
+        "dav4pro.jpg",
+        "dav4pro_2.jpg",
+        "dav4pro_3.jpg",
+        "dav4pro_4.jpg"
+    ],
+
+    "ankernano.jpg": [
+        "ankernano.jpg",
+        "ankernano_2.jpg",
+        "ankernano_3.jpg",
+        "ankernano_4.jpg"
+    ],
+
+    "choetechpd.jpg": [
+        "choetechpd.jpg",
+        "choetechpd_2.jpg",
+        "choetechpd_3.jpg",
+        "choetechpd_4.jpg"
+    ],
+
+    "essager240w.jpg": [
+        "essager240w.jpg",
+        "essager240w_2.jpg",
+        "essager240w_3.jpg",
+        "essager240w_4.jpg"
+    ],
+
+    "mcdodo.jpg": [
+        "mcdodo.jpg",
+        "mcdodo_2.jpg",
+        "mcdodo_3.jpg",
+        "mcdodo_4.jpg"
     ]
+
 
 }
 
