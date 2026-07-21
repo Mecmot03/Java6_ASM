@@ -25,29 +25,21 @@ public class ProductServiceImpl implements ProductService {
         return productDAO.findById(id).orElse(null);
     }
 
-    // =========================
-    // Thêm
-    // =========================
+    @Override
+    public List<Product> filterProducts(String keyword, Long categoryId, String brand, String sortBy) {
+        return productDAO.filterProducts(keyword, categoryId, brand, sortBy);
+    }
 
     @Override
     public Product createProduct(Product product) {
-
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
-
         return productDAO.save(product);
-
     }
-
-    // =========================
-    // Sửa
-    // =========================
 
     @Override
     public Product updateProduct(Long id, Product product) {
-
         Product oldProduct = productDAO.findById(id).orElse(null);
-
         if (oldProduct == null) {
             return null;
         }
@@ -61,24 +53,15 @@ public class ProductServiceImpl implements ProductService {
         oldProduct.setImage(product.getImage());
         oldProduct.setBrand(product.getBrand());
         oldProduct.setStatus(product.getStatus());
-
         oldProduct.setUpdatedAt(LocalDateTime.now());
 
         return productDAO.save(oldProduct);
-
     }
-
-    // =========================
-    // Xóa
-    // =========================
 
     @Override
     public void deleteProduct(Long id) {
-
         if (productDAO.existsById(id)) {
             productDAO.deleteById(id);
         }
-
     }
-
 }
