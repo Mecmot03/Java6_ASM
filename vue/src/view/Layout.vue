@@ -72,14 +72,15 @@
       </nav>
     </header>
 
-    <!-- BANNER CỐ ĐỊNH TRÁI/PHẢI (CHỈ HIỂN THỊ KHI KHÔNG PHẢI TRANG /flashsale) -->
-    <div v-if="!isFlashSalePage" class="side-banner side-banner-left d-none d-xl-block">
+
+
+    <div v-if="isHomePage" class="side-banner side-banner-left d-none d-xl-block">
       <router-link to="/flashsale">
         <img src="/images/mi.png" alt="Banner Trai" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
     </div>
 
-    <div v-if="!isFlashSalePage" class="side-banner side-banner-right d-none d-xl-block">
+    <div v-if="isHomePage" class="side-banner side-banner-right d-none d-xl-block">
       <router-link to="/flashsale">
         <img src="/images/ni.png" alt="Banner Phai" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
@@ -169,8 +170,7 @@ const cartCount = ref(0)
 const menuItems = ref([])
 
 // Kiểm tra trang hiện tại có phải /flashsale không
-const isFlashSalePage = computed(() => route.path === '/flashsale')
-
+const isHomePage = computed(() => route.path === '/')
 const iconMap = {
   "Điện thoại": "bi bi-phone",
   "Laptop": "bi bi-laptop",
@@ -359,16 +359,16 @@ const policyLinks = ref([
   position: fixed;
   top: 170px;
   z-index: 99;
-  width: 110px;
+  width: 140px;
   transition: all 0.3s ease;
 }
 
 .side-banner-left {
-  left: calc(50% - 670px);
+  left: 20px; 
 }
 
 .side-banner-right {
-  right: calc(50% - 680px);
+  right: 20px; 
 }
 
 .side-banner img {
@@ -425,7 +425,15 @@ const policyLinks = ref([
   transform: scale(1.1);
 }
 
-.facebook { background-color: #1877f2; }
-.youtube { background-color: #ff0000; }
-.tiktok { background-color: #000000; }
+.facebook {
+  background-color: #1877f2;
+}
+
+.youtube {
+  background-color: #ff0000;
+}
+
+.tiktok {
+  background-color: #000000;
+}
 </style>
