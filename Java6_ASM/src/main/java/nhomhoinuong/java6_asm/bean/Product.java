@@ -28,7 +28,7 @@ public class Product implements Serializable {
     @Column(name = "Id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "CategoryId", nullable = false)
     private Category category;
 
