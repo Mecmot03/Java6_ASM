@@ -1,22 +1,28 @@
 package nhomhoinuong.java6_asm.service;
 
 import java.util.List;
-import java.util.Optional;
 
-import nhomhoinuong.java6_asm.bean.User;
+import nhomhoinuong.java6_asm.dto.UserRequest;
+import nhomhoinuong.java6_asm.dto.UserResponse;
 
 public interface UserService {
 
-    List<User> findAll();
+    // Lấy tất cả User
+    List<UserResponse> getAllUsers();
 
-    Optional<User> findById(Long id);
+    // Lấy User theo ID
+    UserResponse getUserById(Long id);
 
-    Optional<User> findByEmail(String email);
+    // Thêm User
+    UserResponse createUser(UserRequest request);
 
-    User save(User user);
+    // Cập nhật User
+    UserResponse updateUser(Long id, UserRequest request);
 
-    void delete(Long id);
+    // Xóa User
+    void deleteUser(Long id);
 
-    boolean existsByEmail(String email);
+    // Khóa / Mở khóa User
+    UserResponse changeStatus(Long id);
 
 }
