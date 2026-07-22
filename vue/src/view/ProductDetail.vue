@@ -96,6 +96,26 @@
 
             </p>
 
+            <!--  -->
+            <!--  -->
+            <!--  -->
+
+            <hr>
+
+<div class="text-muted small">
+
+    <i class="bi bi-calendar-event"></i>
+
+    Ngày đăng sản phẩm:
+
+    <strong>
+
+        {{ formatDate(product.createdAt) }}
+
+    </strong>
+
+</div>
+
             <!-- Chọn số lượng -->
 
             <div class="d-flex align-items-center mt-4">
@@ -893,21 +913,63 @@ const viewProduct = (id) => {
 
 }
 
+
+// const viewProduct = async (id) => {
+
+//     await router.push("/product/" + id)
+
+//     window.scrollTo({
+
+//         top: 0,
+
+//         behavior: "smooth"
+
+//     })
+
+// }
+
+
 /* ===============================
    Theo dõi URL
 ================================ */
+
+// watch(
+
+//     () => route.params.id,
+
+//     () => {
+
+//         fetchProduct()
+
+//     }
+
+// )
+
 
 watch(
 
     () => route.params.id,
 
-    () => {
+    async () => {
 
-        fetchProduct()
+        await fetchProduct()
+
+        selectedImage.value = 0
+
+        buyQuantity.value = 1
+
+        window.scrollTo({
+
+            top: 0,
+
+            behavior: "smooth"
+
+        })
 
     }
 
 )
+
 
 /* ===============================
    Format giá
@@ -998,6 +1060,35 @@ onMounted(() => {
     fetchProduct()
 
 })
+
+
+
+
+const formatDate = (date) => {
+
+    if (!date) return ""
+
+    return new Date(date).toLocaleString(
+
+        "vi-VN",
+
+        {
+
+            // day: "2-digit",
+
+            month: "2-digit",
+
+            year: "numeric"
+
+            // hour: "2-digit",
+
+            // minute: "2-digit"
+
+        }
+
+    )
+
+}
 
 </script>
 
