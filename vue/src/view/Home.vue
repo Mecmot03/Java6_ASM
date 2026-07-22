@@ -41,7 +41,7 @@
         </button>
       </div>
 
-      <div class="d-flex align-items-center gap-2 pt-3 flex-wrap">
+      <div class="d-flex align-items-center gap-3 pt-3 flex-wrap">
         <span class="fw-bold text-dark me-1 small text-uppercase tracking-wider flex-shrink-0">
           <i class="bi bi-sort-down me-1 text-warning"></i>Sắp xếp:
         </span>
@@ -65,6 +65,30 @@
             <option value="price_desc">Giá: Cao đến Thấp</option>
           </select>
         </div>
+
+        <!-- BỘ LỌC KHOẢNG GIÁ (0đ - Xđ) -->
+        <div class="price-filter-box d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border flex-shrink-0">
+          <i class="bi bi-funnel-fill text-warning"></i>
+          <span class="small fw-bold text-nowrap">Khoảng giá:</span>
+          
+          <input 
+            type="range" 
+            class="form-range price-slider" 
+            min="0" 
+            max="100000000" 
+            step="1000000" 
+            v-model.number="tempMaxPrice" 
+          />
+
+          <span class="badge bg-warning text-dark font-monospace price-badge">
+            0đ - {{ formatCurrency(tempMaxPrice) }}
+          </span>
+
+          <button class="btn btn-dark btn-sm rounded-pill px-3 py-1 fs-7 fw-bold" @click="applyPriceFilter">
+            Áp dụng
+          </button>
+        </div>
+
       </div>
     </div>
 
@@ -77,17 +101,17 @@
           <span v-else>Tất cả sản phẩm</span>
         </h4>
         <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-normal">
-          {{ products.length }} sản phẩm
+          {{ filteredProducts.length }} sản phẩm
         </span>
       </div>
 
-      <div v-if="products.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
+      <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
         <i class="bi bi-box-seam display-1 text-muted opacity-25 d-block mb-3"></i>
-        <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào phù hợp!</p>
+        <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào trong khoảng giá này!</p>
       </div>
 
       <!-- PRODUCT CARD -->
-      <div v-for="product in products" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+      <div v-for="product in filteredProducts" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
         <div class="card h-100 shadow-sm border-0 rounded-4 product-card overflow-hidden">
           <div class="product-img-container p-3 d-flex align-items-center justify-content-center position-relative">
             <span v-if="product.discountId || product.DiscountId" class="badge bg-danger rounded-pill position-absolute top-0 start-0 m-3 px-2 py-1">
@@ -125,7 +149,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -140,7 +164,26 @@ const selectedBrand = ref('')
 const sortBy = ref('default')
 const priceSort = ref('')
 
+// tempMaxPrice: lưu giá trị tạm thời khi kéo trượt
+const tempMaxPrice = ref(100000000)
+// appliedMaxPrice: lưu giá trị chốt sau khi bấm "Áp dụng"
+const appliedMaxPrice = ref(100000000)
+
 const availableBrands = ref(['Apple', 'Samsung', 'Xiaomi', 'Dell', 'Logitech', 'Sony', 'Razer', 'Asus', 'Anker'])
+
+// Format hiển thị tiền VNĐ
+const formatCurrency = (value) => {
+  if (!value || value === 0) return '0đ'
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
+}
+
+// Lọc sản phẩm trực tiếp bằng computed (Đảm bảo lọc ăn ngay 100%)
+const filteredProducts = computed(() => {
+  return products.value.filter(product => {
+    const price = Number(product.price ?? product.Price ?? 0)
+    return price <= appliedMaxPrice.value
+  })
+})
 
 const fetchFilteredProducts = async () => {
   try {
@@ -149,16 +192,13 @@ const fetchFilteredProducts = async () => {
     if (selectedCategoryId.value) params.categoryId = selectedCategoryId.value
     if (selectedBrand.value) params.brand = selectedBrand.value
     if (sortBy.value) params.sortBy = sortBy.value
-
-    const response = await axios.get('http://localhost:8080/api/products/filter', { params })
     
-    console.log("DỮ LIỆU THỰC TẾ:", response.data)
+    const response = await axios.get('http://localhost:8080/api/products/filter', { params })
 
-    // 🔴 SỬA TẠI ĐÂY: Nếu Backend trả về Object chứa mảng (ví dụ response.data.content hoặc response.data.data)
     if (Array.isArray(response.data)) {
       products.value = response.data
     } else if (response.data && response.data.content) {
-      products.value = response.data.content // Dành cho Page<Product>
+      products.value = response.data.content
     } else if (response.data && response.data.data) {
       products.value = response.data.data
     } else {
@@ -185,7 +225,7 @@ const fetchCategoryName = async (catId) => {
   }
 }
 
-// Các hàm Helper lấy giá trị an toàn
+// Helpers
 const getProductName = (p) => p.name || p.Name || 'Sản phẩm'
 const getProductBrand = (p) => p.brand || p.Brand || 'Khác'
 const getProductImage = (p) => {
@@ -233,6 +273,11 @@ const onPriceSortChange = () => {
   }
 }
 
+// Nút Áp dụng được bấm -> Cập nhật appliedMaxPrice
+const applyPriceFilter = () => {
+  appliedMaxPrice.value = tempMaxPrice.value
+}
+
 const formatPrice = (price) => {
   if (price === undefined || price === null || isNaN(price)) return '0 đ'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
@@ -272,4 +317,25 @@ onMounted(() => {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .tracking-wider { letter-spacing: 0.03em; }
+
+/* CSS THANH KÉO KHOẢNG GIÁ & NÚT ÁP DỤNG */
+.price-filter-box {
+  border-color: #dee2e6 !important;
+}
+
+.price-slider {
+  width: 120px;
+  cursor: pointer;
+  accent-color: #ffd400;
+}
+
+.price-badge {
+  font-size: 12px;
+  min-width: 130px;
+  text-align: center;
+}
+
+.fs-7 {
+  font-size: 12px;
+}
 </style>
