@@ -45,14 +45,16 @@ import { createRouter, createWebHistory } from 'vue-router'
 // =========================
 import Home from '../view/Home.vue'
 import ProductDetail from '../view/ProductDetail.vue'
-import Login from '../view/Login.vue'       // 👈 THÊM DÒNG NÀY
-import Register from '../view/Register.vue' // 👈 THÊM DÒNG NÀY
-import FlashSale from '../view/FlashSale.vue' // 1. Import component Flash Sale
+import Login from '../view/Login.vue'
+import Register from '../view/Register.vue'
+import FlashSale from '../view/FlashSale.vue'
 
 // =========================
 // Admin
 // =========================
+import UserManagement from '../view/admin/UserManagement.vue'
 import ProductManagement from '../view/admin/ProductManagement.vue'
+
 // import ProductCreate from '../view/admin/ProductCreate.vue'
 // import ProductEdit from '../view/admin/ProductEdit.vue'
 
@@ -75,15 +77,39 @@ const routes = [
         props: true
     },
 
+    {
+        path: '/login',
+        name: 'Login',
+        component: Login
+    },
+
+    {
+        path: '/register',
+        name: 'Register',
+        component: Register
+    },
+
+    {
+        path: '/flash-sale',
+        name: 'FlashSale',
+        component: FlashSale
+    },
+
     // =========================
-    // Admin Product
+    // Admin
     // =========================
+
+    {
+        path: '/admin/users',
+        name: 'UserManagement',
+        component: UserManagement
+    },
 
     {
         path: '/admin/products',
         name: 'ProductManagement',
         component: ProductManagement
-    },
+    }
 
     // {
     //     path: '/admin/products/create',
