@@ -12,19 +12,16 @@ import FlashSale from '../view/FlashSale.vue'
 // =========================
 // Admin Views
 // =========================
-import UserManagement from '../view/admin/UserManagement.vue'
 import ProductManagement from '../view/admin/ProductManagement.vue'
 import CategoryManagement from '../view/admin/CategoryManagement.vue'
-
+// Bỏ comment 2 dòng dưới nếu bạn đã tạo file ProductCreate.vue và ProductEdit.vue
 // import ProductCreate from '../view/admin/ProductCreate.vue'
 // import ProductEdit from '../view/admin/ProductEdit.vue'
 
 const routes = [
-
     // =========================
-    // User
+    // User Routes
     // =========================
-
     {
         path: '/',
         name: 'Home',
@@ -37,60 +34,46 @@ const routes = [
         component: ProductDetail,
         props: true
     },
-
     {
         path: '/login',
         name: 'Login',
         component: Login
     },
-
     {
         path: '/register',
         name: 'Register',
         component: Register
     },
-
     {
-        path: '/flash-sale',
+        path: '/flashsale',
         name: 'FlashSale',
         component: FlashSale
     },
 
     // =========================
-    // Admin
+    // Admin Routes
     // =========================
-
-    {
-        path: '/admin/users',
-        name: 'UserManagement',
-        component: UserManagement
-    },
-
     {
         path: '/admin/products',
         name: 'ProductManagement',
         component: ProductManagement
     },
-
     {
         path: '/admin/categories',
         name: 'CategoryManagement',
         component: CategoryManagement
     }
-
     // {
-    //     path: '/admin/products/create',
-    //     name: 'ProductCreate',
-    //     component: ProductCreate
+    //   path: '/admin/products/create',
+    //   name: 'ProductCreate',
+    //   component: ProductCreate
     // },
-
     // {
-    //     path: '/admin/products/edit/:id',
-    //     name: 'ProductEdit',
-    //     component: ProductEdit,
-    //     props: true
+    //   path: '/admin/products/edit/:id',
+    //   name: 'ProductEdit',
+    //   component: ProductEdit,
+    //   props: true
     // }
-
 ]
 
 const router = createRouter({
