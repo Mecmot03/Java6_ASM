@@ -2,65 +2,80 @@
 
     <aside class="admin-sidebar">
 
-        <!-- Logo -->
+        <div class="top-section">
 
-        <div class="logo">
+            <!-- Logo -->
 
-            <i class="bi bi-speedometer2"></i>
+            <div class="logo">
 
-            <h3>ADMIN</h3>
+                <i class="bi bi-speedometer2"></i>
 
-            <small>Thế Giới Điện Tử</small>
+                <h3>ADMIN</h3>
+
+                <small>Thế Giới Điện Tử</small>
+
+            </div>
+
+            <!-- Menu -->
+
+            <ul class="menu">
+
+                <li>
+
+                    <router-link to="/admin/users">
+
+                        <i class="bi bi-people-fill"></i>
+
+                        <span>Quản lý User</span>
+
+                    </router-link>
+
+                </li>
+
+                <li>
+
+                    <router-link to="/admin/products">
+
+                        <i class="bi bi-phone-fill"></i>
+
+                        <span>Quản lý sản phẩm</span>
+
+                    </router-link>
+
+                </li>
+
+                <li>
+
+                    <router-link to="/admin/categories">
+
+                        <i class="bi bi-tags-fill"></i>
+
+                        <span>Quản lý thể loại</span>
+
+                    </router-link>
+
+                </li>
+
+            </ul>
 
         </div>
 
-        <!-- Menu -->
+        <!-- Footer -->
 
-        <ul class="menu">
+        <div class="sidebar-footer">
 
-            <!-- Hy -->
+            <router-link
+                to="/"
+                class="home-btn"
+            >
 
-            <li>
+                <i class="bi bi-house-door-fill"></i>
 
-                <router-link to="/admin/users">
+                <span>Trang chủ</span>
 
-                    <i class="bi bi-people-fill"></i>
+            </router-link>
 
-                    <span>Quản lý User</span>
-
-                </router-link>
-
-            </li>
-
-            <!-- Thịnh -->
-
-            <li>
-
-                <router-link to="/admin/products">
-
-                    <i class="bi bi-phone-fill"></i>
-
-                    <span>Quản lý sản phẩm</span>
-
-                </router-link>
-
-            </li>
-
-            <!-- Nhi -->
-
-            <li>
-
-                <a href="#">
-
-                    <i class="bi bi-tags-fill"></i>
-
-                    <span>Quản lý thể loại</span>
-
-                </a>
-
-            </li>
-
-        </ul>
+        </div>
 
     </aside>
 
@@ -92,9 +107,21 @@
 
     box-shadow:2px 0 10px rgba(0,0,0,.1);
 
+    display:flex;
+
+    flex-direction:column;
+
 }
 
+.top-section{
+
+    flex:1;
+
+}
+
+/* ========================= */
 /* Logo */
+/* ========================= */
 
 .logo{
 
@@ -128,7 +155,9 @@
 
 }
 
+/* ========================= */
 /* Menu */
+/* ========================= */
 
 .menu{
 
@@ -185,6 +214,56 @@
 .menu i{
 
     font-size:18px;
+
+}
+
+/* ========================= */
+/* Footer */
+/* ========================= */
+
+.sidebar-footer{
+
+    border-top:1px solid rgba(255,255,255,.15);
+
+    padding-top:20px;
+
+}
+
+.home-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    gap:10px;
+
+    width:100%;
+
+    padding:14px;
+
+    background:#dc3545;
+
+    color:white;
+
+    text-decoration:none;
+
+    border-radius:10px;
+
+    font-weight:600;
+
+    transition:.3s;
+
+}
+
+.home-btn:hover{
+
+    background:#bb2d3b;
+
+    color:white;
+
+    transform:none;
 
 }
 
