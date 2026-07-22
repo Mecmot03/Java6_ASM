@@ -11,12 +11,14 @@ import nhomhoinuong.java6_asm.bean.Product;
 @Repository
 public interface ProductDAO extends JpaRepository<Product, Long> {
 
-    @Query("SELECT p FROM Product p WHERE (p.status IS NULL OR p.status = true) " +
-           "AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "     OR LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "     OR LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-           "AND (:categoryId IS NULL OR p.category.id = :categoryId) " +
-           "AND (:brand IS NULL OR LOWER(p.brand) = LOWER(:brand)) " +
+    @Query("SELECT p FROM Product p LEFT JOIN p.category c WHERE " +
+           "(p.status IS NULL OR p.status = true) " +
+           "AND (:keyword IS NULL OR " +
+           "     LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "     LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "     LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+           "AND (:brand IS NULL OR :brand = '' OR LOWER(p.brand) = LOWER(:brand)) " +
            "ORDER BY " +
            "CASE WHEN :sortBy = 'price_asc' THEN p.price END ASC, " +
            "CASE WHEN :sortBy = 'price_desc' THEN p.price END DESC, " +

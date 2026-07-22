@@ -28,15 +28,22 @@
       </button>
     </div>
 
-    <!-- FILTER SECTION -->
-    <div class="filter-section mb-4 p-3 p-md-4 bg-white rounded-4 shadow-sm border-0">
+    <!-- BỘ LỌC THƯƠNG HIỆU, SẮP XẾP & KHOẢNG GIÁ -->
+    <div 
+      class="filter-section mb-4 p-3 p-md-4 bg-white rounded-4 shadow-sm border-0"
+      :class="{ 'filter-sticky-show': isScrollingUp }"
+    >
       <div class="d-flex align-items-center gap-2 overflow-auto pb-3 border-bottom no-scrollbar">
         <span class="fw-bold text-dark me-2 flex-shrink-0 small text-uppercase tracking-wider">
           <i class="bi bi-tags-fill me-1 text-warning"></i>Thương hiệu:
         </span>
-        <button v-for="brand in availableBrands" :key="brand"
+        <button 
+          v-for="brand in availableBrands" 
+          :key="brand"
           class="btn btn-filter btn-sm rounded-pill flex-shrink-0 px-3 py-1 fw-medium"
-          :class="selectedBrand === brand ? 'active' : ''" @click="selectBrand(brand)">
+          :class="selectedBrand === brand ? 'active' : ''" 
+          @click="selectBrand(brand)"
+        >
           {{ brand }}
         </button>
       </div>
@@ -47,41 +54,66 @@
         </span>
 
         <div class="sort-pill-group p-1 bg-light rounded-pill d-inline-flex border flex-shrink-0">
-          <button class="btn btn-sort-pill btn-sm rounded-pill px-3 fw-medium"
-            :class="sortBy === 'default' ? 'active' : ''" @click="selectSort('default')">
+          <button 
+            class="btn btn-sort-pill btn-sm rounded-pill px-3 fw-medium"
+            :class="sortBy === 'default' ? 'active' : ''" 
+            @click="selectSort('default')"
+          >
             Nổi bật
           </button>
-          <button class="btn btn-sort-pill btn-sm rounded-pill px-3 fw-medium"
-            :class="sortBy === 'newest' ? 'active' : ''" @click="selectSort('newest')">
+          <button 
+            class="btn btn-sort-pill btn-sm rounded-pill px-3 fw-medium"
+            :class="sortBy === 'newest' ? 'active' : ''" 
+            @click="selectSort('newest')"
+          >
             Mới nhất
           </button>
         </div>
 
         <div class="flex-shrink-0">
-          <select class="form-select form-select-sm rounded-pill ps-3 pe-5 py-1 border-light-subtle bg-light shadow-none fw-medium text-secondary custom-price-select"
-            v-model="priceSort" @change="onPriceSortChange">
+          <select 
+            class="form-select form-select-sm rounded-pill ps-3 pe-5 py-1 border-light-subtle bg-light shadow-none fw-medium text-secondary custom-price-select"
+            v-model="priceSort" 
+            @change="onPriceSortChange"
+          >
             <option value="">Giá: Mặc định</option>
             <option value="price_asc">Giá: Thấp đến Cao</option>
             <option value="price_desc">Giá: Cao đến Thấp</option>
           </select>
         </div>
 
-        <!-- BỘ LỌC KHOẢNG GIÁ (0đ - Xđ) -->
+        <!-- BỘ LỌC KHOẢNG GIÁ 2 ĐẦU -->
         <div class="price-filter-box d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border flex-shrink-0">
           <i class="bi bi-funnel-fill text-warning"></i>
           <span class="small fw-bold text-nowrap">Khoảng giá:</span>
           
-          <input 
-            type="range" 
-            class="form-range price-slider" 
-            min="0" 
-            max="100000000" 
-            step="1000000" 
-            v-model.number="tempMaxPrice" 
-          />
+          <div class="range-slider-container mx-2">
+            <!-- Thanh dải màu hiển thị khoảng giá chọn -->
+            <div class="slider-track" :style="trackStyle"></div>
+            <!-- Input Giá Min -->
+            <input 
+              type="range" 
+              min="0" 
+              max="100000000" 
+              step="500000" 
+              v-model.number="tempMinPrice" 
+              @input="enforceMinPrice"
+              class="dual-range" 
+            />
+            <!-- Input Giá Max -->
+            <input 
+              type="range" 
+              min="0" 
+              max="100000000" 
+              step="500000" 
+              v-model.number="tempMaxPrice" 
+              @input="enforceMaxPrice"
+              class="dual-range" 
+            />
+          </div>
 
           <span class="badge bg-warning text-dark font-monospace price-badge">
-            0đ - {{ formatCurrency(tempMaxPrice) }}
+            {{ formatCurrency(tempMinPrice) }} - {{ formatCurrency(tempMaxPrice) }}
           </span>
 
           <button class="btn btn-dark btn-sm rounded-pill px-3 py-1 fs-7 fw-bold" @click="applyPriceFilter">
@@ -107,7 +139,7 @@
 
       <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
         <i class="bi bi-box-seam display-1 text-muted opacity-25 d-block mb-3"></i>
-        <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào trong khoảng giá này!</p>
+        <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào!</p>
       </div>
 
       <!-- PRODUCT CARD -->
@@ -149,7 +181,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
@@ -164,34 +196,93 @@ const selectedBrand = ref('')
 const sortBy = ref('default')
 const priceSort = ref('')
 
-// tempMaxPrice: lưu giá trị tạm thời khi kéo trượt
+// Quản lý khoảng giá 2 đầu
+const tempMinPrice = ref(0)
 const tempMaxPrice = ref(100000000)
-// appliedMaxPrice: lưu giá trị chốt sau khi bấm "Áp dụng"
+const appliedMinPrice = ref(0)
 const appliedMaxPrice = ref(100000000)
+const MAX_ALLOWED_PRICE = 100000000
 
 const availableBrands = ref(['Apple', 'Samsung', 'Xiaomi', 'Dell', 'Logitech', 'Sony', 'Razer', 'Asus', 'Anker'])
 
-// Format hiển thị tiền VNĐ
+// Quản lý trạng thái cuộn mượt bằng requestAnimationFrame
+const isScrollingUp = ref(false)
+let lastScrollPos = 0
+let ticking = false
+
+const handleHomeScroll = () => {
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      const currentScroll = window.scrollY || document.documentElement.scrollTop
+      
+      if (currentScroll <= 120) {
+        isScrollingUp.value = false
+      } else {
+        const diff = currentScroll - lastScrollPos
+        if (Math.abs(diff) > 10) {
+          isScrollingUp.value = diff < 0
+          lastScrollPos = currentScroll
+        }
+      }
+      ticking = false
+    })
+    ticking = true
+  }
+}
+
+// Đảm bảo nút Min không vượt nút Max
+const enforceMinPrice = () => {
+  if (tempMinPrice.value > tempMaxPrice.value - 500000) {
+    tempMinPrice.value = tempMaxPrice.value - 500000
+  }
+}
+
+// Đảm bảo nút Max không bé hơn nút Min
+const enforceMaxPrice = () => {
+  if (tempMaxPrice.value < tempMinPrice.value + 500000) {
+    tempMaxPrice.value = tempMinPrice.value + 500000
+  }
+}
+
+// Tính dải màu vàng hiển thị ở giữa 2 nút kéo
+const trackStyle = computed(() => {
+  const minPercent = (tempMinPrice.value / MAX_ALLOWED_PRICE) * 100
+  const maxPercent = (tempMaxPrice.value / MAX_ALLOWED_PRICE) * 100
+  return {
+    background: `linear-gradient(to right, #dee2e6 ${minPercent}%, #ffd400 ${minPercent}%, #ffd400 ${maxPercent}%, #dee2e6 ${maxPercent}%)`
+  }
+})
+
 const formatCurrency = (value) => {
   if (!value || value === 0) return '0đ'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 }
 
-// Lọc sản phẩm trực tiếp bằng computed (Đảm bảo lọc ăn ngay 100%)
+// Lọc sản phẩm theo khoảng giá Min - Max đã áp dụng
 const filteredProducts = computed(() => {
   return products.value.filter(product => {
     const price = Number(product.price ?? product.Price ?? 0)
-    return price <= appliedMaxPrice.value
+    if (price === 0) return true
+    return price >= appliedMinPrice.value && price <= appliedMaxPrice.value
   })
 })
 
 const fetchFilteredProducts = async () => {
   try {
     const params = {}
-    if (keyword.value.trim()) params.keyword = keyword.value.trim()
-    if (selectedCategoryId.value) params.categoryId = selectedCategoryId.value
-    if (selectedBrand.value) params.brand = selectedBrand.value
-    if (sortBy.value) params.sortBy = sortBy.value
+
+    if (keyword.value && keyword.value.trim() !== '') {
+      params.keyword = keyword.value.trim()
+    }
+    if (selectedCategoryId.value) {
+      params.categoryId = selectedCategoryId.value
+    }
+    if (selectedBrand.value && selectedBrand.value.trim() !== '') {
+      params.brand = selectedBrand.value.trim()
+    }
+    if (sortBy.value && sortBy.value !== 'default') {
+      params.sortBy = sortBy.value
+    }
     
     const response = await axios.get('http://localhost:8080/api/products/filter', { params })
 
@@ -225,7 +316,6 @@ const fetchCategoryName = async (catId) => {
   }
 }
 
-// Helpers
 const getProductName = (p) => p.name || p.Name || 'Sản phẩm'
 const getProductBrand = (p) => p.brand || p.Brand || 'Khác'
 const getProductImage = (p) => {
@@ -236,27 +326,23 @@ const getProductImage = (p) => {
 watch(
   () => [route.query.keyword, route.query.categoryId],
   async ([newKeyword, newCatId]) => {
-    keyword.value = newKeyword || ''
+    keyword.value = newKeyword ? newKeyword.trim() : ''
     selectedCategoryId.value = newCatId || null
-    selectedBrand.value = ''
-
-    if (newCatId) {
-      await fetchCategoryName(newCatId)
-    } else {
+    selectedBrand.value = '' 
+    
+    if (!newCatId) {
       selectedCategoryName.value = ''
+    } else {
+      await fetchCategoryName(newCatId)
     }
-
+    
     fetchFilteredProducts()
   },
   { immediate: true }
 )
 
 const selectBrand = (brand) => {
-  if (selectedBrand.value === brand) {
-    selectedBrand.value = ''
-  } else {
-    selectedBrand.value = brand
-  }
+  selectedBrand.value = selectedBrand.value === brand ? '' : brand
   fetchFilteredProducts()
 }
 
@@ -273,8 +359,8 @@ const onPriceSortChange = () => {
   }
 }
 
-// Nút Áp dụng được bấm -> Cập nhật appliedMaxPrice
 const applyPriceFilter = () => {
+  appliedMinPrice.value = tempMinPrice.value
   appliedMaxPrice.value = tempMaxPrice.value
 }
 
@@ -287,12 +373,36 @@ const viewDetail = (id) => {
   router.push('/product/' + id)
 }
 
-const addToCart = (productId) => {
-  alert(`Đã thêm sản phẩm ID: ${productId} vào giỏ hàng!`)
+// Thêm vào giỏ hàng thật vào DB Spring Boot
+const addToCart = async (productId) => {
+  try {
+    const userStorage = localStorage.getItem('user')
+    const userId = userStorage ? JSON.parse(userStorage).id : 1
+
+    await axios.post(`http://localhost:8080/api/cart/add?userId=${userId}`, {
+      productId: productId,
+      quantity: 1
+    })
+
+    // Bắn Event thông báo cho Layout.vue biết để cập nhật badge ngay lập tức
+    window.dispatchEvent(new CustomEvent('cart-updated'))
+
+    if (confirm("Đã thêm sản phẩm vào giỏ hàng! Bạn có muốn đến trang Giỏ hàng ngay không?")) {
+      router.push('/cart')
+    }
+  } catch (error) {
+    console.error("Lỗi thêm vào giỏ hàng:", error)
+    alert("Không thể thêm vào giỏ hàng. Vui lòng kiểm tra lại Backend!")
+  }
 }
 
 onMounted(() => {
+  window.addEventListener('scroll', handleHomeScroll, { passive: true })
   fetchFilteredProducts()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleHomeScroll)
 })
 </script>
 
@@ -302,13 +412,90 @@ onMounted(() => {
 #mainBannerCarousel:hover .banner-img { transform: scale(1.01); }
 .custom-indicator { width: 12px !important; height: 12px !important; border-radius: 50% !important; background-color: rgba(255, 255, 255, 0.7) !important; border: none !important; margin: 0 4px !important; }
 .custom-indicator.active { background-color: #ffd400 !important; width: 28px !important; border-radius: 10px !important; }
-.filter-section { background: #ffffff; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; border: 1px solid #f1f3f5 !important; }
+
+/* BỘ LỌC THƯƠNG HIỆU & GIÁ STICKY */
+.filter-section { 
+  background: #ffffff; 
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; 
+  border: 1px solid #f1f3f5 !important; 
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+}
+
+.filter-section.filter-sticky-show {
+  position: sticky;
+  top: 85px;
+  z-index: 890;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
+}
+
 .btn-filter { background-color: #f8f9fa; color: #495057; border: 1px solid #e9ecef; transition: all 0.25s ease; }
 .btn-filter:hover { background-color: #e9ecef; color: #212529; }
 .btn-filter.active { background-color: #000000; color: #ffd400; border-color: #000000; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); }
 .sort-pill-group { background-color: #f1f3f5 !important; }
 .btn-sort-pill { color: #6c757d; border: none; transition: all 0.2s ease; }
 .btn-sort-pill.active { background-color: #ffffff; color: #000000; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
+
+/* --- DUAL RANGE SLIDER --- */
+.range-slider-container {
+  position: relative;
+  width: 140px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.slider-track {
+  position: absolute;
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  z-index: 1;
+}
+
+.dual-range {
+  position: absolute;
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: none;
+  pointer-events: none;
+  z-index: 2;
+  margin: 0;
+}
+
+.dual-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0d6efd;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.1s;
+}
+
+.dual-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.dual-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0d6efd;
+  cursor: pointer;
+  pointer-events: auto;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.price-filter-box { border-color: #dee2e6 !important; }
+.price-badge { font-size: 11.5px; min-width: 165px; text-align: center; letter-spacing: -0.2px; }
+
 .product-card { transition: all 0.3s ease; border: 1px solid #f1f3f5 !important; }
 .product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important; }
 .product-img-container { height: 200px; background-color: #fafafa; }
@@ -317,25 +504,5 @@ onMounted(() => {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .tracking-wider { letter-spacing: 0.03em; }
-
-/* CSS THANH KÉO KHOẢNG GIÁ & NÚT ÁP DỤNG */
-.price-filter-box {
-  border-color: #dee2e6 !important;
-}
-
-.price-slider {
-  width: 120px;
-  cursor: pointer;
-  accent-color: #ffd400;
-}
-
-.price-badge {
-  font-size: 12px;
-  min-width: 130px;
-  text-align: center;
-}
-
-.fs-7 {
-  font-size: 12px;
-}
+.fs-7 { font-size: 12px; }
 </style>
