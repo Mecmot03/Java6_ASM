@@ -7,6 +7,7 @@ import nhomhoinuong.java6_asm.bean.User;
 import nhomhoinuong.java6_asm.dto.LoginRequest;
 import nhomhoinuong.java6_asm.dto.LoginResponse;
 import nhomhoinuong.java6_asm.dto.RegisterRequest;
+import nhomhoinuong.java6_asm.dto.SocialLoginRequest;
 import nhomhoinuong.java6_asm.service.AuthenticationService;
 
 @RestController
@@ -24,6 +25,11 @@ public class AuthController {
     @PostMapping("/register")
     public User register(@RequestBody RegisterRequest request) {
         return authenticationService.register(request);
+    }
+
+    @PostMapping("/social-login")
+    public LoginResponse socialLogin(@RequestBody SocialLoginRequest request) {
+        return authenticationService.socialLogin(request);
     }
 
 }

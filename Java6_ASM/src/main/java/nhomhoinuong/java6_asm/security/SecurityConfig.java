@@ -30,7 +30,7 @@ public class SecurityConfig {
             // 1. Tắt CSRF
             .csrf(csrf -> csrf.disable())
 
-            // 2. Tích hợp CorsConfigurationSource chuẩn bên dưới
+            // 2. Tích hợp CorsConfigurationSource
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
             // 3. Stateless Session
@@ -39,15 +39,17 @@ public class SecurityConfig {
 
             // 4. Phân quyền
             .authorizeHttpRequests(auth -> auth
-                // Cực kỳ quan trọng: Cho phép tất cả request Pre-flight OPTIONS đi qua
+                // Cho phép tất cả request Pre-flight OPTIONS đi qua
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Mở quyền truy cập các API công khai
+                // Mở quyền truy cập tất cả API giỏ hàng và API công khai
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/products/**",
                     "/api/categories/**",
-                    "/api/cart/count"
+                    "/api/cart/**",  
+                    "/api/orders/**",
+                    "/api/auth/**"
                 ).permitAll()
 
                 // Phân quyền Admin
@@ -66,14 +68,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 🔥 CẤU HÌNH CORS DUY NHẤT CHUẨN XÁC DÀNH CHO SPRING SECURITY
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Dùng allowedOriginPatterns thay cho allowedOrigins để tránh lỗi 400 với allowCredentials(true)
         configuration.setAllowedOriginPatterns(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
-        
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));

@@ -2,16 +2,6 @@
   <div class="auth-container d-flex align-items-center justify-content-center py-5">
     <div class="auth-card bg-white rounded-4 shadow-lg overflow-hidden">
       
-      <!-- HEADER LOGO -->
-      <!-- <div class="auth-header text-center py-4 px-3">
-        <router-link to="/" class="logo text-decoration-none d-inline-flex align-items-center mb-2">
-          <span class="logo-icon me-2">⚡</span>
-          <span class="logo-text">thegioidientu</span>
-        </router-link>
-        <p class="text-muted small mb-0">Hệ thống bán lẻ điện thoại & thiết bị điện tử</p>
-      </div> -->
-
-      <!-- TIÊU ĐỀ TRANG -->
       <div class="px-4 pt-4 pb-2 text-center">
         <h4 class="fw-bold text-dark mb-1">Đăng Nhập Tài Khoản</h4>
         <p class="text-muted small">
@@ -89,10 +79,12 @@
           </div>
 
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-danger flex-fill btn-sm rounded-pill py-2">
+            <!-- NÚT GOOGLE -->
+            <button type="button" class="btn btn-outline-danger flex-fill btn-sm rounded-pill py-2" @click="loginWithGoogle">
               <i class="bi bi-google me-1"></i> Google
             </button>
-            <button type="button" class="btn btn-outline-primary flex-fill btn-sm rounded-pill py-2">
+            <!-- NÚT FACEBOOK -->
+            <button type="button" class="btn btn-outline-primary flex-fill btn-sm rounded-pill py-2" @click="loginWithFacebook">
               <i class="bi bi-facebook me-1"></i> Facebook
             </button>
           </div>
@@ -105,8 +97,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+import { googleOneTap, googleTokenLogin } from 'vue3-google-login'
 
+const router = useRouter()
 const showPassword = ref(false)
 
 const loginForm = ref({
@@ -115,50 +111,103 @@ const loginForm = ref({
   remember: false
 })
 
-const handleLogin = () => {
-  alert(`Đăng nhập tài khoản: ${loginForm.value.username}`)
+// Khởi tạo Facebook SDK khi component mounted
+onMounted(() => {
+  window.fbAsyncInit = function() {
+    window.FB.init({
+      appId      : '1037782925805986', // <--- DÁN APP ID THẬT CỦA NHI VÀO ĐÂY (chỉ giữ lại số)
+      cookie     : true,
+      xfbml      : true,
+      version    : 'v18.0'
+    });
+  };
+  (function(d, s, id) {
+     var js, fjs = d.getElementsByTagName(s)[0];
+     if (d.getElementById(id)) return;
+     js = d.createElement(s); js.id = id;
+     js.src = "https://connect.facebook.net/vi_VN/sdk.js"; // Đã đổi sang tiếng Việt
+     fjs.parentNode.insertBefore(js, fjs);
+   }(document, 'script', 'facebook-jssdk'));
+})
+// 1. ĐĂNG NHẬP THƯỜNG
+const handleLogin = async () => {
+  try {
+    const response = await axios.post('http://localhost:8080/api/auth/login', {
+      email: loginForm.value.username,
+      password: loginForm.value.password
+    })
+    saveSessionAndRedirect(response.data)
+  } catch (error) {
+    alert(error.response?.data?.message || 'Tài khoản hoặc mật khẩu không chính xác!')
+  }
+}
+
+// 2. ĐĂNG NHẬP GOOGLE
+const loginWithGoogle = () => {
+  googleTokenLogin({
+    clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com' // Thay Client ID Google của Nhi vào đây
+  }).then(async (response) => {
+    try {
+      // Gọi API lấy thông tin Google User thông qua Access Token
+      const res = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${response.access_token}`)
+      const googleUser = res.data
+
+      // Gửi thông tin về Spring Boot để tạo account & cấp JWT
+      const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+        email: googleUser.email,
+        fullName: googleUser.name,
+        avatar: googleUser.picture,
+        provider: 'GOOGLE'
+      })
+      saveSessionAndRedirect(backendRes.data)
+    } catch (err) {
+      alert("Đăng nhập Google thất bại!")
+    }
+  })
+}
+
+// 3. ĐĂNG NHẬP FACEBOOK
+const loginWithFacebook = () => {
+  window.FB.login((response) => {
+    if (response.authResponse) {
+      const accessToken = response.authResponse.accessToken;
+      
+      // Gọi Graph API của Facebook lấy name và picture
+      axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
+        .then(async (res) => {
+          const fbUser = res.data;
+          
+          const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+            email: `${fbUser.id}@facebook.com`, // Tự sinh email theo ID Facebook nếu không xin quyền email
+            fullName: fbUser.name,
+            avatar: fbUser.picture?.data?.url,
+            provider: 'FACEBOOK'
+          });
+
+          saveSessionAndRedirect(backendRes.data);
+        })
+        .catch(() => alert("Không thể lấy thông tin tài khoản Facebook!"));
+    } else {
+      alert("Đăng nhập Facebook bị hủy bỏ!");
+    }
+  }, { scope: 'public_profile' }); // 👈 Sửa dòng này: đổi 'public_profile,email' thành 'public_profile'
+}
+// Hàm lưu Token và chuyển hướng
+const saveSessionAndRedirect = (data) => {
+  const token = data.token || data.accessToken || ''
+  const userData = data.user || data
+
+  if (token) localStorage.setItem('token', token)
+  localStorage.setItem('user', JSON.stringify(userData))
+
+  alert('Đăng nhập thành công!')
+  window.dispatchEvent(new CustomEvent('user-logged-in'))
+  router.push('/')
 }
 </script>
 
 <style scoped>
-.auth-container {
-  min-height: 80vh;
-  background-color: #f8f9fa;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 450px;
-  border: 1px solid #eee;
-}
-
-.auth-header {
-  background-color: #ffd400;
-}
-
-.logo-icon {
-  background-color: #000;
-  color: #ffd400;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 18px;
-}
-
-.logo-text {
-  font-size: 22px;
-  font-family: 'Arial Black', sans-serif;
-  font-weight: 900;
-  color: #000;
-  display: inline-block;
-  transform: skewX(-15deg);
-}
-
-.form-control:focus {
-  box-shadow: none;
-  border-color: #ffd400;
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
+.auth-container { min-height: 80vh; background-color: #f8f9fa; }
+.auth-card { width: 100%; max-width: 450px; border: 1px solid #eee; }
+.cursor-pointer { cursor: pointer; }
 </style>

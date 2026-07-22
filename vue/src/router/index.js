@@ -8,6 +8,9 @@ import ProductDetail from '../view/ProductDetail.vue'
 import Login from '../view/Login.vue'
 import Register from '../view/Register.vue'
 import FlashSale from '../view/FlashSale.vue'
+import CartView from '../view/CartView.vue'
+import CheckoutView from '../view/CheckoutView.vue'
+import OrderView from '../view/OrderView.vue'
 
 // =========================
 // Admin Views
@@ -15,41 +18,49 @@ import FlashSale from '../view/FlashSale.vue'
 import UserManagement from '../view/admin/UserManagement.vue'
 import ProductManagement from '../view/admin/ProductManagement.vue'
 import CategoryManagement from '../view/admin/CategoryManagement.vue'
-
 // import ProductCreate from '../view/admin/ProductCreate.vue'
 // import ProductEdit from '../view/admin/ProductEdit.vue'
 
 const routes = [
-
     // =========================
     // User
     // =========================
-
     {
         path: '/',
         name: 'Home',
         component: Home
     },
-
+    {
+        path: '/cart',
+        name: 'Cart',
+        component: CartView
+    },
+    {
+        path: '/checkout',
+        name: 'Checkout',
+        component: CheckoutView
+    },
+    {
+        path: '/orders',
+        name: 'Orders',
+        component: OrderView
+    },
     {
         path: '/product/:id',
         name: 'ProductDetail',
         component: ProductDetail,
         props: true
     },
-
     {
         path: '/login',
         name: 'Login',
         component: Login
     },
-
     {
         path: '/register',
         name: 'Register',
         component: Register
     },
-
     {
         path: '/flash-sale',
         name: 'FlashSale',
@@ -59,65 +70,43 @@ const routes = [
     // =========================
     // Admin
     // =========================
-
     {
         path: '/admin/users',
         name: 'UserManagement',
         component: UserManagement
     },
-
     {
         path: '/admin/products',
         name: 'ProductManagement',
         component: ProductManagement
     },
-
     {
         path: '/admin/categories',
         name: 'CategoryManagement',
         component: CategoryManagement
     }
-
     // {
     //     path: '/admin/products/create',
     //     name: 'ProductCreate',
     //     component: ProductCreate
     // },
-
     // {
     //     path: '/admin/products/edit/:id',
     //     name: 'ProductEdit',
     //     component: ProductEdit,
     //     props: true
     // }
-
 ]
 
-// const router = createRouter({
-//     history: createWebHistory(),
-//     routes
-// })
-
-
 const router = createRouter({
-
     history: createWebHistory(),
-
     routes,
-
     scrollBehavior() {
-
         return {
-
             top: 0,
-
             behavior: "smooth"
-
         }
-
     }
-
 })
-
 
 export default router

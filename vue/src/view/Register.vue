@@ -2,14 +2,7 @@
   <div class="auth-container d-flex align-items-center justify-content-center py-5">
     <div class="auth-card bg-white rounded-4 shadow-lg overflow-hidden">
       
-      <!-- HEADER LOGO -->
-      <!-- <div class="auth-header text-center py-4 px-3">
-        <router-link to="/" class="logo text-decoration-none d-inline-flex align-items-center mb-2">
-          <span class="logo-icon me-2">⚡</span>
-          <span class="logo-text">thegioidientu</span>
-        </router-link>
-        <p class="text-muted small mb-0">Hệ thống bán lẻ điện thoại & thiết bị điện tử</p>
-      </div> -->
+    
 
       <!-- TIÊU ĐỀ TRANG -->
       <div class="px-4 pt-4 pb-2 text-center">
@@ -122,7 +115,10 @@
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const showPassword = ref(false)
 
 const registerForm = ref({
@@ -132,8 +128,25 @@ const registerForm = ref({
   password: ''
 })
 
-const handleRegister = () => {
-  alert(`Tạo tài khoản thành công cho: ${registerForm.value.fullname}`)
+const handleRegister = async () => {
+  try {
+    // Gọi API Đăng ký bên Spring Boot
+    await axios.post('http://localhost:8080/api/auth/register', {
+      fullName: registerForm.value.fullname,
+      username: registerForm.value.username,
+      email: registerForm.value.email,
+      password: registerForm.value.password
+    })
+
+    alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập.')
+    
+    // Đăng ký xong chuyển sang trang Login
+    router.push('/login')
+  } catch (error) {
+    console.error('Lỗi đăng ký:', error)
+    const msg = error.response?.data?.message || 'Đăng ký thất bại, email hoặc tên đăng nhập đã tồn tại!'
+    alert(msg)
+  }
 }
 </script>
 

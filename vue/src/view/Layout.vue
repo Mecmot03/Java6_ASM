@@ -1,14 +1,14 @@
 <template>
   <div class="d-flex flex-column min-vh-100 w-100">
     <!-- HEADER -->
-    <header class="tgdd-header w-100">
+    <header class="tgdd-header w-100 sticky-header" :class="{ 'header-hidden': isHeaderHidden }">
+      <!-- 1. MAIN NAV (Logo, Ô tìm kiếm, Utility) -->
       <div class="main-nav py-2">
         <div class="container d-flex align-items-center justify-content-between gap-3">
-
-          <router-link to="/" class="logo text-decoration-none">
+          <a href="#" class="logo text-decoration-none" @click.prevent="goHome">
             <span class="logo-icon">⚡</span>
             <span class="logo-text">thegioidientu</span>
-          </router-link>
+          </a>
 
           <div class="search-box flex-grow-1 mx-3" style="max-width: 450px;">
             <div class="input-group">
@@ -21,39 +21,85 @@
           </div>
 
           <!-- Utilities -->
-          <div class="nav-utilities d-flex align-items-center gap-4">
-            <router-link to="/login" class="nav-item-link">
+          <div class="nav-utilities d-flex align-items-center gap-3">
+
+            <!-- 1. CHƯA ĐĂNG NHẬP -->
+            <router-link v-if="!currentUser" to="/login" class="nav-item-link">
               <i class="bi bi-person-circle"></i>
               <span>Đăng nhập</span>
             </router-link>
 
-            <a href="#" class="nav-item-link position-relative">
+            <!-- 2. ĐÃ ĐĂNG NHẬP: HIỂN THỊ TÊN USER -->
+            <div v-else class="nav-item-link text-dark fw-bold cursor-default">
+              <i class="bi bi-person-circle fs-5"></i>
+              <span class="text-truncate" style="max-width: 100px;"
+                :title="currentUser.fullName || currentUser.username">
+                {{ currentUser.fullName || currentUser.username }}
+              </span>
+            </div>
+
+            <!-- 3. ICON GIỎ HÀNG -->
+            <router-link to="/cart" class="nav-item-link position-relative">
               <i class="bi bi-cart3"></i>
               <span>Giỏ hàng</span>
               <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                 v-if="cartCount > 0">
                 {{ cartCount }}
               </span>
-            </a>
+            </router-link>
 
-            <div class="location-box d-none d-lg-flex align-items-center ms-2">
-              <i class="bi bi-geo-alt-fill me-1"></i>
-              <select class="form-select form-select-sm bg-transparent border-0 fw-bold p-0 text-dark"
-                style="padding-right: 24px !important;">
-                <option>Hồ Chí Minh</option>
-                <option>Hà Nội</option>
-                <option>Đà Nẵng</option>
-              </select>
+            <!-- 4. DROPDOWN THEO DÕI ĐƠN HÀNG -->
+            <div v-if="currentUser" class="dropdown">
+              <button class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
+                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-box-seam"></i>
+                <span>Đơn hàng</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2"
+                style="min-width: 200px;">
+                <li class="dropdown-header text-uppercase fw-bold fs-8 text-secondary">Trạng thái đơn hàng</li>
+                <li>
+                  <router-link to="/orders?status=PENDING" class="dropdown-item rounded-2 py-1 small">
+                    <i class="bi bi-clock me-2 text-warning"></i>Chờ xác nhận
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/orders?status=PROCESSING" class="dropdown-item rounded-2 py-1 small">
+                    <i class="bi bi-box-seam me-2 text-info"></i>Chờ lấy hàng
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/orders?status=SHIPPING" class="dropdown-item rounded-2 py-1 small">
+                    <i class="bi bi-truck me-2 text-primary"></i>Chờ giao hàng
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/orders?status=DELIVERED" class="dropdown-item rounded-2 py-1 small">
+                    <i class="bi bi-check-circle me-2 text-success"></i>Đã giao
+                  </router-link>
+                </li>
+                <li>
+                  <router-link to="/orders?status=CANCELLED" class="dropdown-item rounded-2 py-1 small">
+                    <i class="bi bi-x-circle me-2 text-danger"></i>Đã hủy
+                  </router-link>
+                </li>
+              </ul>
             </div>
-          </div>
 
+            <!-- 5. NÚT ĐĂNG XUẤT -->
+            <button v-if="currentUser" class="btn btn-link nav-item-link text-danger text-decoration-none p-0 border-0"
+              @click="handleLogout" title="Đăng xuất">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Đăng xuất</span>
+            </button>
+
+          </div>
         </div>
       </div>
 
-      <!-- DANH MỤC -->
-      <nav class="categories-nav d-none d-md-block py-2">
+      <!-- 2. DANH MỤC -->
+      <nav class="categories-nav d-none d-md-block py-2 border-top border-dark border-opacity-10">
         <div class="container d-flex justify-content-between align-items-center text-nowrap overflow-x-auto gap-2">
-
           <a href="#" class="category-item" @click.prevent="selectCategory(null)">
             <i class="bi bi-grid-fill"></i>
             <span>Tất cả</span>
@@ -63,17 +109,14 @@
             @click.prevent="selectCategory(menu.id)">
             <img v-if="menu.img" :src="menu.img" :alt="menu.name" class="category-icon-img" />
             <i v-else :class="menu.icon"></i>
-
             <span>{{ menu.name }}</span>
             <i v-if="menu.hasSub" class="bi bi-chevron-down ms-1 small-arrow"></i>
           </a>
-
         </div>
       </nav>
     </header>
 
-
-
+    <!-- BANNER 2 BÊN -->
     <div v-if="isHomePage" class="side-banner side-banner-left d-none d-xl-block">
       <router-link to="/flashsale">
         <img src="/images/mi.png" alt="Banner Trai" class="img-fluid rounded-3 shadow-sm" />
@@ -91,7 +134,7 @@
       <slot />
     </main>
 
-    <!-- FOOTER -->
+    <!-- FOOTER ĐẦY ĐỦ -->
     <footer class="tgdd-footer bg-white border-top mt-5 pt-4 pb-3 w-100">
       <div class="container">
         <div class="row g-4">
@@ -151,26 +194,55 @@
           </div>
 
         </div>
+
+        <!-- BẢN QUYỀN DƯỚI CÙNG -->
+        <div class="border-top mt-4 pt-3 text-center text-muted fs-7">
+          <p class="mb-0">© 2026 thegioidientu. All rights reserved.</p>
+        </div>
       </div>
     </footer>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue' // 👈 ĐÃ THÊM computed VÀO ĐÂY
-import { useRouter, useRoute } from 'vue-router' // 👈 ĐÃ THÊM useRoute VÀO ĐÂY
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 
 const router = useRouter()
-const route = useRoute() // 👈 ĐÃ KHAI BÁO route
+const route = useRoute()
 
 const searchQuery = ref('')
 const cartCount = ref(0)
 const menuItems = ref([])
+const currentUser = ref(null)
 
-// Kiểm tra trang hiện tại có phải /flashsale không
+const isHeaderHidden = ref(false)
+let lastScrollPosition = 0
+let ticking = false
+
+// Danh sách link cho Footer
+const companyLinks = ref([
+  { text: 'Giới thiệu công ty (MWG.vn)', url: '#' },
+  { text: 'Tuyển dụng', url: '#' },
+  { text: 'Gửi góp ý, khiếu nại', url: '#' },
+  { text: 'Tìm siêu thị (3.000 shop)', url: '#' }
+])
+
+const policyLinks = ref([
+  { text: 'Chính sách bảo hành', url: '#' },
+  { text: 'Chính sách đổi trả', url: '#' },
+  { text: 'Giao hàng & Lắp đặt', url: '#' },
+  { text: 'Hướng dẫn mua trả góp', url: '#' }
+])
+
 const isHomePage = computed(() => route.path === '/')
+
+const goHome = () => {
+  searchQuery.value = ''
+  router.push('/')
+}
+
 const iconMap = {
   "Điện thoại": "bi bi-phone",
   "Laptop": "bi bi-laptop",
@@ -182,29 +254,82 @@ const iconMap = {
   "Cáp sạc": "bi bi-usb-plug"
 }
 
-// Lấy danh mục từ DB
+// Kiểm tra thông tin User đã đăng nhập
+const checkUserLogin = () => {
+  const userStorage = localStorage.getItem('user')
+  if (userStorage) {
+    try {
+      currentUser.value = JSON.parse(userStorage)
+    } catch (e) {
+      currentUser.value = null
+    }
+  } else {
+    currentUser.value = null
+  }
+}
+
+// Xử lý Đăng xuất
+const handleLogout = () => {
+  if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?")) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    currentUser.value = null
+    fetchCartCount() // Reset giỏ hàng về 0 khi đăng xuất
+    alert("Đã đăng xuất thành công!")
+    router.push('/login')
+  }
+}
+
+// Xử lý sự kiện cuộn mượt
+const handleScroll = () => {
+  if (!ticking) {
+    window.requestAnimationFrame(() => {
+      const currentScroll = window.scrollY || document.documentElement.scrollTop
+
+      if (currentScroll <= 80) {
+        isHeaderHidden.value = false
+      } else {
+        const diff = currentScroll - lastScrollPosition
+        if (Math.abs(diff) > 8) {
+          isHeaderHidden.value = diff > 0
+          lastScrollPosition = currentScroll
+        }
+      }
+      ticking = false
+    })
+    ticking = true
+  }
+}
+
 const fetchCategories = async () => {
   try {
     const response = await axios.get('http://localhost:8080/api/categories')
     menuItems.value = response.data.map(cat => ({
-      id: cat.id,
-      name: cat.name,
-      icon: iconMap[cat.name] || 'bi bi-grid',
+      id: cat.id || cat.Id,
+      name: cat.name || cat.Name,
+      icon: iconMap[cat.name || cat.Name] || 'bi bi-grid',
       hasSub: false
     }))
   } catch (error) {
     console.error("Lỗi khi tải danh mục:", error)
-    menuItems.value = []
   }
 }
 
-// Hàm lấy số lượng sản phẩm trong giỏ hàng hiện tại
+// Lấy số lượng giỏ hàng thực tế từ API (Chỉ gọi khi ĐÃ ĐĂNG NHẬP)
 const fetchCartCount = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/cart/count')
+    const userStorage = localStorage.getItem('user')
+    if (!userStorage) {
+      cartCount.value = 0
+      return
+    }
+
+    const userId = JSON.parse(userStorage).id
+    const response = await axios.get(`http://localhost:8080/api/cart/count?userId=${userId}`)
     cartCount.value = response.data.count || 0
+
   } catch (error) {
-    console.warn("Chưa lấy được số lượng giỏ hàng:", error.message)
+    console.error("Lỗi khi lấy số lượng giỏ hàng:", error)
     cartCount.value = 0
   }
 }
@@ -219,45 +344,56 @@ const selectCategory = (categoryId) => {
 }
 
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({ path: '/', query: { keyword: searchQuery.value.trim() } })
+  const queryText = searchQuery.value ? searchQuery.value.trim() : ''
+  if (queryText) {
+    router.push({ path: '/', query: { keyword: queryText } })
   } else {
     router.push('/')
   }
 }
 
+// Lắng nghe Event từ các Component khác
+const handleCartUpdated = () => {
+  fetchCartCount()
+}
+
+const handleUserLoggedIn = () => {
+  checkUserLogin()
+  fetchCartCount()
+}
+
 onMounted(() => {
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('cart-updated', handleCartUpdated)
+  window.addEventListener('user-logged-in', handleUserLoggedIn)
+
+  checkUserLogin()
   fetchCategories()
   fetchCartCount()
 })
 
-const companyLinks = ref([
-  { text: 'Giới thiệu công ty (MWG)', url: '#' },
-  { text: 'Tuyển dụng', url: '#' },
-  { text: 'Gửi góp ý, khiếu nại', url: '#' },
-  { text: 'Tìm siêu thị Thế Giới Di Động', url: '#' },
-  { text: 'Xem bản điện thoại', url: '#' }
-])
-
-const policyLinks = ref([
-  { text: 'Chính sách bảo hành', url: '#' },
-  { text: 'Chính sách đổi trả', url: '#' },
-  { text: 'Giao hàng & Thanh toán', url: '#' },
-  { text: 'Hướng dẫn mua trả góp', url: '#' },
-  { text: 'Chính sách bảo mật thông tin', url: '#' }
-])
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('cart-updated', handleCartUpdated)
+  window.removeEventListener('user-logged-in', handleUserLoggedIn)
+})
 </script>
 
 <style scoped>
-/* ==================== STYLE CỦA HEADER ==================== */
-.tgdd-header {
+.sticky-header {
   background-color: #ffd400;
   font-family: Arial, sans-serif;
   font-size: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  will-change: transform;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.main-nav {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+.sticky-header.header-hidden {
+  transform: translateY(-58px);
 }
 
 .logo {
@@ -279,11 +415,8 @@ const policyLinks = ref([
 .logo-text {
   font-size: 23px;
   font-family: 'Arial Black', sans-serif;
-  font-style: normal;
   font-weight: 900;
-  background: linear-gradient(45deg, #000000);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #000;
   letter-spacing: -1px;
   display: inline-block;
   transform: skewX(-15deg);
@@ -308,17 +441,22 @@ const policyLinks = ref([
   font-size: 18px;
 }
 
-.location-box {
-  background-color: rgba(255, 255, 255, 0.4);
-  padding: 6px 12px;
-  border-radius: 20px;
-  white-space: nowrap;
+button.nav-item-link {
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 
-.location-box select {
-  cursor: pointer;
-  min-width: 135px;
-  text-align: left;
+button.nav-item-link:hover {
+  opacity: 0.8;
+}
+
+.cursor-default {
+  cursor: default;
+}
+
+.dropdown-toggle::after {
+  display: none !important;
 }
 
 .category-item {
@@ -354,43 +492,51 @@ const policyLinks = ref([
   scrollbar-width: none;
 }
 
-/* Banner 2 bên lề */
 .side-banner {
   position: fixed;
-  top: 170px;
+  top: 130px;
   z-index: 99;
-  width: 140px;
-  transition: all 0.3s ease;
+  width: calc((100vw - 1230px) / 2);
+  min-width: 100px;
+  max-width: 140px;
 }
 
 .side-banner-left {
-  left: 20px; 
+  left: max(10px, calc((100vw - 1200px) / 2 - 230px));
 }
 
 .side-banner-right {
-  right: 20px; 
+  right: max(10px, calc((100vw - 1200px) / 2 - 230px));
 }
 
 .side-banner img {
   width: 100%;
   height: auto;
-  transition: transform 0.25s ease;
+  object-fit: contain;
 }
 
-.side-banner:hover img {
-  transform: scale(1.03);
+@media (max-width: 1400px) {
+  .side-banner {
+    display: none !important;
+  }
 }
 
-/* FOOTER */
-.tgdd-footer {
-  font-family: Arial, sans-serif;
+.fs-7 {
+  font-size: 12px;
+}
+
+.fs-8 {
+  font-size: 11px;
+}
+
+.dropdown-item:active {
+  background-color: #ffd400;
+  color: #000;
+}
+
+/* CSS CHO FOOTER */
+.footer-links {
   font-size: 13px;
-  color: #4a4a4a;
-}
-
-.tgdd-footer h6 {
-  font-size: 14px;
-  letter-spacing: 0.5px;
 }
 
 .footer-links li {
@@ -398,42 +544,35 @@ const policyLinks = ref([
 }
 
 .footer-links a {
-  color: #2f80ed;
+  color: #4a4a4a;
   text-decoration: none;
-  transition: color 0.2s ease-in-out;
+  transition: color 0.2s;
 }
 
 .footer-links a:hover {
-  color: #e51f27;
-  text-decoration: underline;
+  color: #007bff;
 }
 
 .social-icon {
-  width: 32px;
-  height: 32px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   color: #fff;
-  font-size: 16px;
   text-decoration: none;
-  transition: transform 0.2s;
 }
 
-.social-icon:hover {
-  transform: scale(1.1);
-}
-
-.facebook {
+.social-icon.facebook {
   background-color: #1877f2;
 }
 
-.youtube {
+.social-icon.youtube {
   background-color: #ff0000;
 }
 
-.tiktok {
+.social-icon.tiktok {
   background-color: #000000;
 }
 </style>
