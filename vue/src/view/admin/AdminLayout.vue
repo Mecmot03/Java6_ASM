@@ -11,30 +11,18 @@
             <!-- Topbar -->
             <div class="topbar">
 
-                <!-- Bên trái -->
-                <div class="d-flex align-items-center">
+                <div>
 
-                    <router-link
-                        to="/"
-                        class="btn btn-outline-primary me-3"
-                    >
-                        <i class="bi bi-house-door-fill me-1"></i>
-                        Trang chủ
-                    </router-link>
+                    <h4 class="mb-0 fw-bold">
+                        Trang quản trị
+                    </h4>
 
-                    <div>
-                        <h4 class="mb-0 fw-bold">
-                            Trang quản trị
-                        </h4>
-
-                        <small class="text-muted">
-                            Hệ thống quản lý Thế Giới Điện Tử
-                        </small>
-                    </div>
+                    <small class="text-muted">
+                        Hệ thống quản lý Thế Giới Điện Tử
+                    </small>
 
                 </div>
 
-                <!-- Bên phải -->
                 <div class="admin-user">
 
                     <i class="bi bi-person-circle"></i>
@@ -45,7 +33,7 @@
 
             </div>
 
-            <!-- Nội dung từng trang -->
+            <!-- Nội dung -->
             <div class="content">
 
                 <router-view />
@@ -110,17 +98,9 @@ import AdminSidebar from '../../components/admin/AdminSidebar.vue'
 
 }
 
-/* Nút Trang chủ */
-
-.topbar .btn{
-
-    border-radius:10px;
-
-    font-weight:600;
-
-}
-
-/* Thông tin Admin */
+/* ========================= */
+/* Admin */
+/* ========================= */
 
 .admin-user{
 
