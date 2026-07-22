@@ -27,6 +27,7 @@ const routes = [
         name: 'Home',
         component: Home
     },
+
     {
         path: '/product/:id',
         name: 'ProductDetail',
