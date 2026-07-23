@@ -141,14 +141,6 @@ const flashProducts = ref([
   padding: 0 !important;
 }
 
-/* Khung bọc Banner tràn sát 100% hai bên màn hình */
-/* .hero-banner-wrapper {
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  background-color: #ffd400; 
-} */ cái này tutu
-
 /* Ảnh banner tự do phình to 100% theo tỉ lệ thực, không bị xén chân */
 .hero-banner-img {
   width: 100%;

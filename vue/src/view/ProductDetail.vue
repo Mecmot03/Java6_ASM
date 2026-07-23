@@ -96,10 +96,6 @@
 
             </p>
 
-            <!--  -->
-            <!--  -->
-            <!--  -->
-
             <hr>
 
 <div class="text-muted small">
@@ -255,6 +251,8 @@
 import { ref, computed, onMounted, watch } from "vue"
 import axios from "axios"
 import { useRoute, useRouter } from "vue-router"
+import { addGuestCartItem } from '../utils/cart'
+import { notify } from '../utils/notify'
 
 const route = useRoute()
 const router = useRouter()
@@ -803,6 +801,14 @@ const productImages = {
 
 }
 
+const isAuthError = (error) => {
+
+    const status = error?.response?.status
+
+    return status === 401 || status === 403
+
+}
+
 /* ===============================
    Lấy chi tiết sản phẩm
 ================================ */
@@ -813,7 +819,7 @@ const fetchProduct = async () => {
 
         const response = await axios.get(
 
-            `http://localhost:8080/api/products/${route.params.id}`
+            `/api/products/${route.params.id}`
 
         )
 
@@ -827,7 +833,13 @@ const fetchProduct = async () => {
 
     catch (error) {
 
-        console.error("Lỗi tải sản phẩm:", error)
+        if (!isAuthError(error)) {
+
+            console.error("Lỗi tải sản phẩm:", error)
+
+        }
+
+        product.value = {}
 
     }
 
@@ -843,7 +855,7 @@ const fetchProducts = async () => {
 
         const response = await axios.get(
 
-            "http://localhost:8080/api/products"
+            "/api/products"
 
         )
 
@@ -853,7 +865,13 @@ const fetchProducts = async () => {
 
     catch (error) {
 
-        console.error("Lỗi tải danh sách:", error)
+        if (!isAuthError(error)) {
+
+            console.error("Lỗi tải danh sách:", error)
+
+        }
+
+        products.value = []
 
     }
 
@@ -1036,15 +1054,20 @@ const decrease = () => {
 ================================ */
 
 const addToCart = () => {
+    const userStorage = localStorage.getItem('user')
 
-    alert(
+    if (!userStorage) {
+        addGuestCartItem(product.value, buyQuantity.value)
+        window.dispatchEvent(new CustomEvent('cart-updated'))
+        notify(`Đã thêm ${buyQuantity.value} sản phẩm vào giỏ hàng tạm.`, 'success')
+        return
+    }
 
+    notify(
         "Đã thêm " +
-
         buyQuantity.value +
-
-        " sản phẩm vào giỏ hàng."
-
+        " sản phẩm vào giỏ hàng.",
+        'success'
     )
 
 }

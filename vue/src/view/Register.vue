@@ -17,7 +17,7 @@
 
       <!-- FORM ĐĂNG KÝ -->
       <div class="auth-body px-4 px-sm-5 pb-5">
-        <form @submit.prevent="handleRegister">
+        <form @submit.prevent="handleRegister" novalidate>
           
           <!-- Họ và Tên -->
           <div class="mb-3">
@@ -36,19 +36,34 @@
             </div>
           </div>
 
-          <!-- Tên đăng nhập -->
+          <!-- Số điện thoại -->
           <div class="mb-3">
-            <label class="form-label fw-bold text-dark small">Tên đăng nhập</label>
+            <label class="form-label fw-bold text-dark small">Số điện thoại</label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted">
-                <i class="bi bi-person-badge"></i>
+                <i class="bi bi-telephone"></i>
+              </span>
+              <input 
+                type="tel" 
+                class="form-control bg-light border-start-0" 
+                placeholder="Nhập số điện thoại"
+                v-model="registerForm.phone"
+              />
+            </div>
+          </div>
+
+          <!-- Địa chỉ -->
+          <div class="mb-3">
+            <label class="form-label fw-bold text-dark small">Địa chỉ</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0 text-muted">
+                <i class="bi bi-geo-alt"></i>
               </span>
               <input 
                 type="text" 
                 class="form-control bg-light border-start-0" 
-                placeholder="Nhập tên tài khoản"
-                v-model="registerForm.username"
-                required
+                placeholder="Nhập địa chỉ liên hệ"
+                v-model="registerForm.address"
               />
             </div>
           </div>
@@ -117,35 +132,52 @@
 import { ref } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import { notify } from '../utils/notify'
 
 const router = useRouter()
 const showPassword = ref(false)
 
 const registerForm = ref({
   fullname: '',
-  username: '',
   email: '',
-  password: ''
+  password: '',
+  phone: '',
+  address: ''
 })
 
 const handleRegister = async () => {
+  if (
+    !registerForm.value.fullname.trim() ||
+    !registerForm.value.email.trim() ||
+    !registerForm.value.password.trim()
+  ) {
+    notify('Vui lòng nhập đầy đủ thông tin đăng ký.', 'warning')
+    return
+  }
+
+  if (registerForm.value.password.trim().length < 6) {
+    notify('Mật khẩu phải có ít nhất 6 ký tự.', 'warning')
+    return
+  }
+
   try {
     // Gọi API Đăng ký bên Spring Boot
-    await axios.post('http://localhost:8080/api/auth/register', {
+    await axios.post('/api/auth/register', {
       fullName: registerForm.value.fullname,
-      username: registerForm.value.username,
       email: registerForm.value.email,
-      password: registerForm.value.password
+      password: registerForm.value.password,
+      phone: registerForm.value.phone,
+      address: registerForm.value.address
     })
 
-    alert('Đăng ký tài khoản thành công! Vui lòng đăng nhập.')
+    notify('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success')
     
     // Đăng ký xong chuyển sang trang Login
     router.push('/login')
   } catch (error) {
     console.error('Lỗi đăng ký:', error)
-    const msg = error.response?.data?.message || 'Đăng ký thất bại, email hoặc tên đăng nhập đã tồn tại!'
-    alert(msg)
+    const msg = error.response?.data?.message || 'Đăng ký thất bại, email đã tồn tại!'
+    notify(msg, 'danger')
   }
 }
 </script>

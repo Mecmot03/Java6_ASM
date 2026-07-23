@@ -11,6 +11,8 @@ import FlashSale from '../view/FlashSale.vue'
 import CartView from '../view/CartView.vue'
 import CheckoutView from '../view/CheckoutView.vue'
 import OrderView from '../view/OrderView.vue'
+import OrderHistory from '../view/OrderHistory.vue'
+import UserInfo from '../view/UserInfo.vue'
 
 // =========================
 // Admin Views
@@ -18,8 +20,6 @@ import OrderView from '../view/OrderView.vue'
 import UserManagement from '../view/admin/UserManagement.vue'
 import ProductManagement from '../view/admin/ProductManagement.vue'
 import CategoryManagement from '../view/admin/CategoryManagement.vue'
-// import ProductCreate from '../view/admin/ProductCreate.vue'
-// import ProductEdit from '../view/admin/ProductEdit.vue'
 
 const routes = [
     // =========================
@@ -43,7 +43,20 @@ const routes = [
     {
         path: '/orders',
         name: 'Orders',
-        component: OrderView
+        component: OrderView,
+        meta: { requiresAdmin: true }
+    },
+    {
+        path: '/order-history',
+        name: 'OrderHistory',
+        component: OrderHistory,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/user-info',
+        name: 'UserInfo',
+        component: UserInfo,
+        meta: { requiresAuth: true }
     },
     {
         path: '/product/:id',
@@ -64,7 +77,8 @@ const routes = [
     {
         path: '/flash-sale',
         name: 'FlashSale',
-        component: FlashSale
+        component: FlashSale,
+        alias: '/flashsale'
     },
 
     // =========================
@@ -73,29 +87,21 @@ const routes = [
     {
         path: '/admin/users',
         name: 'UserManagement',
-        component: UserManagement
+        component: UserManagement,
+        meta: { requiresAdmin: true }
     },
     {
         path: '/admin/products',
         name: 'ProductManagement',
-        component: ProductManagement
+        component: ProductManagement,
+        meta: { requiresAdmin: true }
     },
     {
         path: '/admin/categories',
         name: 'CategoryManagement',
-        component: CategoryManagement
+        component: CategoryManagement,
+        meta: { requiresAdmin: true }
     }
-    // {
-    //     path: '/admin/products/create',
-    //     name: 'ProductCreate',
-    //     component: ProductCreate
-    // },
-    // {
-    //     path: '/admin/products/edit/:id',
-    //     name: 'ProductEdit',
-    //     component: ProductEdit,
-    //     props: true
-    // }
 ]
 
 const router = createRouter({
@@ -107,6 +113,45 @@ const router = createRouter({
             behavior: "smooth"
         }
     }
+})
+
+router.beforeEach((to) => {
+    if (to.meta?.requiresAuth) {
+        const token = localStorage.getItem('token')
+        const userRaw = localStorage.getItem('user')
+
+        if (!token || !userRaw) {
+            return {
+                path: '/login',
+                query: { redirect: to.fullPath }
+            }
+        }
+    }
+
+    if (!to.meta?.requiresAdmin) {
+        return true
+    }
+
+    const token = localStorage.getItem('token')
+    const userRaw = localStorage.getItem('user')
+
+    if (!token || !userRaw) {
+        return {
+            path: '/login',
+            query: { redirect: to.fullPath }
+        }
+    }
+
+    try {
+        const user = JSON.parse(userRaw)
+        if (user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN') {
+            return true
+        }
+    } catch (error) {
+        // Nếu user trong localStorage bị lỗi parse, ép đăng nhập lại
+    }
+
+    return { path: '/' }
 })
 
 export default router

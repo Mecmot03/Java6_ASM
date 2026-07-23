@@ -2,7 +2,9 @@ package nhomhoinuong.java6_asm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +26,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
 
         return userDAO.findAll()
@@ -34,6 +37,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
 
         User user = userDAO.findById(id)
@@ -142,14 +146,9 @@ public class UserServiceImpl implements UserService {
 
     private UserResponse convertToResponse(User user) {
 
-        String role = "";
-
-        if (user.getAuthorities() != null
-                && !user.getAuthorities().isEmpty()) {
-
-            role = user.getAuthorities().get(0).getRole();
-
-        }
+        String role = authorityDAO.findByUser_Id(user.getId())
+            .map(authority -> authority.getRole())
+            .orElse("");
 
         return UserResponse.builder()
                 .id(user.getId())

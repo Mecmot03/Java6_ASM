@@ -15,6 +15,8 @@ import nhomhoinuong.java6_asm.dto.LoginRequest;
 import nhomhoinuong.java6_asm.dto.LoginResponse;
 import nhomhoinuong.java6_asm.dto.RegisterRequest;
 import nhomhoinuong.java6_asm.dto.SocialLoginRequest;
+import nhomhoinuong.java6_asm.dto.UserRequest;
+import nhomhoinuong.java6_asm.dto.UserResponse;
 import nhomhoinuong.java6_asm.security.JwtService;
 import nhomhoinuong.java6_asm.service.AuthenticationService;
 
@@ -35,7 +37,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 				.orElseThrow(() -> new RuntimeException("Email không tồn tại"));
 
 		// Kiểm tra mật khẩu
-		if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+		boolean passwordMatched = passwordEncoder.matches(request.getPassword(), user.getPassword());
+		if (!passwordMatched && request.getPassword() != null && request.getPassword().equals(user.getPassword())) {
+			user.setPassword(passwordEncoder.encode(request.getPassword()));
+			userDAO.save(user);
+			passwordMatched = true;
+		}
+		if (!passwordMatched) {
 			throw new RuntimeException("Sai mật khẩu");
 		}
 
@@ -48,7 +56,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		String token = jwtService.generateToken(user);
 
 		// Lấy role
-		String role = user.getAuthorities().stream().findFirst().map(Authority::getRole).orElse("ROLE_USER");
+		String role = authorityDAO.findByUser_Id(user.getId())
+				.map(Authority::getRole)
+				.orElse("ROLE_USER");
 
 		// Trả về cho Vue
 		return new LoginResponse(token, user.getId(), user.getFullName(), user.getEmail(), role);
@@ -126,12 +136,48 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 		String token = jwtService.generateToken(user);
 
 		// 5. Lấy Role
-		String role = "ROLE_USER";
-		if (user.getAuthorities() != null && !user.getAuthorities().isEmpty()) {
-			role = user.getAuthorities().stream().findFirst().map(Authority::getRole).orElse("ROLE_USER");
-		}
+		String role = authorityDAO.findByUser_Id(user.getId())
+				.map(Authority::getRole)
+				.orElse("ROLE_USER");
 
 		// 6. Trả về LoginResponse
 		return new LoginResponse(token, user.getId(), user.getFullName(), user.getEmail(), role);
+	}
+
+	@Override
+	public UserResponse updateCurrentUser(Long userId, UserRequest request) {
+		User user = userDAO.findById(userId)
+				.orElseThrow(() -> new RuntimeException("Không tìm thấy User"));
+
+		if (request.getFullName() != null) {
+			user.setFullName(request.getFullName());
+		}
+		if (request.getPhone() != null) {
+			user.setPhone(request.getPhone());
+		}
+		if (request.getAddress() != null) {
+			user.setAddress(request.getAddress());
+		}
+		if (request.getPassword() != null && !request.getPassword().isBlank()) {
+			user.setPassword(passwordEncoder.encode(request.getPassword()));
+		}
+
+		user.setUpdatedAt(LocalDateTime.now());
+		User savedUser = userDAO.save(user);
+
+		String role = authorityDAO.findByUser_Id(savedUser.getId())
+				.map(Authority::getRole)
+				.orElse("ROLE_USER");
+
+		return UserResponse.builder()
+				.id(savedUser.getId())
+				.fullName(savedUser.getFullName())
+				.email(savedUser.getEmail())
+				.phone(savedUser.getPhone())
+				.address(savedUser.getAddress())
+				.avatar(savedUser.getAvatar())
+				.enabled(savedUser.getEnabled())
+				.role(role)
+				.build();
 	}
 }

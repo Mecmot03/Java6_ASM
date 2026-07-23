@@ -14,7 +14,7 @@
 
         <div class="card-body">
 
-            <form @submit.prevent="save">
+            <form @submit.prevent="save" novalidate>
 
                 <div class="row">
 
@@ -203,6 +203,7 @@
 <script setup>
 
 import { reactive, watch } from 'vue'
+import { notify } from '../../utils/notify'
 
 const props = defineProps({
 
@@ -267,6 +268,25 @@ watch(
 )
 
 const save=()=>{
+
+    const fullName = String(form.fullName || '').trim()
+    const email = String(form.email || '').trim()
+    const password = String(form.password || '').trim()
+
+    if (!fullName || !email) {
+        notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
+        return
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+        notify('Email không đúng định dạng.', 'warning')
+        return
+    }
+
+    if (!form.id && !password) {
+        notify('Vui lòng nhập mật khẩu cho tài khoản mới.', 'warning')
+        return
+    }
 
     emit('save',{...form})
 
