@@ -16,18 +16,18 @@
       <div class="auth-body px-4 px-sm-5 pb-5">
         <form @submit.prevent="handleLogin">
           
-          <!-- Tên đăng nhập / Email -->
+          <!-- Email -->
           <div class="mb-3">
-            <label class="form-label fw-bold text-dark small">Tài khoản / Email</label>
+            <label class="form-label fw-bold text-dark small">Email</label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted">
-                <i class="bi bi-person"></i>
+                <i class="bi bi-envelope"></i>
               </span>
               <input 
-                type="text" 
+                type="email" 
                 class="form-control bg-light border-start-0" 
-                placeholder="Nhập tên đăng nhập hoặc email"
-                v-model="loginForm.username"
+                placeholder="Nhập địa chỉ email"
+                v-model="loginForm.email"
                 required
               />
             </div>
@@ -79,11 +79,9 @@
           </div>
 
           <div class="d-flex gap-2">
-            <!-- NÚT GOOGLE -->
             <button type="button" class="btn btn-outline-danger flex-fill btn-sm rounded-pill py-2" @click="loginWithGoogle">
               <i class="bi bi-google me-1"></i> Google
             </button>
-            <!-- NÚT FACEBOOK -->
             <button type="button" class="btn btn-outline-primary flex-fill btn-sm rounded-pill py-2" @click="loginWithFacebook">
               <i class="bi bi-facebook me-1"></i> Facebook
             </button>
@@ -100,22 +98,21 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
-import { googleOneTap, googleTokenLogin } from 'vue3-google-login'
+import { googleTokenLogin } from 'vue3-google-login'
 
 const router = useRouter()
 const showPassword = ref(false)
 
 const loginForm = ref({
-  username: '',
+  email: '',
   password: '',
   remember: false
 })
 
-// Khởi tạo Facebook SDK khi component mounted
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
-      appId      : '1037782925805986', // <--- DÁN APP ID THẬT CỦA NHI VÀO ĐÂY (chỉ giữ lại số)
+      appId      : '1037782925805986',
       cookie     : true,
       xfbml      : true,
       version    : 'v18.0'
@@ -125,15 +122,15 @@ onMounted(() => {
      var js, fjs = d.getElementsByTagName(s)[0];
      if (d.getElementById(id)) return;
      js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/vi_VN/sdk.js"; // Đã đổi sang tiếng Việt
+     js.src = "https://connect.facebook.net/vi_VN/sdk.js";
      fjs.parentNode.insertBefore(js, fjs);
    }(document, 'script', 'facebook-jssdk'));
 })
-// 1. ĐĂNG NHẬP THƯỜNG
+
 const handleLogin = async () => {
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', {
-      email: loginForm.value.username,
+      email: loginForm.value.email,
       password: loginForm.value.password
     })
     saveSessionAndRedirect(response.data)
@@ -142,17 +139,14 @@ const handleLogin = async () => {
   }
 }
 
-// 2. ĐĂNG NHẬP GOOGLE
 const loginWithGoogle = () => {
   googleTokenLogin({
-    clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com' // Thay Client ID Google của Nhi vào đây
+    clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com'
   }).then(async (response) => {
     try {
-      // Gọi API lấy thông tin Google User thông qua Access Token
       const res = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${response.access_token}`)
       const googleUser = res.data
 
-      // Gửi thông tin về Spring Boot để tạo account & cấp JWT
       const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
         email: googleUser.email,
         fullName: googleUser.name,
@@ -166,19 +160,16 @@ const loginWithGoogle = () => {
   })
 }
 
-// 3. ĐĂNG NHẬP FACEBOOK
 const loginWithFacebook = () => {
   window.FB.login((response) => {
     if (response.authResponse) {
       const accessToken = response.authResponse.accessToken;
-      
-      // Gọi Graph API của Facebook lấy name và picture
       axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
         .then(async (res) => {
           const fbUser = res.data;
           
           const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
-            email: `${fbUser.id}@facebook.com`, // Tự sinh email theo ID Facebook nếu không xin quyền email
+            email: `${fbUser.id}@facebook.com`,
             fullName: fbUser.name,
             avatar: fbUser.picture?.data?.url,
             provider: 'FACEBOOK'
@@ -190,9 +181,9 @@ const loginWithFacebook = () => {
     } else {
       alert("Đăng nhập Facebook bị hủy bỏ!");
     }
-  }, { scope: 'public_profile' }); // 👈 Sửa dòng này: đổi 'public_profile,email' thành 'public_profile'
+  }, { scope: 'public_profile' });
 }
-// Hàm lưu Token và chuyển hướng
+
 const saveSessionAndRedirect = (data) => {
   const token = data.token || data.accessToken || ''
   const userData = data.user || data
