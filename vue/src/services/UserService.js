@@ -1,6 +1,7 @@
 import axios from "axios"
+import { getAuthConfig } from "./authRequest"
 
-const API_URL = "http://localhost:8080/api/users"
+const API_URL = "/api/admin/users"
 
 export default {
 
@@ -12,7 +13,7 @@ export default {
 
         try {
 
-            const response = await axios.get(API_URL)
+            const response = await axios.get(API_URL, getAuthConfig())
 
             return response.data
 
@@ -21,8 +22,7 @@ export default {
         catch (error) {
 
             console.error("Lỗi lấy danh sách User:", error)
-
-            return []
+            throw error
 
         }
 
@@ -36,7 +36,7 @@ export default {
 
         try {
 
-            const response = await axios.get(`${API_URL}/${id}`)
+            const response = await axios.get(`${API_URL}/${id}`, getAuthConfig())
 
             return response.data
 
@@ -60,7 +60,7 @@ export default {
 
         try {
 
-            const response = await axios.post(API_URL, user)
+            const response = await axios.post(API_URL, user, getAuthConfig())
 
             return response.data
 
@@ -84,7 +84,7 @@ export default {
 
         try {
 
-            const response = await axios.put(`${API_URL}/${id}`, user)
+            const response = await axios.put(`${API_URL}/${id}`, user, getAuthConfig())
 
             return response.data
 
@@ -108,7 +108,7 @@ export default {
 
         try {
 
-            const response = await axios.delete(`${API_URL}/${id}`)
+            const response = await axios.delete(`${API_URL}/${id}`, getAuthConfig())
 
             return response.data
 
@@ -132,7 +132,7 @@ export default {
 
         try {
 
-            const response = await axios.patch(`${API_URL}/${id}/status`)
+            const response = await axios.patch(`${API_URL}/${id}/status`, null, getAuthConfig())
 
             return response.data
 

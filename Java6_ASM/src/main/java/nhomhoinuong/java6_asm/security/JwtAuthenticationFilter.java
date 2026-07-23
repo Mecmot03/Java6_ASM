@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.User;
+import nhomhoinuong.java6_asm.dao.AuthorityDAO;
 import nhomhoinuong.java6_asm.dao.UserDAO;
 
 @Component
@@ -24,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDAO userDAO;
+        private final AuthorityDAO authorityDAO;
 
     @Override
     protected void doFilterInternal(
@@ -52,11 +54,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (user != null
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            List<SimpleGrantedAuthority> authorities =
-                    user.getAuthorities()
-                            .stream()
-                            .map(role -> new SimpleGrantedAuthority(role.getRole()))
-                            .toList();
+            List<SimpleGrantedAuthority> authorities = authorityDAO.findByUser_Id(user.getId())
+                    .map(authority -> List.of(new SimpleGrantedAuthority(authority.getRole())))
+                    .orElseGet(() -> List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(

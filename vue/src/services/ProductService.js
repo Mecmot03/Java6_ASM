@@ -1,6 +1,7 @@
 import axios from "axios"
+import { getAuthConfig, requestWithOptionalAuth } from "./authRequest"
 
-const API_URL = "http://localhost:8080/api/products"
+const API_URL = "/api/products"
 
 export default {
 
@@ -57,7 +58,10 @@ export default {
 
         try {
 
-            const response = await axios.post(API_URL, product)
+            const response = await requestWithOptionalAuth(
+                () => axios.post(API_URL, product),
+                () => axios.post(API_URL, product, getAuthConfig())
+            )
 
             return response.data
 
@@ -80,7 +84,10 @@ export default {
 
         try {
 
-            const response = await axios.put(`${API_URL}/${id}`, product)
+            const response = await requestWithOptionalAuth(
+                () => axios.put(`${API_URL}/${id}`, product),
+                () => axios.put(`${API_URL}/${id}`, product, getAuthConfig())
+            )
 
             return response.data
 
@@ -103,7 +110,10 @@ export default {
 
         try {
 
-            const response = await axios.delete(`${API_URL}/${id}`)
+            const response = await requestWithOptionalAuth(
+                () => axios.delete(`${API_URL}/${id}`),
+                () => axios.delete(`${API_URL}/${id}`, getAuthConfig())
+            )
 
             return response.data
 

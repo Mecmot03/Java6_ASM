@@ -30,13 +30,28 @@
             </router-link>
 
             <!-- 2. ĐÃ ĐĂNG NHẬP: HIỂN THỊ TÊN USER -->
-            <div v-else class="nav-item-link text-dark fw-bold cursor-default">
+            <button
+              v-else
+              type="button"
+              class="nav-item-link text-dark fw-bold nav-user-btn"
+              :title="isAdmin ? 'Vào trang quản trị' : 'Thông tin tài khoản'"
+              @click="handleUserArea"
+            >
               <i class="bi bi-person-circle fs-5"></i>
               <span class="text-truncate" style="max-width: 100px;"
                 :title="currentUser.fullName || currentUser.username">
                 {{ currentUser.fullName || currentUser.username }}
               </span>
-            </div>
+            </button>
+            <router-link
+              v-if="currentUser && !isAdmin"
+              to="/order-history?status=PENDING"
+              class="nav-item-link nav-history-link ms-1"
+              title="Lịch sử đặt hàng"
+            >
+              <i class="bi bi-clock-history"></i>
+              <span>Lịch sử đặt hàng</span>
+            </router-link>
 
             <!-- 3. ICON GIỎ HÀNG -->
             <router-link to="/cart" class="nav-item-link position-relative">
@@ -49,7 +64,7 @@
             </router-link>
 
             <!-- 4. DROPDOWN THEO DÕI ĐƠN HÀNG -->
-            <div v-if="currentUser" class="dropdown">
+            <div v-if="isAdmin" class="dropdown">
               <button class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
                 type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-box-seam"></i>
@@ -134,6 +149,50 @@
       <slot />
     </main>
 
+    <div
+      v-if="toastVisible"
+      class="app-toast position-fixed end-0 top-0 m-4 shadow-lg rounded-4 px-4 py-3"
+      :class="toastClasses"
+      role="status"
+      aria-live="polite"
+    >
+      <div class="d-flex align-items-start gap-3">
+        <i :class="toastIcon" class="fs-5 mt-1"></i>
+        <div class="flex-grow-1">
+          <div class="fw-bold mb-1">Thông báo</div>
+          <div class="small">{{ toastMessage }}</div>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-2" aria-label="Đóng" @click="hideToast"></button>
+      </div>
+    </div>
+
+    <div
+      v-if="confirmVisible"
+      class="app-confirm-backdrop position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+      @click.self="cancelConfirm"
+    >
+      <div class="app-confirm-modal bg-white shadow-lg rounded-4 p-4 mx-3">
+        <div class="d-flex align-items-start gap-3 mb-3">
+          <div class="app-confirm-icon rounded-circle d-flex align-items-center justify-content-center">
+            <i class="bi bi-question-circle-fill fs-4"></i>
+          </div>
+          <div class="flex-grow-1">
+            <h5 class="fw-bold mb-1">{{ confirmTitle }}</h5>
+            <p class="mb-0 text-secondary">{{ confirmMessage }}</p>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-4" @click="cancelConfirm">
+            Hủy
+          </button>
+          <button type="button" class="btn btn-warning rounded-pill px-4 fw-bold text-dark" @click="acceptConfirm">
+            Đồng ý
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- FOOTER ĐẦY ĐỦ -->
     <footer class="tgdd-footer bg-white border-top mt-5 pt-4 pb-3 w-100">
       <div class="container">
@@ -208,6 +267,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { getGuestCartCount } from '../utils/cart'
+import { confirmDialog, resolveConfirmDialog } from '../utils/dialog'
 
 const router = useRouter()
 const route = useRoute()
@@ -216,6 +277,14 @@ const searchQuery = ref('')
 const cartCount = ref(0)
 const menuItems = ref([])
 const currentUser = ref(null)
+const toastVisible = ref(false)
+const toastMessage = ref('')
+const toastType = ref('info')
+const confirmVisible = ref(false)
+const confirmTitle = ref('')
+const confirmMessage = ref('')
+const confirmId = ref(null)
+let toastTimer = null
 
 const isHeaderHidden = ref(false)
 let lastScrollPosition = 0
@@ -237,10 +306,91 @@ const policyLinks = ref([
 ])
 
 const isHomePage = computed(() => route.path === '/')
+const isAdmin = computed(() => {
+  const role = currentUser.value?.role
+  return role === 'ROLE_ADMIN' || role === 'ADMIN'
+})
+
+const toastClasses = computed(() => {
+  const map = {
+    success: 'bg-success text-white',
+    warning: 'bg-warning text-dark',
+    danger: 'bg-danger text-white',
+    info: 'bg-dark text-white',
+  }
+
+  return map[toastType.value] || map.info
+})
+
+const toastIcon = computed(() => {
+  const map = {
+    success: 'bi bi-check-circle-fill',
+    warning: 'bi bi-exclamation-triangle-fill',
+    danger: 'bi bi-x-circle-fill',
+    info: 'bi bi-info-circle-fill',
+  }
+
+  return map[toastType.value] || map.info
+})
+
+const hideToast = () => {
+  toastVisible.value = false
+
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+    toastTimer = null
+  }
+}
+
+const showToast = (message, type = 'info') => {
+  toastMessage.value = message
+  toastType.value = type
+  toastVisible.value = true
+
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+  }
+
+  toastTimer = setTimeout(() => {
+    toastVisible.value = false
+    toastTimer = null
+  }, 2600)
+}
+
+const showConfirm = (event) => {
+  const detail = event?.detail || {}
+  confirmId.value = detail.id ?? null
+  confirmTitle.value = detail.title || 'Xác nhận'
+  confirmMessage.value = detail.message || ''
+  confirmVisible.value = true
+}
+
+const closeConfirm = (confirmed) => {
+  if (confirmId.value != null) {
+    resolveConfirmDialog(confirmId.value, confirmed)
+  }
+
+  confirmVisible.value = false
+  confirmId.value = null
+  confirmTitle.value = ''
+  confirmMessage.value = ''
+}
+
+const acceptConfirm = () => closeConfirm(true)
+const cancelConfirm = () => closeConfirm(false)
 
 const goHome = () => {
   searchQuery.value = ''
   router.push('/')
+}
+
+const handleUserArea = () => {
+  if (isAdmin.value) {
+    router.push('/admin/users')
+    return
+  }
+
+  router.push('/user-info')
 }
 
 const iconMap = {
@@ -252,6 +402,11 @@ const iconMap = {
   "Bàn phím": "bi bi-keyboard",
   "Chuột": "bi bi-mouse",
   "Cáp sạc": "bi bi-usb-plug"
+}
+
+const isAuthError = (error) => {
+  const status = error?.response?.status
+  return status === 401 || status === 403
 }
 
 // Kiểm tra thông tin User đã đăng nhập
@@ -270,14 +425,18 @@ const checkUserLogin = () => {
 
 // Xử lý Đăng xuất
 const handleLogout = () => {
-  if (confirm("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?")) {
+  confirmDialog("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?").then((confirmed) => {
+    if (!confirmed) {
+      return
+    }
+
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     currentUser.value = null
     fetchCartCount() // Reset giỏ hàng về 0 khi đăng xuất
-    alert("Đã đăng xuất thành công!")
+    showToast("Đã đăng xuất thành công!", 'success')
     router.push('/login')
-  }
+  })
 }
 
 // Xử lý sự kiện cuộn mượt
@@ -303,7 +462,7 @@ const handleScroll = () => {
 
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://localhost:8080/api/categories')
+    const response = await axios.get('/api/categories')
     menuItems.value = response.data.map(cat => ({
       id: cat.id || cat.Id,
       name: cat.name || cat.Name,
@@ -311,7 +470,10 @@ const fetchCategories = async () => {
       hasSub: false
     }))
   } catch (error) {
-    console.error("Lỗi khi tải danh mục:", error)
+    menuItems.value = []
+    if (!isAuthError(error)) {
+      console.error("Lỗi khi tải danh mục:", error)
+    }
   }
 }
 
@@ -320,16 +482,23 @@ const fetchCartCount = async () => {
   try {
     const userStorage = localStorage.getItem('user')
     if (!userStorage) {
+      cartCount.value = getGuestCartCount()
+      return
+    }
+
+    const userId = JSON.parse(userStorage)?.id
+    if (!userId) {
       cartCount.value = 0
       return
     }
 
-    const userId = JSON.parse(userStorage).id
-    const response = await axios.get(`http://localhost:8080/api/cart/count?userId=${userId}`)
+    const response = await axios.get(`/api/cart/count?userId=${userId}`)
     cartCount.value = response.data.count || 0
 
   } catch (error) {
-    console.error("Lỗi khi lấy số lượng giỏ hàng:", error)
+    if (!isAuthError(error)) {
+      console.error("Lỗi khi lấy số lượng giỏ hàng:", error)
+    }
     cartCount.value = 0
   }
 }
@@ -362,10 +531,26 @@ const handleUserLoggedIn = () => {
   fetchCartCount()
 }
 
+const handleUserUpdated = () => {
+  checkUserLogin()
+}
+
+const handleAppNotify = (event) => {
+  const detail = event?.detail || {}
+  showToast(detail.message || 'Đã cập nhật', detail.type || 'info')
+}
+
+const handleAppConfirm = (event) => {
+  showConfirm(event)
+}
+
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('cart-updated', handleCartUpdated)
   window.addEventListener('user-logged-in', handleUserLoggedIn)
+  window.addEventListener('user-updated', handleUserUpdated)
+  window.addEventListener('app-notify', handleAppNotify)
+  window.addEventListener('app-confirm', handleAppConfirm)
 
   checkUserLogin()
   fetchCategories()
@@ -376,6 +561,13 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('cart-updated', handleCartUpdated)
   window.removeEventListener('user-logged-in', handleUserLoggedIn)
+  window.removeEventListener('user-updated', handleUserUpdated)
+  window.removeEventListener('app-notify', handleAppNotify)
+  window.removeEventListener('app-confirm', handleAppConfirm)
+
+  if (toastTimer) {
+    clearTimeout(toastTimer)
+  }
 })
 </script>
 
@@ -394,6 +586,31 @@ onUnmounted(() => {
 
 .sticky-header.header-hidden {
   transform: translateY(-58px);
+}
+
+.app-toast {
+  z-index: 2000;
+  min-width: 320px;
+  max-width: 420px;
+  border: 0;
+}
+
+.app-confirm-backdrop {
+  z-index: 2100;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.app-confirm-modal {
+  width: min(92vw, 440px);
+}
+
+.app-confirm-icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 212, 0, 0.18);
+  color: #b07f00;
+  flex: 0 0 auto;
 }
 
 .logo {
@@ -449,6 +666,24 @@ button.nav-item-link {
 
 button.nav-item-link:hover {
   opacity: 0.8;
+}
+
+.nav-history-link {
+  color: #000;
+}
+
+.nav-history-link:hover {
+  opacity: 0.8;
+}
+
+.nav-history-link i {
+  font-size: 18px;
+}
+
+.nav-user-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .cursor-default {

@@ -20,7 +20,7 @@
     </div>
 
     <!-- NỘI DUNG THANH TOÁN -->
-    <form v-else @submit.prevent="handlePlaceOrder" class="row g-4">
+    <form v-else @submit.prevent="handlePlaceOrder" class="row g-4" novalidate>
       
       <!-- CỘT TRÁI: THÔNG TIN GIAO HÀNG & THANH TOÁN -->
       <div class="col-lg-7">
@@ -183,6 +183,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import { notify } from '../utils/notify'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -218,7 +219,8 @@ const fetchCheckoutData = async () => {
   const user = getUserFromStorage()
   
   if (!user) {
-    alert("Vui lòng đăng nhập để tiến hành đặt hàng!")
+    notify("Vui lòng đăng nhập để tiến hành đặt hàng!", 'warning')
+    loading.value = false
     router.push('/login')
     return
   }
@@ -230,7 +232,7 @@ const fetchCheckoutData = async () => {
   orderForm.value.address = user.address || ''
 
   try {
-    const res = await axios.get(`http://localhost:8080/api/cart?userId=${user.id}`)
+    const res = await axios.get(`/api/cart?userId=${user.id}`)
     cartItems.value = res.data
   } catch (err) {
     console.error("Lỗi khi tải thông tin thanh toán:", err)
@@ -248,6 +250,12 @@ const totalQuantity = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
 })
 
+const isAdminUser = () => {
+  const user = getUserFromStorage()
+  const role = user?.role
+  return role === 'ROLE_ADMIN' || role === 'ADMIN'
+}
+
 const formatPrice = (price) => {
   if (!price && price !== 0) return '0 đ'
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
@@ -257,6 +265,17 @@ const formatPrice = (price) => {
 const handlePlaceOrder = async () => {
   const user = getUserFromStorage()
   if (!user) return
+
+  if (
+    !orderForm.value.fullName.trim() ||
+    !orderForm.value.phone.trim() ||
+    !orderForm.value.email.trim() ||
+    !orderForm.value.address.trim() ||
+    !orderForm.value.paymentMethod
+  ) {
+    notify('Vui lòng nhập đầy đủ thông tin giao hàng và chọn phương thức thanh toán.', 'warning')
+    return
+  }
 
   submitting.value = true
 
@@ -274,21 +293,25 @@ const handlePlaceOrder = async () => {
 
   try {
     // Gọi API lưu Đơn hàng vào Database
-    await axios.post('http://localhost:8080/api/orders/create', orderPayload)
+    await axios.post('/api/orders/create', orderPayload)
 
     // Làm sạch giỏ hàng sau khi đặt thành công
-    await axios.delete(`http://localhost:8080/api/cart/clear?userId=${user.id}`)
+    await axios.delete(`/api/cart/clear?userId=${user.id}`)
     
     // Cập nhật lại Badge giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
 
-    alert("🎉 Đặt hàng thành công! Đơn hàng của bạn đang chờ xác nhận.")
+    notify("Đặt hàng thành công! Đơn hàng của bạn đang chờ xác nhận.", 'success')
     
-    // Chuyển hướng sang trang Xem đơn hàng vừa đặt
-    router.push('/orders?status=PENDING')
+    // Chuyển hướng theo vai trò
+    if (isAdminUser()) {
+      router.push('/orders?status=PENDING')
+    } else {
+      router.push('/order-history?status=PENDING')
+    }
   } catch (err) {
     console.error("Lỗi khi tạo đơn hàng:", err)
-    alert(err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!")
+    notify(err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!", 'danger')
   } finally {
     submitting.value = false
   }

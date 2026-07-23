@@ -14,7 +14,7 @@
 
         <div class="card-body product-body">
 
-            <form @submit.prevent="saveProduct">
+            <form @submit.prevent="saveProduct" novalidate>
 
                 <div class="row">
 
@@ -321,6 +321,7 @@ import {
 } from "vue"
 
 import CategoryService from "../../services/CategoryService"
+import { notify } from '../../utils/notify'
 
 const props = defineProps({
 
@@ -533,6 +534,36 @@ const isEdit = computed(()=>{
 // =========================
 
 const saveProduct=()=>{
+
+    const name = String(form.name || '').trim()
+    const brand = String(form.brand || '').trim()
+    const price = Number(form.price)
+    const quantity = Number(form.quantity)
+
+    if (!name) {
+        notify('Vui lòng nhập tên sản phẩm.', 'warning')
+        return
+    }
+
+    if (!form.category) {
+        notify('Vui lòng chọn danh mục.', 'warning')
+        return
+    }
+
+    if (!brand) {
+        notify('Vui lòng chọn thương hiệu.', 'warning')
+        return
+    }
+
+    if (Number.isNaN(price) || price < 0) {
+        notify('Giá sản phẩm không hợp lệ.', 'warning')
+        return
+    }
+
+    if (Number.isNaN(quantity) || quantity < 0) {
+        notify('Số lượng sản phẩm không hợp lệ.', 'warning')
+        return
+    }
 
     emit("save",{
 

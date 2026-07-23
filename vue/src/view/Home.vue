@@ -168,7 +168,7 @@
                 <button class="btn btn-light btn-sm flex-grow-1 rounded-pill fw-medium text-secondary" @click="viewDetail(product.id || product.Id)">
                   <i class="bi bi-eye"></i> Xem
                 </button>
-                <button class="btn btn-warning btn-sm flex-grow-1 rounded-pill fw-bold text-dark" @click="addToCart(product.id || product.Id)">
+                <button class="btn btn-warning btn-sm flex-grow-1 rounded-pill fw-bold text-dark" @click="addToCart(product)">
                   <i class="bi bi-cart-plus me-1"></i> Mua
                 </button>
               </div>
@@ -184,6 +184,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
+import { addGuestCartItem } from '../utils/cart'
+import { confirmDialog } from '../utils/dialog'
+import { notify } from '../utils/notify'
 
 const router = useRouter()
 const route = useRoute()
@@ -258,6 +261,11 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 }
 
+const isAuthError = (error) => {
+  const status = error?.response?.status
+  return status === 401 || status === 403
+}
+
 // Lọc sản phẩm theo khoảng giá Min - Max đã áp dụng
 const filteredProducts = computed(() => {
   return products.value.filter(product => {
@@ -284,7 +292,7 @@ const fetchFilteredProducts = async () => {
       params.sortBy = sortBy.value
     }
     
-    const response = await axios.get('http://localhost:8080/api/products/filter', { params })
+    const response = await axios.get('/api/products/filter', { params })
 
     if (Array.isArray(response.data)) {
       products.value = response.data
@@ -297,7 +305,9 @@ const fetchFilteredProducts = async () => {
     }
 
   } catch (error) {
-    console.error("Lỗi tải sản phẩm:", error)
+    if (!isAuthError(error)) {
+      console.error("Lỗi tải sản phẩm:", error)
+    }
     products.value = []
   }
 }
@@ -308,11 +318,14 @@ const fetchCategoryName = async (catId) => {
     return
   }
   try {
-    const res = await axios.get('http://localhost:8080/api/categories')
+    const res = await axios.get('/api/categories')
     const found = res.data.find(c => (c.id || c.Id) == catId)
     if (found) selectedCategoryName.value = found.name || found.Name
   } catch (e) {
-    console.error("Lỗi lấy thông tin danh mục:", e)
+    if (!isAuthError(e)) {
+      console.error("Lỗi lấy thông tin danh mục:", e)
+    }
+    selectedCategoryName.value = ''
   }
 }
 
@@ -374,12 +387,25 @@ const viewDetail = (id) => {
 }
 
 // Thêm vào giỏ hàng thật vào DB Spring Boot
-const addToCart = async (productId) => {
+const addToCart = async (product) => {
   try {
     const userStorage = localStorage.getItem('user')
-    const userId = userStorage ? JSON.parse(userStorage).id : 1
+    const productId = product.id || product.Id
 
-    await axios.post(`http://localhost:8080/api/cart/add?userId=${userId}`, {
+    if (!userStorage) {
+      addGuestCartItem(product, 1)
+      window.dispatchEvent(new CustomEvent('cart-updated'))
+      notify('Đã thêm sản phẩm vào giỏ hàng tạm.', 'success')
+
+      if (await confirmDialog('Đã thêm sản phẩm vào giỏ hàng tạm. Bạn có muốn xem giỏ hàng ngay không?')) {
+        router.push('/cart')
+      }
+      return
+    }
+
+    const userId = JSON.parse(userStorage).id
+
+    await axios.post(`/api/cart/add?userId=${userId}`, {
       productId: productId,
       quantity: 1
     })
@@ -387,12 +413,12 @@ const addToCart = async (productId) => {
     // Bắn Event thông báo cho Layout.vue biết để cập nhật badge ngay lập tức
     window.dispatchEvent(new CustomEvent('cart-updated'))
 
-    if (confirm("Đã thêm sản phẩm vào giỏ hàng! Bạn có muốn đến trang Giỏ hàng ngay không?")) {
+    if (await confirmDialog("Đã thêm sản phẩm vào giỏ hàng! Bạn có muốn đến trang Giỏ hàng ngay không?")) {
       router.push('/cart')
     }
   } catch (error) {
     console.error("Lỗi thêm vào giỏ hàng:", error)
-    alert("Không thể thêm vào giỏ hàng. Vui lòng kiểm tra lại Backend!")
+    notify(error.response?.data?.message || "Không thể thêm vào giỏ hàng. Vui lòng kiểm tra lại Backend!", 'danger')
   }
 }
 

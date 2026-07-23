@@ -139,6 +139,14 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import {
+  loadGuestCart,
+  updateGuestCartQuantity,
+  removeGuestCartItem,
+  clearGuestCart,
+} from '../utils/cart'
+import { confirmDialog } from '../utils/dialog'
+import { notify } from '../utils/notify'
 
 const router = useRouter()
 const cartItems = ref([])
@@ -149,12 +157,12 @@ const getUserId = () => {
   if (userStorage) {
     try {
       const user = JSON.parse(userStorage)
-      return user.id || 1
+      return user.id || null
     } catch (e) {
-      return 1
+      return null
     }
   }
-  return 1
+  return null
 }
 
 // Hàm phát sự kiện đồng bộ lại Badge số lượng giỏ hàng trên Navbar Header
@@ -166,7 +174,13 @@ const notifyCartUpdate = () => {
 const fetchCart = async () => {
   try {
     const userId = getUserId()
-    const res = await axios.get(`http://localhost:8080/api/cart?userId=${userId}`)
+    if (!userId) {
+      cartItems.value = loadGuestCart()
+      notifyCartUpdate()
+      return
+    }
+
+    const res = await axios.get(`/api/cart?userId=${userId}`)
     cartItems.value = res.data
     notifyCartUpdate()
   } catch (err) {
@@ -182,7 +196,13 @@ const updateQuantity = async (item, newQty) => {
   }
   try {
     const userId = getUserId()
-    await axios.put(`http://localhost:8080/api/cart/update/${item.id}?userId=${userId}&quantity=${newQty}`)
+    if (!userId) {
+      updateGuestCartQuantity(item.id, newQty)
+      await fetchCart()
+      return
+    }
+
+    await axios.put(`/api/cart/update/${item.id}?userId=${userId}&quantity=${newQty}`)
     await fetchCart()
   } catch (err) {
     console.error("Lỗi cập nhật số lượng:", err)
@@ -191,28 +211,45 @@ const updateQuantity = async (item, newQty) => {
 
 // Xóa 1 sản phẩm
 const removeItem = async (cartItemId) => {
-  if (confirm("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?")) {
-    try {
-      const userId = getUserId()
-      await axios.delete(`http://localhost:8080/api/cart/remove/${cartItemId}?userId=${userId}`)
+  if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?"))) {
+    return
+  }
+
+  try {
+    const userId = getUserId()
+    if (!userId) {
+      removeGuestCartItem(cartItemId)
       await fetchCart()
-    } catch (err) {
-      console.error("Lỗi xóa sản phẩm:", err)
+      return
     }
+
+    await axios.delete(`/api/cart/remove/${cartItemId}?userId=${userId}`)
+    await fetchCart()
+  } catch (err) {
+    console.error("Lỗi xóa sản phẩm:", err)
   }
 }
 
 // Xóa toàn bộ giỏ hàng
 const clearCart = async () => {
-  if (confirm("Bạn có chắc muốn xóa toàn bộ giỏ hàng?")) {
-    try {
-      const userId = getUserId()
-      await axios.delete(`http://localhost:8080/api/cart/clear?userId=${userId}`)
+  if (!(await confirmDialog("Bạn có chắc muốn xóa toàn bộ giỏ hàng?"))) {
+    return
+  }
+
+  try {
+    const userId = getUserId()
+    if (!userId) {
+      clearGuestCart()
       cartItems.value = []
       notifyCartUpdate()
-    } catch (err) {
-      console.error("Lỗi làm sạch giỏ hàng:", err)
+      return
     }
+
+    await axios.delete(`/api/cart/clear?userId=${userId}`)
+    cartItems.value = []
+    notifyCartUpdate()
+  } catch (err) {
+    console.error("Lỗi làm sạch giỏ hàng:", err)
   }
 }
 
@@ -234,9 +271,11 @@ const formatPrice = (price) => {
 const checkout = () => {
   const token = localStorage.getItem('token')
   if (!token) {
-    if (confirm("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?")) {
-      router.push('/login')
-    }
+    confirmDialog("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?").then((confirmed) => {
+      if (confirmed) {
+        router.push('/login')
+      }
+    })
   } else {
     router.push('/checkout')
   }

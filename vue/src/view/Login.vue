@@ -14,7 +14,7 @@
 
       <!-- FORM ĐĂNG NHẬP -->
       <div class="auth-body px-4 px-sm-5 pb-5">
-        <form @submit.prevent="handleLogin">
+        <form @submit.prevent="handleLogin" novalidate>
           
           <!-- Email -->
           <div class="mb-3">
@@ -97,10 +97,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { googleTokenLogin } from 'vue3-google-login'
 
 const router = useRouter()
+const route = useRoute()
 const showPassword = ref(false)
 
 const loginForm = ref({
@@ -128,14 +129,19 @@ onMounted(() => {
 })
 
 const handleLogin = async () => {
+  if (!loginForm.value.email.trim() || !loginForm.value.password.trim()) {
+    notify('Vui lòng nhập đầy đủ email và mật khẩu.', 'warning')
+    return
+  }
+
   try {
     const response = await axios.post('http://localhost:8080/api/auth/login', {
       email: loginForm.value.email,
       password: loginForm.value.password
     })
-    saveSessionAndRedirect(response.data)
+    await saveSessionAndRedirect(response.data)
   } catch (error) {
-    alert(error.response?.data?.message || 'Tài khoản hoặc mật khẩu không chính xác!')
+    notify(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'danger')
   }
 }
 
@@ -153,9 +159,9 @@ const loginWithGoogle = () => {
         avatar: googleUser.picture,
         provider: 'GOOGLE'
       })
-      saveSessionAndRedirect(backendRes.data)
+      await saveSessionAndRedirect(backendRes.data)
     } catch (err) {
-      alert("Đăng nhập Google thất bại!")
+      notify("Đăng nhập Google thất bại!", 'danger')
     }
   })
 }
@@ -175,25 +181,33 @@ const loginWithFacebook = () => {
             provider: 'FACEBOOK'
           });
 
-          saveSessionAndRedirect(backendRes.data);
+          await saveSessionAndRedirect(backendRes.data);
         })
-        .catch(() => alert("Không thể lấy thông tin tài khoản Facebook!"));
+        .catch(() => notify("Không thể lấy thông tin tài khoản Facebook!", 'danger'));
     } else {
-      alert("Đăng nhập Facebook bị hủy bỏ!");
+      notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
   }, { scope: 'public_profile' });
 }
 
-const saveSessionAndRedirect = (data) => {
+const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
   const userData = data.user || data
 
   if (token) localStorage.setItem('token', token)
   localStorage.setItem('user', JSON.stringify(userData))
 
-  alert('Đăng nhập thành công!')
+  try {
+    await mergeGuestCartIntoBackend(userData.id, axios)
+  } catch (error) {
+    console.error('Không thể đồng bộ giỏ khách:', error)
+  }
+
+  notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
-  router.push('/')
+
+  const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+  router.push(redirectPath)
 }
 </script>
 

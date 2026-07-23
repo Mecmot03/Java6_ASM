@@ -77,7 +77,7 @@
             </h5>
             <button type="button" class="btn-close" @click="closeModal"></button>
           </div>
-          <form @submit.prevent="handleSubmit">
+          <form @submit.prevent="handleSubmit" novalidate>
             <div class="modal-body p-4">
               <div class="mb-3">
                 <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
@@ -136,6 +136,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { confirmDialog } from '../../utils/dialog'
+import { notify } from '../../utils/notify'
 import CategoryService from '../../services/CategoryService.js'
 
 const categories = ref([])
@@ -207,6 +209,11 @@ const closeModal = () => {
 }
 
 const handleSubmit = async () => {
+  if (!formData.value.name.trim()) {
+    notify('Vui lòng nhập tên danh mục.', 'warning')
+    return
+  }
+
   loading.value = true
   try {
     if (isEditing.value) {
@@ -217,20 +224,22 @@ const handleSubmit = async () => {
     await fetchCategories()
     closeModal()
   } catch (error) {
-    alert("Lỗi khi lưu danh mục: " + (error.response?.data?.message || error.message))
+    notify("Lỗi khi lưu danh mục: " + (error.response?.data?.message || error.message), 'danger')
   } finally {
     loading.value = false
   }
 }
 
 const handleDelete = async (id) => {
-  if (confirm("Bạn có chắc chắn muốn xóa danh mục này?")) {
-    try {
-      await CategoryService.deleteCategory(id)
-      await fetchCategories()
-    } catch (error) {
-      alert("Không thể xóa danh mục này do đã có Sản phẩm thuộc danh mục (ràng buộc Khóa ngoại)!")
-    }
+  if (!(await confirmDialog("Bạn có chắc chắn muốn xóa danh mục này?"))) {
+    return
+  }
+
+  try {
+    await CategoryService.deleteCategory(id)
+    await fetchCategories()
+  } catch (error) {
+    notify(error.response?.data?.message || "Không thể xóa danh mục này do đã có Sản phẩm thuộc danh mục (ràng buộc Khóa ngoại)!", 'danger')
   }
 }
 

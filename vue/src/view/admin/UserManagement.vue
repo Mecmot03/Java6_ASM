@@ -87,6 +87,10 @@
 
         <!-- Danh sách User -->
 
+        <div v-if="loadError" class="alert alert-danger mb-3">
+            {{ loadError }}
+        </div>
+
         <UserTable
             :users="users"
             @edit="editUser"
@@ -101,6 +105,8 @@
 <script setup>
 
 import { ref, onMounted } from 'vue'
+import { confirmDialog } from '../../utils/dialog'
+import { notify } from '../../utils/notify'
 
 import UserService from '../../services/UserService'
 
@@ -114,13 +120,30 @@ const keyword = ref('')
 
 const selectedUser = ref({})
 
-const loadUsers = async () => {
+const loadError = ref('')
 
-    users.value = await UserService.getAllUsers()
+const loadUsers = async () => {
+    loadError.value = ''
+
+    try {
+
+        users.value = await UserService.getAllUsers()
+
+    }
+
+    catch (error) {
+
+        users.value = []
+
+        loadError.value = error.response?.data?.message || error.response?.data || 'Không tải được danh sách User!'
+
+        notify(loadError.value, 'danger')
+
+    }
 
 }
 
-const searchUser = async () => {
+const searchUser = () => {
 
     if (keyword.value.trim() === '') {
 
@@ -186,18 +209,15 @@ const saveUser = async (user) => {
 
     catch (error) {
 
-        alert("Không thể lưu User!")
+        notify(error.response?.data?.message || "Không thể lưu User!", 'danger')
 
     }
 
 }
 
 const deleteUser = async (id) => {
-
-    if (!confirm("Bạn chắc chắn muốn xóa User?")) {
-
+    if (!(await confirmDialog("Bạn chắc chắn muốn xóa User?"))) {
         return
-
     }
 
     try {
@@ -210,7 +230,7 @@ const deleteUser = async (id) => {
 
     catch (error) {
 
-        alert("Xóa User thất bại!")
+        notify(error.response?.data?.message || "Xóa User thất bại!", 'danger')
 
     }
 
@@ -228,7 +248,7 @@ const changeStatus = async (id) => {
 
     catch (error) {
 
-        alert("Không đổi được trạng thái!")
+        notify(error.response?.data?.message || "Không đổi được trạng thái!", 'danger')
 
     }
 
