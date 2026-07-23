@@ -1,21 +1,19 @@
 <template>
   <div class="container py-4">
-    <!-- TIÊU ĐỀ TRANG -->
     <div class="d-flex align-items-center justify-content-between mb-4">
       <h3 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-        <i class="bi bi-box-seam text-warning"></i> Quản Lý Đơn Hàng
+        <i class="bi bi-receipt text-warning"></i> Lịch Sử Đặt Hàng
       </h3>
       <router-link to="/" class="btn btn-outline-dark btn-sm rounded-pill px-3">
         <i class="bi bi-house me-1"></i> Về trang chủ
       </router-link>
     </div>
 
-    <!-- THANH TAB TRẠNG THÁI ĐƠN HÀNG -->
     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
       <div class="d-flex border-bottom bg-white overflow-auto text-nowrap">
-        <button 
-          v-for="tab in tabs" 
-          :key="tab.status" 
+        <button
+          v-for="tab in tabs"
+          :key="tab.status"
           class="btn tab-btn px-4 py-3 fw-bold rounded-0 border-0 flex-fill text-secondary"
           :class="{ 'active-tab': currentStatus === tab.status }"
           @click="changeTab(tab.status)"
@@ -25,13 +23,11 @@
       </div>
     </div>
 
-    <!-- TRẠNG THÁI LOADING -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-warning" role="status"></div>
-      <p class="mt-2 text-muted">Đang tải danh sách đơn hàng...</p>
+      <p class="mt-2 text-muted">Đang tải lịch sử đơn hàng...</p>
     </div>
 
-    <!-- NẾU KHÔNG CÓ ĐƠN HÀNG NÀO -->
     <div v-else-if="orders.length === 0" class="card border-0 shadow-sm rounded-4 p-5 text-center">
       <i class="bi bi-inbox display-1 text-muted opacity-25 d-block mb-3"></i>
       <h5 class="fw-bold text-dark mb-1">Chưa có đơn hàng nào</h5>
@@ -41,18 +37,11 @@
       </router-link>
     </div>
 
-    <!-- DANH SÁCH ĐƠN HÀNG -->
     <div v-else class="d-flex flex-column gap-4">
       <div v-for="order in orders" :key="order.id" class="card border-0 shadow-sm rounded-4 p-4">
-        
-        <!-- HEADER ĐƠN HÀNG -->
         <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-          <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div class="d-flex align-items-center gap-3">
             <span class="fw-bold text-dark fs-5">Mã đơn hàng: #{{ order.id }}</span>
-            <span class="badge rounded-pill border border-warning text-dark bg-warning bg-opacity-10 px-3 py-2">
-              <i class="bi bi-person-badge me-1 text-warning"></i>
-              Khách hàng #{{ order.userId || 'N/A' }}
-            </span>
             <small class="text-muted border-start ps-3">
               <i class="bi bi-clock me-1"></i>{{ formatDate(order.orderDate) }}
             </small>
@@ -62,39 +51,25 @@
           </span>
         </div>
 
-        <!-- THÔNG TIN KHÁCH HÀNG -->
-        <div class="customer-info-card mb-3 p-3 rounded-4 border bg-light small">
-          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-            <div class="fw-bold text-dark d-flex align-items-center gap-2">
-              <i class="bi bi-person-lines-fill text-warning"></i>
-              Thông tin khách hàng
-            </div>
-            <span class="badge rounded-pill border border-warning text-dark bg-white px-3 py-2">
-              <i class="bi bi-person-badge me-1 text-warning"></i>
-              Khách hàng #{{ order.userId || 'N/A' }}
-            </span>
+        <div class="row g-2 mb-3 bg-light p-3 rounded-3 small">
+          <div class="col-md-4">
+            <i class="bi bi-person me-1 text-secondary"></i>
+            <strong>Người nhận:</strong> {{ order.receiverName }}
           </div>
-          <div class="row g-2">
-            <div class="col-md-4">
-              <i class="bi bi-person me-1 text-secondary"></i>
-              <strong>Người nhận:</strong> {{ order.receiverName }}
-            </div>
-            <div class="col-md-4">
-              <i class="bi bi-telephone me-1 text-secondary"></i>
-              <strong>Số điện thoại:</strong> {{ order.receiverPhone }}
-            </div>
-            <div class="col-md-4">
-              <i class="bi bi-credit-card me-1 text-secondary"></i>
-              <strong>Thanh toán:</strong> {{ order.paymentMethod === 'COD' ? 'Thanh toán khi nhận (COD)' : 'Chuyển khoản' }}
-            </div>
-            <div class="col-12 mt-1">
-              <i class="bi bi-geo-alt me-1 text-secondary"></i>
-              <strong>Địa chỉ:</strong> {{ order.shippingAddress }}
-            </div>
+          <div class="col-md-4">
+            <i class="bi bi-telephone me-1 text-secondary"></i>
+            <strong>Số điện thoại:</strong> {{ order.receiverPhone }}
+          </div>
+          <div class="col-md-4">
+            <i class="bi bi-credit-card me-1 text-secondary"></i>
+            <strong>Thanh toán:</strong> {{ order.paymentMethod === 'COD' ? 'Thanh toán khi nhận (COD)' : 'Chuyển khoản' }}
+          </div>
+          <div class="col-12 mt-1">
+            <i class="bi bi-geo-alt me-1 text-secondary"></i>
+            <strong>Địa chỉ:</strong> {{ order.shippingAddress }}
           </div>
         </div>
 
-        <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN HÀNG -->
         <div class="order-items-list border-top border-bottom py-2 mb-3" v-if="order.items && order.items.length > 0">
           <div v-for="item in order.items" :key="item.id" class="d-flex align-items-center justify-content-between py-2">
             <div class="d-flex align-items-center gap-3">
@@ -110,40 +85,16 @@
           </div>
         </div>
 
-        <!-- NẾU CHƯA CÓ ITEMS (HIỂN THỊ TẠM THÔNG BÁO SỐ LƯỢNG) -->
         <div v-else class="py-2 text-muted small border-top border-bottom mb-3">
           <i class="bi bi-bag-check me-1"></i> Đơn hàng bao gồm các sản phẩm đã được xác nhận.
         </div>
 
-        <!-- FOOTER ĐƠN HÀNG -->
         <div class="d-flex justify-content-between align-items-center pt-2">
-          <div v-if="order.status === 'PENDING'" class="d-flex align-items-center gap-2">
-            <button class="btn btn-warning btn-sm rounded-pill px-3 fw-bold text-dark" @click="handleConfirmOrder(order.id)">
-              Xác nhận đơn hàng
-            </button>
-            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @click="handleCancelOrder(order.id)">
-              Hủy đơn hàng
-            </button>
-          </div>
-          <div v-else-if="order.status === 'PROCESSING'" class="d-flex align-items-center gap-2">
-            <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" @click="handleShipOrder(order.id)">
-              Chuyển sang chờ giao hàng
-            </button>
-            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3" @click="handleCancelOrder(order.id)">
-              Hủy đơn hàng
-            </button>
-          </div>
-          <div v-else-if="order.status === 'SHIPPING'" class="d-flex align-items-center gap-2">
-            <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" @click="handleDeliverOrder(order.id)">
-              Xác nhận đã giao
-            </button>
-          </div>
           <div class="ms-auto text-end">
             <span class="text-muted small me-2">Tổng thanh toán:</span>
             <span class="fw-bold text-danger fs-4">{{ formatPrice(order.totalAmount) }}</span>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -153,8 +104,6 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import { confirmDialog } from '../utils/dialog'
-import { notify } from '../utils/notify'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,12 +125,6 @@ const getUserFromStorage = () => {
   return userStorage ? JSON.parse(userStorage) : null
 }
 
-const isAdminUser = () => {
-  const user = getUserFromStorage()
-  const role = user?.role
-  return role === 'ROLE_ADMIN' || role === 'ADMIN'
-}
-
 const fetchOrders = async () => {
   loading.value = true
   const user = getUserFromStorage()
@@ -191,15 +134,10 @@ const fetchOrders = async () => {
   }
 
   try {
-    const query = new URLSearchParams({ status: currentStatus.value })
-    if (!isAdminUser()) {
-      query.set('userId', user.id)
-    }
-
-    const res = await axios.get(`/api/orders?${query.toString()}`)
+    const res = await axios.get(`/api/orders?userId=${user.id}&status=${currentStatus.value}`)
     orders.value = res.data
   } catch (err) {
-    console.error("Lỗi tải đơn hàng:", err)
+    console.error('Lỗi tải lịch sử đơn hàng:', err)
   } finally {
     loading.value = false
   }
@@ -207,72 +145,7 @@ const fetchOrders = async () => {
 
 const changeTab = (status) => {
   currentStatus.value = status
-  router.push({ path: '/orders', query: { status } })
-}
-
-const switchToStatusTab = (status) => {
-  if (currentStatus.value === status && route.query.status === status) {
-    fetchOrders()
-    return
-  }
-
-  changeTab(status)
-}
-
-const handleConfirmOrder = async (orderId) => {
-  if (!(await confirmDialog("Xác nhận đơn này sang trạng thái chờ lấy hàng?"))) {
-    return
-  }
-
-  try {
-    await axios.put(`/api/orders/${orderId}/confirm`)
-    notify("Đơn hàng đã chuyển sang trạng thái chờ lấy hàng.", 'success')
-    switchToStatusTab('PROCESSING')
-  } catch (err) {
-    notify(err.response?.data?.message || "Không thể xác nhận đơn hàng lúc này.", 'danger')
-  }
-}
-
-const handleShipOrder = async (orderId) => {
-  if (!(await confirmDialog("Xác nhận đơn này sang trạng thái chờ giao hàng?"))) {
-    return
-  }
-
-  try {
-    await axios.put(`/api/orders/${orderId}/ship`)
-    notify("Đơn hàng đã chuyển sang chờ giao hàng.", 'success')
-    switchToStatusTab('SHIPPING')
-  } catch (err) {
-    notify(err.response?.data?.message || "Không thể cập nhật trạng thái giao hàng lúc này.", 'danger')
-  }
-}
-
-const handleDeliverOrder = async (orderId) => {
-  if (!(await confirmDialog("Xác nhận đơn này đã giao thành công?"))) {
-    return
-  }
-
-  try {
-    await axios.put(`/api/orders/${orderId}/deliver`)
-    notify("Đơn hàng đã được xác nhận giao thành công.", 'success')
-    switchToStatusTab('DELIVERED')
-  } catch (err) {
-    notify(err.response?.data?.message || "Không thể cập nhật trạng thái đã giao lúc này.", 'danger')
-  }
-}
-
-const handleCancelOrder = async (orderId) => {
-  if (!(await confirmDialog("Bạn có chắc chắn muốn hủy đơn hàng này không?"))) {
-    return
-  }
-
-  try {
-    await axios.put(`/api/orders/${orderId}/cancel`)
-    notify("Đã hủy đơn hàng thành công!", 'success')
-    switchToStatusTab('CANCELLED')
-  } catch (err) {
-    notify(err.response?.data?.message || "Không thể hủy đơn hàng lúc này.", 'danger')
-  }
+  router.push({ path: '/order-history', query: { status } })
 }
 
 watch(() => route.query.status, (newStatus) => {

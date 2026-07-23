@@ -14,20 +14,20 @@
 
       <!-- FORM ĐĂNG NHẬP -->
       <div class="auth-body px-4 px-sm-5 pb-5">
-        <form @submit.prevent="handleLogin">
+        <form @submit.prevent="handleLogin" novalidate>
           
-          <!-- Tên đăng nhập / Email -->
+          <!-- Email đăng nhập -->
           <div class="mb-3">
-            <label class="form-label fw-bold text-dark small">Tài khoản / Email</label>
+            <label class="form-label fw-bold text-dark small">Email đăng nhập</label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted">
                 <i class="bi bi-person"></i>
               </span>
               <input 
-                type="text" 
+                type="email" 
                 class="form-control bg-light border-start-0" 
-                placeholder="Nhập tên đăng nhập hoặc email"
-                v-model="loginForm.username"
+                placeholder="Nhập email đã đăng ký"
+                v-model="loginForm.email"
                 required
               />
             </div>
@@ -99,14 +99,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { googleOneTap, googleTokenLogin } from 'vue3-google-login'
+import { notify } from '../utils/notify'
+import { mergeGuestCartIntoBackend } from '../utils/cart'
 
 const router = useRouter()
+const route = useRoute()
 const showPassword = ref(false)
 
 const loginForm = ref({
-  username: '',
+  email: '',
   password: '',
   remember: false
 })
@@ -115,7 +118,7 @@ const loginForm = ref({
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
-      appId      : '1037782925805986', // <--- DÁN APP ID THẬT CỦA NHI VÀO ĐÂY (chỉ giữ lại số)
+      appId      : '1037782925805986', 
       cookie     : true,
       xfbml      : true,
       version    : 'v18.0'
@@ -131,14 +134,19 @@ onMounted(() => {
 })
 // 1. ĐĂNG NHẬP THƯỜNG
 const handleLogin = async () => {
+  if (!loginForm.value.email.trim() || !loginForm.value.password.trim()) {
+    notify('Vui lòng nhập đầy đủ email và mật khẩu.', 'warning')
+    return
+  }
+
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/login', {
-      email: loginForm.value.username,
+    const response = await axios.post('/api/auth/login', {
+      email: loginForm.value.email,
       password: loginForm.value.password
     })
-    saveSessionAndRedirect(response.data)
+    await saveSessionAndRedirect(response.data)
   } catch (error) {
-    alert(error.response?.data?.message || 'Tài khoản hoặc mật khẩu không chính xác!')
+    notify(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'danger')
   }
 }
 
@@ -153,15 +161,15 @@ const loginWithGoogle = () => {
       const googleUser = res.data
 
       // Gửi thông tin về Spring Boot để tạo account & cấp JWT
-      const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+      const backendRes = await axios.post('/api/auth/social-login', {
         email: googleUser.email,
         fullName: googleUser.name,
         avatar: googleUser.picture,
         provider: 'GOOGLE'
       })
-      saveSessionAndRedirect(backendRes.data)
+      await saveSessionAndRedirect(backendRes.data)
     } catch (err) {
-      alert("Đăng nhập Google thất bại!")
+      notify("Đăng nhập Google thất bại!", 'danger')
     }
   })
 }
@@ -177,32 +185,40 @@ const loginWithFacebook = () => {
         .then(async (res) => {
           const fbUser = res.data;
           
-          const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+          const backendRes = await axios.post('/api/auth/social-login', {
             email: `${fbUser.id}@facebook.com`, // Tự sinh email theo ID Facebook nếu không xin quyền email
             fullName: fbUser.name,
             avatar: fbUser.picture?.data?.url,
             provider: 'FACEBOOK'
           });
 
-          saveSessionAndRedirect(backendRes.data);
+          await saveSessionAndRedirect(backendRes.data);
         })
-        .catch(() => alert("Không thể lấy thông tin tài khoản Facebook!"));
+        .catch(() => notify("Không thể lấy thông tin tài khoản Facebook!", 'danger'));
     } else {
-      alert("Đăng nhập Facebook bị hủy bỏ!");
+      notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
   }, { scope: 'public_profile' }); // 👈 Sửa dòng này: đổi 'public_profile,email' thành 'public_profile'
 }
 // Hàm lưu Token và chuyển hướng
-const saveSessionAndRedirect = (data) => {
+const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
   const userData = data.user || data
 
   if (token) localStorage.setItem('token', token)
   localStorage.setItem('user', JSON.stringify(userData))
 
-  alert('Đăng nhập thành công!')
+  try {
+    await mergeGuestCartIntoBackend(userData.id, axios)
+  } catch (error) {
+    console.error('Không thể đồng bộ giỏ khách:', error)
+  }
+
+  notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
-  router.push('/')
+
+  const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+  router.push(redirectPath)
 }
 </script>
 

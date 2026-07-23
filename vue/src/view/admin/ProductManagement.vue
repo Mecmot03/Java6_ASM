@@ -12,17 +12,6 @@
 
             </h2>
 
-            <!-- <button
-    class="btn btn-success"
-    @click="newProduct"
->
-
-                <i class="bi bi-plus-circle me-2"></i>
-
-                Thêm sản phẩm
-
-            </button> -->
-
         </div>
 
 
@@ -91,12 +80,6 @@
 
         </div>
 
-
-        <!-- <ProductTable
-            :products="products"
-            @delete="deleteProduct"
-        /> -->
-
         <ProductTable
     :products="products"
     @edit="editProduct"
@@ -112,6 +95,8 @@
 <script setup>
 
 import { ref, onMounted } from 'vue'
+import { confirmDialog } from '../../utils/dialog'
+import { notify } from '../../utils/notify'
 
 import ProductService from '../../services/ProductService'
 
@@ -131,7 +116,7 @@ const loadProducts = async () => {
 
 }
 
-const searchProduct = async () => {
+const searchProduct = () => {
 
     if (keyword.value.trim() === '') {
 
@@ -154,11 +139,8 @@ const searchProduct = async () => {
 }
 
 const deleteProduct = async (id) => {
-
-    if (!confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-
+    if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này?"))) {
         return
-
     }
 
     try {
@@ -171,19 +153,11 @@ const deleteProduct = async (id) => {
 
     catch(error){
 
-        alert("Xóa thất bại!")
+        notify(error.response?.data?.message || "Xóa thất bại!", 'danger')
 
     }
 
 }
-
-
-const newProduct = () => {
-
-    selectedProduct.value = {}
-
-}
-
 const editProduct = (product) => {
 
     selectedProduct.value = { ...product }
@@ -218,7 +192,7 @@ const saveProduct = async(product)=>{
 
     catch(error){
 
-        alert("Lưu sản phẩm thất bại!")
+        notify(error.response?.data?.message || "Lưu sản phẩm thất bại!", 'danger')
 
     }
 

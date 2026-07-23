@@ -48,8 +48,7 @@ public class SecurityConfig {
                     "/api/products/**",
                     "/api/categories/**",
                     "/api/cart/**",  
-                    "/api/orders/**",
-                    "/api/auth/**"
+                    "/api/orders/**"
                 ).permitAll()
 
                 // Phân quyền Admin
@@ -72,7 +71,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
+        configuration.setAllowedOriginPatterns(List.of(
+            "http://localhost:*",
+            "http://127.0.0.1:*"
+        ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));

@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { getAuthConfig, requestWithOptionalAuth } from './authRequest'
 
-const API_URL = 'http://localhost:8080/api/categories'
+const API_URL = '/api/categories'
 
 export default {
   // Lấy danh sách tất cả danh mục
@@ -28,7 +29,10 @@ export default {
   // Thêm mới danh mục
   async createCategory(category) {
     try {
-      const response = await axios.post(API_URL, category)
+      const response = await requestWithOptionalAuth(
+        () => axios.post(API_URL, category),
+        () => axios.post(API_URL, category, getAuthConfig())
+      )
       return response.data
     } catch (error) {
       console.error('Lỗi thêm danh mục:', error)
@@ -39,7 +43,10 @@ export default {
   // Cập nhật danh mục
   async updateCategory(id, category) {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, category)
+      const response = await requestWithOptionalAuth(
+        () => axios.put(`${API_URL}/${id}`, category),
+        () => axios.put(`${API_URL}/${id}`, category, getAuthConfig())
+      )
       return response.data
     } catch (error) {
       console.error(`Lỗi cập nhật danh mục ID ${id}:`, error)
@@ -50,7 +57,10 @@ export default {
   // Xóa danh mục
   async deleteCategory(id) {
     try {
-      const response = await axios.delete(`${API_URL}/${id}`)
+      const response = await requestWithOptionalAuth(
+        () => axios.delete(`${API_URL}/${id}`),
+        () => axios.delete(`${API_URL}/${id}`, getAuthConfig())
+      )
       return response.data
     } catch (error) {
       console.error(`Lỗi xóa danh mục ID ${id}:`, error)

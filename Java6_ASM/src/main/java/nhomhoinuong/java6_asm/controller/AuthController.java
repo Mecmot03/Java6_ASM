@@ -8,6 +8,8 @@ import nhomhoinuong.java6_asm.dto.LoginRequest;
 import nhomhoinuong.java6_asm.dto.LoginResponse;
 import nhomhoinuong.java6_asm.dto.RegisterRequest;
 import nhomhoinuong.java6_asm.dto.SocialLoginRequest;
+import nhomhoinuong.java6_asm.dto.UserRequest;
+import nhomhoinuong.java6_asm.dto.UserResponse;
 import nhomhoinuong.java6_asm.service.AuthenticationService;
 
 @RestController
@@ -30,6 +32,15 @@ public class AuthController {
     @PostMapping("/social-login")
     public LoginResponse socialLogin(@RequestBody SocialLoginRequest request) {
         return authenticationService.socialLogin(request);
+    }
+
+    @PutMapping("/me")
+    public UserResponse updateCurrentUser(
+            @RequestBody UserRequest request,
+            org.springframework.security.core.Authentication authentication) {
+
+        User currentUser = (User) authentication.getPrincipal();
+        return authenticationService.updateCurrentUser(currentUser.getId(), request);
     }
 
 }

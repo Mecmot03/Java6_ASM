@@ -1,6 +1,5 @@
 package nhomhoinuong.java6_asm.security;
 
-import java.security.Key;
 import java.util.Date;
 
 import javax.crypto.SecretKey;
@@ -19,7 +18,7 @@ public class JwtService {
     private static final String SECRET =
             "Java6ASMJWTSecretKeyJava6ASMJWTSecretKey";
 
-    private final Key key =
+    private final SecretKey key =
             Keys.hmacShaKeyFor(SECRET.getBytes());
 
     private static final long EXPIRATION =
@@ -32,7 +31,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                .signWith((SecretKey) key, SignatureAlgorithm.HS256)
+            .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
 
     }
@@ -65,7 +64,7 @@ public class JwtService {
     private Claims extractClaims(String token) {
 
         return Jwts.parser()
-                .verifyWith((SecretKey) key)
+            .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
