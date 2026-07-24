@@ -13,6 +13,8 @@ import CheckoutView from '../view/CheckoutView.vue'
 import OrderView from '../view/OrderView.vue'
 import OrderHistory from '../view/OrderHistory.vue'
 import UserInfo from '../view/UserInfo.vue'
+import Layout from '../view/Layout.vue'
+import AdminLayout from '../view/admin/AdminLayout.vue'
 
 // =========================
 // Admin Views
@@ -23,84 +25,98 @@ import CategoryManagement from '../view/admin/CategoryManagement.vue'
 
 const routes = [
     // =========================
-    // User
+    // Public layout + pages
     // =========================
     {
         path: '/',
-        name: 'Home',
-        component: Home
-    },
-    {
-        path: '/cart',
-        name: 'Cart',
-        component: CartView
-    },
-    {
-        path: '/checkout',
-        name: 'Checkout',
-        component: CheckoutView
-    },
-    {
-        path: '/orders',
-        name: 'Orders',
-        component: OrderView,
-        meta: { requiresAdmin: true }
-    },
-    {
-        path: '/order-history',
-        name: 'OrderHistory',
-        component: OrderHistory,
-        meta: { requiresAuth: true }
-    },
-    {
-        path: '/user-info',
-        name: 'UserInfo',
-        component: UserInfo,
-        meta: { requiresAuth: true }
-    },
-    {
-        path: '/product/:id',
-        name: 'ProductDetail',
-        component: ProductDetail,
-        props: true
-    },
-    {
-        path: '/login',
-        name: 'Login',
-        component: Login
-    },
-    {
-        path: '/register',
-        name: 'Register',
-        component: Register
-    },
-    {
-        path: '/flash-sale',
-        name: 'FlashSale',
-        component: FlashSale,
-        alias: '/flashsale'
+        component: Layout,
+        children: [
+            {
+                path: '',
+                name: 'Home',
+                component: Home
+            },
+            {
+                path: 'cart',
+                name: 'Cart',
+                component: CartView
+            },
+            {
+                path: 'checkout',
+                name: 'Checkout',
+                component: CheckoutView
+            },
+            {
+                path: 'orders',
+                name: 'Orders',
+                component: OrderView,
+                meta: { requiresAdmin: true }
+            },
+            {
+                path: 'order-history',
+                name: 'OrderHistory',
+                component: OrderHistory,
+                meta: { requiresAuth: true }
+            },
+            {
+                path: 'user-info',
+                name: 'UserInfo',
+                component: UserInfo,
+                meta: { requiresAuth: true }
+            },
+            {
+                path: 'product/:id',
+                name: 'ProductDetail',
+                component: ProductDetail,
+                props: true
+            },
+            {
+                path: 'login',
+                name: 'Login',
+                component: Login
+            },
+            {
+                path: 'register',
+                name: 'Register',
+                component: Register
+            },
+            {
+                path: 'flash-sale',
+                name: 'FlashSale',
+                component: FlashSale,
+                alias: '/flashsale'
+            }
+        ]
     },
 
     // =========================
-    // Admin
+    // Admin layout + pages
     // =========================
     {
-        path: '/admin/users',
-        name: 'UserManagement',
-        component: UserManagement,
-        meta: { requiresAdmin: true }
-    },
-    {
-        path: '/admin/products',
-        name: 'ProductManagement',
-        component: ProductManagement,
-        meta: { requiresAdmin: true }
-    },
-    {
-        path: '/admin/categories',
-        name: 'CategoryManagement',
-        component: CategoryManagement,
-        meta: { requiresAdmin: true }
+        path: '/admin',
+        component: AdminLayout,
+        meta: { requiresAdmin: true },
+        children: [
+            {
+                path: '',
+                redirect: '/admin/users'
+            },
+            {
+                path: 'users',
+                name: 'UserManagement',
+                component: UserManagement
+            },
+            {
+                path: 'products',
+                name: 'ProductManagement',
+                component: ProductManagement
+            },
+            {
+                path: 'categories',
+                name: 'CategoryManagement',
+                component: CategoryManagement
+            }
+        ]
     }
 ]
 

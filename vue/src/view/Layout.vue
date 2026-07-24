@@ -146,7 +146,7 @@
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow-1 my-4">
-      <slot />
+      <router-view />
     </main>
 
     <div

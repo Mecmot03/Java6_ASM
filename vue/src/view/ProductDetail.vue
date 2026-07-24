@@ -253,6 +253,7 @@ import axios from "axios"
 import { useRoute, useRouter } from "vue-router"
 import { addGuestCartItem } from '../utils/cart'
 import { notify } from '../utils/notify'
+import { confirmDialog } from '../utils/dialog'
 
 const route = useRoute()
 const router = useRouter()
@@ -1053,23 +1054,59 @@ const decrease = () => {
    Cart
 ================================ */
 
-const addToCart = () => {
-    const userStorage = localStorage.getItem('user')
+const addToCart = async () => {
+    try {
+        const userStorage = localStorage.getItem('user')
 
-    if (!userStorage) {
-        addGuestCartItem(product.value, buyQuantity.value)
+        // Chưa đăng nhập -> lưu vào giỏ hàng tạm
+        if (!userStorage) {
+            addGuestCartItem(product.value, buyQuantity.value)
+            window.dispatchEvent(new CustomEvent('cart-updated'))
+
+            notify(
+                `Đã thêm ${buyQuantity.value} sản phẩm vào giỏ hàng tạm.`,
+                'success'
+            )
+
+            if (
+                await confirmDialog(
+                    'Đã thêm sản phẩm vào giỏ hàng tạm. Bạn có muốn xem giỏ hàng ngay không?'
+                )
+            ) {
+                router.push('/cart')
+            }
+
+            return
+        }
+
+        // Đã đăng nhập
+        const userId = JSON.parse(userStorage).id
+        const productId = product.value.id || product.value.Id
+
+        await axios.post(`/api/cart/add?userId=${userId}`, {
+            productId: productId,
+            quantity: buyQuantity.value
+        })
+
+        // Cập nhật badge giỏ hàng
         window.dispatchEvent(new CustomEvent('cart-updated'))
-        notify(`Đã thêm ${buyQuantity.value} sản phẩm vào giỏ hàng tạm.`, 'success')
-        return
+
+        if (
+            await confirmDialog(
+                `Đã thêm ${buyQuantity.value} sản phẩm vào giỏ hàng! Bạn có muốn đến trang Giỏ hàng ngay không?`
+            )
+        ) {
+            router.push('/cart')
+        }
+    } catch (error) {
+        console.error("Lỗi thêm vào giỏ hàng:", error)
+
+        notify(
+            error.response?.data?.message ||
+            "Không thể thêm vào giỏ hàng. Vui lòng kiểm tra lại Backend!",
+            "danger"
+        )
     }
-
-    notify(
-        "Đã thêm " +
-        buyQuantity.value +
-        " sản phẩm vào giỏ hàng.",
-        'success'
-    )
-
 }
 
 /* ===============================
