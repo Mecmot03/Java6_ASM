@@ -1,7 +1,6 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -22,7 +21,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public Optional<Authority> findByUserId(Long userId) {
+    public List<Authority> findByUserId(Long userId) {
         return authorityDAO.findByUser_Id(userId);
     }
 

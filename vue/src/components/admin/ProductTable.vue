@@ -1,12 +1,14 @@
 <template>
 
     <div class="card shadow-sm border-0">
-
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Danh sách sản phẩm</h5>
+        </div>
         <div class="card-body p-0">
 
             <table class="table table-hover align-middle mb-0">
 
-                <thead class="table-dark">
+                <thead class="table-responsive">
 
                     <tr>
 
@@ -38,13 +40,7 @@
 
                 <tbody>
 
-                    <tr
-
-                        v-for="product in products"
-
-                        :key="product.id"
-
-                    >
+                    <tr v-for="product in products" :key="product.id">
 
                         <td>
 
@@ -54,13 +50,7 @@
 
                         <td>
 
-                            <img
-
-                                :src="getImage(product.image)"
-
-                                class="product-image"
-
-                            >
+                            <img :src="getImage(product.image)" class="product-image">
 
                         </td>
 
@@ -100,25 +90,13 @@
 
                         <td>
 
-                            <span
-
-                                v-if="product.status"
-
-                                class="badge bg-success"
-
-                            >
+                            <span v-if="product.status" class="badge bg-success">
 
                                 Đang bán
 
                             </span>
 
-                            <span
-
-                                v-else
-
-                                class="badge bg-danger"
-
-                            >
+                            <span v-else class="badge bg-danger">
 
                                 Ngừng bán
 
@@ -130,13 +108,7 @@
 
                             <!-- Sửa -->
 
-                            <button
-
-                                class="btn btn-warning btn-sm me-2"
-
-                                @click="$emit('edit', product)"
-
-                            >
+                            <button class="btn btn-warning btn-sm me-2" @click="$emit('edit', product)">
 
                                 <i class="bi bi-pencil-square"></i>
 
@@ -144,13 +116,7 @@
 
                             <!-- Xóa -->
 
-                            <button
-
-                                class="btn btn-danger btn-sm"
-
-                                @click="openDeleteModal(product.id)"
-
-                            >
+                            <button class="btn btn-danger btn-sm" @click="openDeleteModal(product.id)">
 
                                 <i class="bi bi-trash"></i>
 
@@ -160,19 +126,9 @@
 
                     </tr>
 
-                    <tr
+                    <tr v-if="products.length == 0">
 
-                        v-if="products.length==0"
-
-                    >
-
-                        <td
-
-                            colspan="9"
-
-                            class="text-center text-muted py-4"
-
-                        >
+                        <td colspan="9" class="text-center text-muted py-4">
 
                             Không có dữ liệu
 
@@ -190,15 +146,7 @@
 
     <!-- Modal -->
 
-    <DeleteModal
-
-        :show="showDelete"
-
-        @confirm="confirmDelete"
-
-        @close="closeDelete"
-
-    />
+    <DeleteModal :show="showDelete" @confirm="confirmDelete" @close="closeDelete" />
 
 </template>
 
@@ -210,11 +158,11 @@ import DeleteModal from "./DeleteModal.vue"
 
 defineProps({
 
-    products:{
+    products: {
 
-        type:Array,
+        type: Array,
 
-        default:()=>[]
+        default: () => []
 
     }
 
@@ -232,29 +180,29 @@ const showDelete = ref(false)
 
 const deleteId = ref(null)
 
-const openDeleteModal=(id)=>{
+const openDeleteModal = (id) => {
 
-    deleteId.value=id
+    deleteId.value = id
 
-    showDelete.value=true
-
-}
-
-const confirmDelete=()=>{
-
-    emit("delete",deleteId.value)
-
-    showDelete.value=false
+    showDelete.value = true
 
 }
 
-const closeDelete=()=>{
+const confirmDelete = () => {
 
-    showDelete.value=false
+    emit("delete", deleteId.value)
+
+    showDelete.value = false
 
 }
 
-const formatPrice=(price)=>{
+const closeDelete = () => {
+
+    showDelete.value = false
+
+}
+
+const formatPrice = (price) => {
 
     return new Intl.NumberFormat(
 
@@ -262,9 +210,9 @@ const formatPrice=(price)=>{
 
         {
 
-            style:"currency",
+            style: "currency",
 
-            currency:"VND"
+            currency: "VND"
 
         }
 
@@ -272,56 +220,54 @@ const formatPrice=(price)=>{
 
 }
 
-const getImage=(image)=>{
+const getImage = (image) => {
 
-    if(!image){
+    if (!image) {
 
         return "https://via.placeholder.com/80"
 
     }
 
-    return "/images/"+image
+    return "/images/" + image
 
 }
 
 </script>
 
 <style scoped>
+.product-image {
 
-.product-image{
+    width: 70px;
 
-    width:70px;
+    height: 70px;
 
-    height:70px;
-
-    object-fit:contain;
-
-}
-
-.table td{
-
-    vertical-align:middle;
+    object-fit: contain;
 
 }
 
-.table tbody tr:hover{
+.table td {
 
-    background:#f8f9fa;
-
-}
-
-.card{
-
-    border-radius:12px;
-
-    overflow:hidden;
+    vertical-align: middle;
 
 }
 
-.btn{
+.table tbody tr:hover {
 
-    min-width:40px;
+    background: #f8f9fa;
 
 }
 
+.card {
+
+    border-radius: 12px;
+
+    overflow: hidden;
+
+}
+
+.btn {
+
+    min-width: 40px;
+
+}
 </style>

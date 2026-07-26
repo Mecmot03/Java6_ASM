@@ -1,5 +1,6 @@
 package nhomhoinuong.java6_asm.dto;
 
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,5 +27,7 @@ public class UserResponse {
     private Boolean enabled;
 
     private String role;
+
+    private List<String> roles;
 
 }

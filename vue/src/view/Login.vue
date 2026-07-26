@@ -79,11 +79,9 @@
           </div>
 
           <div class="d-flex gap-2">
-            <!-- NÚT GOOGLE -->
             <button type="button" class="btn btn-outline-danger flex-fill btn-sm rounded-pill py-2" @click="loginWithGoogle">
               <i class="bi bi-google me-1"></i> Google
             </button>
-            <!-- NÚT FACEBOOK -->
             <button type="button" class="btn btn-outline-primary flex-fill btn-sm rounded-pill py-2" @click="loginWithFacebook">
               <i class="bi bi-facebook me-1"></i> Facebook
             </button>
@@ -100,7 +98,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
-import { googleOneTap, googleTokenLogin } from 'vue3-google-login'
+import { googleTokenLogin } from 'vue3-google-login'
 import { notify } from '../utils/notify'
 import { mergeGuestCartIntoBackend } from '../utils/cart'
 
@@ -114,7 +112,6 @@ const loginForm = ref({
   remember: false
 })
 
-// Khởi tạo Facebook SDK khi component mounted
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
@@ -128,11 +125,11 @@ onMounted(() => {
      var js, fjs = d.getElementsByTagName(s)[0];
      if (d.getElementById(id)) return;
      js = d.createElement(s); js.id = id;
-     js.src = "https://connect.facebook.net/vi_VN/sdk.js"; // Đã đổi sang tiếng Việt
+     js.src = "https://connect.facebook.net/vi_VN/sdk.js";
      fjs.parentNode.insertBefore(js, fjs);
    }(document, 'script', 'facebook-jssdk'));
 })
-// 1. ĐĂNG NHẬP THƯỜNG
+
 const handleLogin = async () => {
   if (!loginForm.value.email.trim() || !loginForm.value.password.trim()) {
     notify('Vui lòng nhập đầy đủ email và mật khẩu.', 'warning')
@@ -144,23 +141,29 @@ const handleLogin = async () => {
       email: loginForm.value.email,
       password: loginForm.value.password
     })
-    await saveSessionAndRedirect(response.data)
+
+    // 🔴 CHỈ LƯU VÀO STORAGE KHI BACKEND TRẢ VỀ TOKEN THẬT
+    if (response.data && response.data.token) {
+      await saveSessionAndRedirect(response.data)
+    } else {
+      notify('Đăng nhập thất bại: Không nhận được token từ server!', 'danger')
+    }
+
   } catch (error) {
-    notify(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'danger')
+    // Nếu sai mật khẩu hoặc lỗi server, KHÔNG ĐƯỢC lưu gì vào localStorage
+    const msg = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!'
+    notify(msg, 'danger')
   }
 }
 
-// 2. ĐĂNG NHẬP GOOGLE
 const loginWithGoogle = () => {
   googleTokenLogin({
-    clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com' // Thay Client ID Google của Nhi vào đây
+    clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com'
   }).then(async (response) => {
     try {
-      // Gọi API lấy thông tin Google User thông qua Access Token
       const res = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${response.access_token}`)
       const googleUser = res.data
 
-      // Gửi thông tin về Spring Boot để tạo account & cấp JWT
       const backendRes = await axios.post('/api/auth/social-login', {
         email: googleUser.email,
         fullName: googleUser.name,
@@ -174,42 +177,39 @@ const loginWithGoogle = () => {
   })
 }
 
-// 3. ĐĂNG NHẬP FACEBOOK
 const loginWithFacebook = () => {
   window.FB.login((response) => {
     if (response.authResponse) {
       const accessToken = response.authResponse.accessToken;
-      
-      // Gọi Graph API của Facebook lấy name và picture
       axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
         .then(async (res) => {
           const fbUser = res.data;
-          
           const backendRes = await axios.post('/api/auth/social-login', {
-            email: `${fbUser.id}@facebook.com`, // Tự sinh email theo ID Facebook nếu không xin quyền email
+            email: `${fbUser.id}@facebook.com`,
             fullName: fbUser.name,
             avatar: fbUser.picture?.data?.url,
             provider: 'FACEBOOK'
           });
-
           await saveSessionAndRedirect(backendRes.data);
         })
         .catch(() => notify("Không thể lấy thông tin tài khoản Facebook!", 'danger'));
     } else {
       notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
-  }, { scope: 'public_profile' }); // 👈 Sửa dòng này: đổi 'public_profile,email' thành 'public_profile'
+  }, { scope: 'public_profile' });
 }
-// Hàm lưu Token và chuyển hướng
+
 const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
-  const userData = data.user || data
+  const userObj = data.user || data
 
   if (token) localStorage.setItem('token', token)
-  localStorage.setItem('user', JSON.stringify(userData))
+  localStorage.setItem('user', JSON.stringify(userObj))
 
   try {
-    await mergeGuestCartIntoBackend(userData.id, axios)
+    if (userObj.id) {
+      await mergeGuestCartIntoBackend(userObj.id, axios)
+    }
   } catch (error) {
     console.error('Không thể đồng bộ giỏ khách:', error)
   }
@@ -217,8 +217,15 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-  const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-  router.push(redirectPath)
+  // ƯU TIÊN KIỂM TRA ROLE ADMIN TRƯỚC VÀ ĐƯA VÀO /admin/users
+  const userString = JSON.stringify(userObj).toUpperCase()
+  
+  if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
+    router.push('/admin/users')
+  } else {
+    const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    router.push(redirectPath)
+  }
 }
 </script>
 
