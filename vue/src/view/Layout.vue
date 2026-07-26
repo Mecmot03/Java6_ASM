@@ -29,7 +29,7 @@
               <span>Đăng nhập</span>
             </router-link>
 
-            <!-- 2. ĐÃ ĐĂNG NHẬP: HIỂN THỊ TÊN USER -->
+            <!-- 2. ĐÃ ĐĂNG NHẬP: HIỂN THỊ TÊN USER HOẶC ADMIN / STAFF -->
             <button
               v-else
               type="button"
@@ -37,38 +37,30 @@
               :title="isAdmin ? 'Vào trang quản trị' : 'Thông tin tài khoản'"
               @click="handleUserArea"
             >
-              <i class="bi bi-person-circle fs-5"></i>
-              <span class="text-truncate" style="max-width: 100px;"
-                :title="currentUser.fullName || currentUser.username">
-                {{ currentUser.fullName || currentUser.username }}
+              <i class="bi bi-person-circle fs-5" :class="{ 'text-danger': isAdmin, 'text-primary': isStaff && !isAdmin }"></i>
+              <span class="text-truncate" style="max-width: 110px;"
+                :title="currentUser.fullName || currentUser.email || currentUser.username">
+                {{ currentUser.fullName || currentUser.email || currentUser.username }}
               </span>
             </button>
+
+            <!-- 3. LỊCH SỬ ĐẶT HÀNG (YÊU CẦU CÓ ROLE_USER) -->
             <router-link
-              v-if="currentUser && !isAdmin"
+              v-if="currentUser && isUser"
               to="/order-history?status=PENDING"
-              class="nav-item-link nav-history-link ms-1"
+              class="nav-item-link nav-history-link"
               title="Lịch sử đặt hàng"
             >
               <i class="bi bi-clock-history"></i>
-              <span>Lịch sử đặt hàng</span>
+              <span>Lịch sử</span>
             </router-link>
 
-            <!-- 3. ICON GIỎ HÀNG -->
-            <router-link to="/cart" class="nav-item-link position-relative">
-              <i class="bi bi-cart3"></i>
-              <span>Giỏ hàng</span>
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                v-if="cartCount > 0">
-                {{ cartCount }}
-              </span>
-            </router-link>
-
-            <!-- 4. DROPDOWN THEO DÕI ĐƠN HÀNG -->
-            <div v-if="isAdmin" class="dropdown">
+            <!-- 4. DROPDOWN THEO DÕI ĐƠN HÀNG (YÊU CẦU CÓ ROLE_STAFF) -->
+            <div v-if="currentUser && isStaff" class="dropdown">
               <button class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
                 type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-box-seam"></i>
-                <span>Đơn hàng</span>
+                <i class="bi bi-box-seam text-danger"></i>
+                <span class="fw-bold text-danger">Đơn hàng</span>
               </button>
               <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2"
                 style="min-width: 200px;">
@@ -101,7 +93,28 @@
               </ul>
             </div>
 
-            <!-- 5. NÚT ĐĂNG XUẤT -->
+            <!-- 5. NÚT SẢN PHẨM YÊU THÍCH -->
+            <router-link
+              v-if="currentUser"
+              to="/favorites"
+              class="nav-item-link"
+              title="Sản phẩm yêu thích"
+            >
+              <i class="bi bi-heart-fill text-danger"></i>
+              <span>Yêu thích</span>
+            </router-link>
+
+            <!-- 6. ICON GIỎ HÀNG -->
+            <router-link to="/cart" class="nav-item-link position-relative">
+              <i class="bi bi-cart3"></i>
+              <span>Giỏ hàng</span>
+              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                v-if="cartCount > 0">
+                {{ cartCount }}
+              </span>
+            </router-link>
+
+            <!-- 7. NÚT ĐĂNG XUẤT -->
             <button v-if="currentUser" class="btn btn-link nav-item-link text-danger text-decoration-none p-0 border-0"
               @click="handleLogout" title="Đăng xuất">
               <i class="bi bi-box-arrow-right"></i>
@@ -149,6 +162,7 @@
       <router-view />
     </main>
 
+    <!-- TOAST THÔNG BÁO -->
     <div
       v-if="toastVisible"
       class="app-toast position-fixed end-0 top-0 m-4 shadow-lg rounded-4 px-4 py-3"
@@ -166,6 +180,7 @@
       </div>
     </div>
 
+    <!-- DIALOG XÁC NHẬN -->
     <div
       v-if="confirmVisible"
       class="app-confirm-backdrop position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
@@ -193,7 +208,7 @@
       </div>
     </div>
 
-    <!-- FOOTER ĐẦY ĐỦ -->
+    <!-- FOOTER -->
     <footer class="tgdd-footer bg-white border-top mt-5 pt-4 pb-3 w-100">
       <div class="container">
         <div class="row g-4">
@@ -254,7 +269,6 @@
 
         </div>
 
-        <!-- BẢN QUYỀN DƯỚI CÙNG -->
         <div class="border-top mt-4 pt-3 text-center text-muted fs-7">
           <p class="mb-0">© 2026 thegioidientu. All rights reserved.</p>
         </div>
@@ -290,7 +304,6 @@ const isHeaderHidden = ref(false)
 let lastScrollPosition = 0
 let ticking = false
 
-// Danh sách link cho Footer
 const companyLinks = ref([
   { text: 'Giới thiệu công ty (MWG.vn)', url: '#' },
   { text: 'Tuyển dụng', url: '#' },
@@ -306,9 +319,32 @@ const policyLinks = ref([
 ])
 
 const isHomePage = computed(() => route.path === '/')
+
+// 🟢 CHUẨN HÓA MẢNG ROLES ĐỂ QUÉT CHÍNH XÁC MỌI DẠNG DỮ LIỆU TỪ BACKEND
+const userRoles = computed(() => {
+  if (!currentUser.value) return []
+
+  if (Array.isArray(currentUser.value.roles)) {
+    return currentUser.value.roles.map(r => String(r).toUpperCase())
+  }
+
+  if (currentUser.value.role) {
+    return [String(currentUser.value.role).toUpperCase()]
+  }
+
+  return [JSON.stringify(currentUser.value).toUpperCase()]
+})
+
 const isAdmin = computed(() => {
-  const role = currentUser.value?.role
-  return role === 'ROLE_ADMIN' || role === 'ADMIN'
+  return userRoles.value.some(r => r.includes('ADMIN') || r.includes('ROLE_ADMIN'))
+})
+
+const isStaff = computed(() => {
+  return userRoles.value.some(r => r.includes('STAFF') || r.includes('ROLE_STAFF'))
+})
+
+const isUser = computed(() => {
+  return userRoles.value.some(r => r.includes('USER') || r.includes('ROLE_USER'))
 })
 
 const toastClasses = computed(() => {
@@ -318,7 +354,6 @@ const toastClasses = computed(() => {
     danger: 'bg-danger text-white',
     info: 'bg-dark text-white',
   }
-
   return map[toastType.value] || map.info
 })
 
@@ -329,13 +364,11 @@ const toastIcon = computed(() => {
     danger: 'bi bi-x-circle-fill',
     info: 'bi bi-info-circle-fill',
   }
-
   return map[toastType.value] || map.info
 })
 
 const hideToast = () => {
   toastVisible.value = false
-
   if (toastTimer) {
     clearTimeout(toastTimer)
     toastTimer = null
@@ -347,9 +380,7 @@ const showToast = (message, type = 'info') => {
   toastType.value = type
   toastVisible.value = true
 
-  if (toastTimer) {
-    clearTimeout(toastTimer)
-  }
+  if (toastTimer) clearTimeout(toastTimer)
 
   toastTimer = setTimeout(() => {
     toastVisible.value = false
@@ -369,7 +400,6 @@ const closeConfirm = (confirmed) => {
   if (confirmId.value != null) {
     resolveConfirmDialog(confirmId.value, confirmed)
   }
-
   confirmVisible.value = false
   confirmId.value = null
   confirmTitle.value = ''
@@ -386,10 +416,9 @@ const goHome = () => {
 
 const handleUserArea = () => {
   if (isAdmin.value) {
-    router.push('/admin/users')
+    router.push('/admin/users') 
     return
   }
-
   router.push('/user-info')
 }
 
@@ -404,17 +433,12 @@ const iconMap = {
   "Cáp sạc": "bi bi-usb-plug"
 }
 
-const isAuthError = (error) => {
-  const status = error?.response?.status
-  return status === 401 || status === 403
-}
-
-// Kiểm tra thông tin User đã đăng nhập
 const checkUserLogin = () => {
   const userStorage = localStorage.getItem('user')
   if (userStorage) {
     try {
-      currentUser.value = JSON.parse(userStorage)
+      const parsed = JSON.parse(userStorage)
+      currentUser.value = parsed.user || parsed
     } catch (e) {
       currentUser.value = null
     }
@@ -423,28 +447,23 @@ const checkUserLogin = () => {
   }
 }
 
-// Xử lý Đăng xuất
 const handleLogout = () => {
   confirmDialog("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?").then((confirmed) => {
-    if (!confirmed) {
-      return
-    }
+    if (!confirmed) return
 
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     currentUser.value = null
-    fetchCartCount() // Reset giỏ hàng về 0 khi đăng xuất
+    fetchCartCount()
     showToast("Đã đăng xuất thành công!", 'success')
     router.push('/login')
   })
 }
 
-// Xử lý sự kiện cuộn mượt
 const handleScroll = () => {
   if (!ticking) {
     window.requestAnimationFrame(() => {
       const currentScroll = window.scrollY || document.documentElement.scrollTop
-
       if (currentScroll <= 80) {
         isHeaderHidden.value = false
       } else {
@@ -471,13 +490,9 @@ const fetchCategories = async () => {
     }))
   } catch (error) {
     menuItems.value = []
-    if (!isAuthError(error)) {
-      console.error("Lỗi khi tải danh mục:", error)
-    }
   }
 }
 
-// Lấy số lượng giỏ hàng thực tế từ API (Chỉ gọi khi ĐÃ ĐĂNG NHẬP)
 const fetchCartCount = async () => {
   try {
     const userStorage = localStorage.getItem('user')
@@ -486,7 +501,8 @@ const fetchCartCount = async () => {
       return
     }
 
-    const userId = JSON.parse(userStorage)?.id
+    const parsed = JSON.parse(userStorage)
+    const userId = parsed?.id || parsed?.user?.id
     if (!userId) {
       cartCount.value = 0
       return
@@ -496,9 +512,6 @@ const fetchCartCount = async () => {
     cartCount.value = response.data.count || 0
 
   } catch (error) {
-    if (!isAuthError(error)) {
-      console.error("Lỗi khi lấy số lượng giỏ hàng:", error)
-    }
     cartCount.value = 0
   }
 }
@@ -521,28 +534,17 @@ const handleSearch = () => {
   }
 }
 
-// Lắng nghe Event từ các Component khác
-const handleCartUpdated = () => {
-  fetchCartCount()
-}
-
+const handleCartUpdated = () => fetchCartCount()
 const handleUserLoggedIn = () => {
   checkUserLogin()
   fetchCartCount()
 }
-
-const handleUserUpdated = () => {
-  checkUserLogin()
-}
-
+const handleUserUpdated = () => checkUserLogin()
 const handleAppNotify = (event) => {
   const detail = event?.detail || {}
   showToast(detail.message || 'Đã cập nhật', detail.type || 'info')
 }
-
-const handleAppConfirm = (event) => {
-  showConfirm(event)
-}
+const handleAppConfirm = (event) => showConfirm(event)
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
@@ -565,9 +567,7 @@ onUnmounted(() => {
   window.removeEventListener('app-notify', handleAppNotify)
   window.removeEventListener('app-confirm', handleAppConfirm)
 
-  if (toastTimer) {
-    clearTimeout(toastTimer)
-  }
+  if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
 
@@ -686,10 +686,6 @@ button.nav-item-link:hover {
   padding: 0;
 }
 
-.cursor-default {
-  cursor: default;
-}
-
 .dropdown-toggle::after {
   display: none !important;
 }
@@ -756,13 +752,8 @@ button.nav-item-link:hover {
   }
 }
 
-.fs-7 {
-  font-size: 12px;
-}
-
-.fs-8 {
-  font-size: 11px;
-}
+.fs-7 { font-size: 12px; }
+.fs-8 { font-size: 11px; }
 
 .dropdown-item:active {
   background-color: #ffd400;
@@ -770,23 +761,10 @@ button.nav-item-link:hover {
 }
 
 /* CSS CHO FOOTER */
-.footer-links {
-  font-size: 13px;
-}
-
-.footer-links li {
-  margin-bottom: 8px;
-}
-
-.footer-links a {
-  color: #4a4a4a;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.footer-links a:hover {
-  color: #007bff;
-}
+.footer-links { font-size: 13px; }
+.footer-links li { margin-bottom: 8px; }
+.footer-links a { color: #4a4a4a; text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: #007bff; }
 
 .social-icon {
   display: inline-flex;
@@ -799,15 +777,7 @@ button.nav-item-link:hover {
   text-decoration: none;
 }
 
-.social-icon.facebook {
-  background-color: #1877f2;
-}
-
-.social-icon.youtube {
-  background-color: #ff0000;
-}
-
-.social-icon.tiktok {
-  background-color: #000000;
-}
+.social-icon.facebook { background-color: #1877f2; }
+.social-icon.youtube { background-color: #ff0000; }
+.social-icon.tiktok { background-color: #000000; }
 </style>

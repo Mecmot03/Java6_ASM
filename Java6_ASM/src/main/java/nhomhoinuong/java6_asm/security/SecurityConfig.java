@@ -27,38 +27,32 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-            // 1. Tắt CSRF
             .csrf(csrf -> csrf.disable())
-
-            // 2. Tích hợp CorsConfigurationSource
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-            // 3. Stateless Session
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-            // 4. Phân quyền
             .authorizeHttpRequests(auth -> auth
-                // Cho phép tất cả request Pre-flight OPTIONS đi qua
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Mở quyền truy cập tất cả API giỏ hàng và API công khai
+                // API Công khai (Đăng nhập, xem sản phẩm, giỏ hàng)
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/products/**",
                     "/api/categories/**",
                     "/api/cart/**",  
-                    "/api/orders/**"
+                    "/api/comments/**",
+                    "/api/favorites/**"
                 ).permitAll()
 
-                // Phân quyền Admin
-                .requestMatchers("/api/admin/**", "/api/users/**").hasRole("ADMIN")
+                // 🟢 API Quản lý Đơn hàng: Cả ADMIN và STAFF đều được vào xác nhận/duyệt đơn
+                .requestMatchers("/api/orders/admin/**", "/api/staff/**").hasAnyRole("ADMIN", "STAFF")
 
-                // Tất cả request khác bắt buộc login
+                // 🔴 API Quản trị hệ thống (User, Sản phẩm, Danh mục...): BẮT BUỘC CHỈ ADMIN
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // Các API còn lại (Đặt hàng của Khách) yêu cầu đăng nhập
                 .anyRequest().authenticated()
             )
-
-            // 5. Thêm JWT Filter
             .addFilterBefore(
                 jwtFilter,
                 UsernamePasswordAuthenticationFilter.class
@@ -75,7 +69,7 @@ public class SecurityConfig {
             "http://localhost:*",
             "http://127.0.0.1:*"
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);

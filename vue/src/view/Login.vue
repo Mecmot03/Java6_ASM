@@ -16,17 +16,17 @@
       <div class="auth-body px-4 px-sm-5 pb-5">
         <form @submit.prevent="handleLogin" novalidate>
           
-          <!-- Email -->
+          <!-- Email đăng nhập -->
           <div class="mb-3">
-            <label class="form-label fw-bold text-dark small">Email</label>
+            <label class="form-label fw-bold text-dark small">Email đăng nhập</label>
             <div class="input-group">
               <span class="input-group-text bg-light border-end-0 text-muted">
-                <i class="bi bi-envelope"></i>
+                <i class="bi bi-person"></i>
               </span>
               <input 
                 type="email" 
                 class="form-control bg-light border-start-0" 
-                placeholder="Nhập địa chỉ email"
+                placeholder="Nhập email đã đăng ký"
                 v-model="loginForm.email"
                 required
               />
@@ -97,8 +97,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { googleTokenLogin } from 'vue3-google-login'
+import { notify } from '../utils/notify'
+import { mergeGuestCartIntoBackend } from '../utils/cart'
 
 const router = useRouter()
 const route = useRoute()
@@ -113,7 +115,7 @@ const loginForm = ref({
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
-      appId      : '1037782925805986',
+      appId      : '1037782925805986', 
       cookie     : true,
       xfbml      : true,
       version    : 'v18.0'
@@ -135,13 +137,22 @@ const handleLogin = async () => {
   }
 
   try {
-    const response = await axios.post('http://localhost:8080/api/auth/login', {
+    const response = await axios.post('/api/auth/login', {
       email: loginForm.value.email,
       password: loginForm.value.password
     })
-    await saveSessionAndRedirect(response.data)
+
+    // 🔴 CHỈ LƯU VÀO STORAGE KHI BACKEND TRẢ VỀ TOKEN THẬT
+    if (response.data && response.data.token) {
+      await saveSessionAndRedirect(response.data)
+    } else {
+      notify('Đăng nhập thất bại: Không nhận được token từ server!', 'danger')
+    }
+
   } catch (error) {
-    notify(error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!', 'danger')
+    // Nếu sai mật khẩu hoặc lỗi server, KHÔNG ĐƯỢC lưu gì vào localStorage
+    const msg = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!'
+    notify(msg, 'danger')
   }
 }
 
@@ -153,7 +164,7 @@ const loginWithGoogle = () => {
       const res = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${response.access_token}`)
       const googleUser = res.data
 
-      const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+      const backendRes = await axios.post('/api/auth/social-login', {
         email: googleUser.email,
         fullName: googleUser.name,
         avatar: googleUser.picture,
@@ -173,14 +184,12 @@ const loginWithFacebook = () => {
       axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
         .then(async (res) => {
           const fbUser = res.data;
-          
-          const backendRes = await axios.post('http://localhost:8080/api/auth/social-login', {
+          const backendRes = await axios.post('/api/auth/social-login', {
             email: `${fbUser.id}@facebook.com`,
             fullName: fbUser.name,
             avatar: fbUser.picture?.data?.url,
             provider: 'FACEBOOK'
           });
-
           await saveSessionAndRedirect(backendRes.data);
         })
         .catch(() => notify("Không thể lấy thông tin tài khoản Facebook!", 'danger'));
@@ -192,13 +201,15 @@ const loginWithFacebook = () => {
 
 const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
-  const userData = data.user || data
+  const userObj = data.user || data
 
   if (token) localStorage.setItem('token', token)
-  localStorage.setItem('user', JSON.stringify(userData))
+  localStorage.setItem('user', JSON.stringify(userObj))
 
   try {
-    await mergeGuestCartIntoBackend(userData.id, axios)
+    if (userObj.id) {
+      await mergeGuestCartIntoBackend(userObj.id, axios)
+    }
   } catch (error) {
     console.error('Không thể đồng bộ giỏ khách:', error)
   }
@@ -206,8 +217,15 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-  const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
-  router.push(redirectPath)
+  // ƯU TIÊN KIỂM TRA ROLE ADMIN TRƯỚC VÀ ĐƯA VÀO /admin/users
+  const userString = JSON.stringify(userObj).toUpperCase()
+  
+  if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
+    router.push('/admin/users')
+  } else {
+    const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    router.push(redirectPath)
+  }
 }
 </script>
 

@@ -2,6 +2,8 @@
   <div class="auth-container d-flex align-items-center justify-content-center py-5">
     <div class="auth-card bg-white rounded-4 shadow-lg overflow-hidden">
       
+    
+
       <!-- TIÊU ĐỀ TRANG -->
       <div class="px-4 pt-4 pb-2 text-center">
         <h4 class="fw-bold text-dark mb-1">Đăng Ký Tài Khoản</h4>
@@ -135,7 +137,6 @@ import { notify } from '../utils/notify'
 const router = useRouter()
 const showPassword = ref(false)
 
-// Đã loại bỏ username, dùng chuẩn fullName
 const registerForm = ref({
   fullname: '',
   email: '',
@@ -182,8 +183,44 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.auth-container { min-height: 80vh; background-color: #f8f9fa; }
-.auth-card { width: 100%; max-width: 450px; border: 1px solid #eee; }
-.form-control:focus { box-shadow: none; border-color: #ffd400; }
-.cursor-pointer { cursor: pointer; }
+.auth-container {
+  min-height: 80vh;
+  background-color: #f8f9fa;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  border: 1px solid #eee;
+}
+
+.auth-header {
+  background-color: #ffd400;
+}
+
+.logo-icon {
+  background-color: #000;
+  color: #ffd400;
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 18px;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  color: #000;
+  display: inline-block;
+  transform: skewX(-15deg);
+}
+
+.form-control:focus {
+  box-shadow: none;
+  border-color: #ffd400;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
 </style>

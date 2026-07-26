@@ -123,7 +123,7 @@
 
       <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN -->
       <div class="col-lg-5">
-        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 100px;">
+        <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top z-1" style="top: 100px;">
           <h5 class="fw-bold text-dark mb-3">Sản phẩm thanh toán ({{ totalQuantity }})</h5>
 
           <!-- DANH SÁCH MÓN HÀNG -->

@@ -88,9 +88,7 @@
           <span class="small fw-bold text-nowrap">Khoảng giá:</span>
           
           <div class="range-slider-container mx-2">
-            <!-- Thanh dải màu hiển thị khoảng giá chọn -->
             <div class="slider-track" :style="trackStyle"></div>
-            <!-- Input Giá Min -->
             <input 
               type="range" 
               min="0" 
@@ -100,7 +98,6 @@
               @input="enforceMinPrice"
               class="dual-range" 
             />
-            <!-- Input Giá Max -->
             <input 
               type="range" 
               min="0" 
@@ -124,58 +121,92 @@
       </div>
     </div>
 
-    <!-- DANH SÁCH SẢN PHẨM -->
+    <!-- DANH SÁCH SẢN PHẨM (THIẾT KẾ MỚI VỚI NGUYÊN NĂNG LỰC FILTER) -->
     <div class="row g-4">
-      <div class="col-12 d-flex align-items-center justify-content-between">
-        <h4 class="fw-bold text-dark mb-0 position-relative section-title">
-          <span v-if="keyword">Kết quả tìm kiếm: <span class="text-black">"{{ keyword }}"</span></span>
-          <span v-else-if="selectedCategoryName">Danh mục: <span class="text-black">{{ selectedCategoryName }}</span></span>
-          <span v-else>Tất cả sản phẩm</span>
-        </h4>
-        <span class="badge bg-light text-dark border rounded-pill px-3 py-2 fw-normal">
-          {{ filteredProducts.length }} sản phẩm
-        </span>
-      </div>
-
-      <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
-        <i class="bi bi-box-seam display-1 text-muted opacity-25 d-block mb-3"></i>
-        <p class="text-muted fs-5 fw-medium mb-0">Không tìm thấy sản phẩm nào!</p>
-      </div>
-
-      <!-- PRODUCT CARD -->
-      <div v-for="product in filteredProducts" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
-        <div class="card h-100 shadow-sm border-0 rounded-4 product-card overflow-hidden">
-          <div class="product-img-container p-3 d-flex align-items-center justify-content-center position-relative">
-            <span v-if="product.discountId || product.DiscountId" class="badge bg-danger rounded-pill position-absolute top-0 start-0 m-3 px-2 py-1">
-              Giảm giá
-            </span>
-            <img :src="getProductImage(product)" class="card-img-top product-hover-zoom" :alt="getProductName(product)">
+      
+      <!-- TIÊU ĐỀ KHỐI SẢN PHẨM HIỆN ĐẠI -->
+      <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded-4 shadow-sm border border-light">
+          <div class="d-flex align-items-center gap-3">
+            <div class="section-badge-icon bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center shadow-sm">
+              <i class="bi bi-lightning-charge-fill fs-5"></i>
+            </div>
+            <div>
+              <h4 class="fw-extrabold text-dark mb-0 text-uppercase tracking-tight">
+                <span v-if="keyword">Kết quả tìm kiếm: <span class="text-danger">"{{ keyword }}"</span></span>
+                <span v-else-if="selectedCategoryName">Danh mục: <span class="text-primary">{{ selectedCategoryName }}</span></span>
+                <span v-else>Sản Phẩm Nổi Bật</span>
+              </h4>
+              <p class="text-muted small mb-0">Cam kết chính hãng - Đổi trả tận nơi - Bảo hành 12 tháng</p>
+            </div>
           </div>
 
-          <div class="card-body d-flex flex-column justify-content-between pt-2 px-3 pb-3">
+          <span class="badge bg-dark text-warning rounded-pill px-3 py-2 fw-bold fs-7 shadow-sm">
+            <i class="bi bi-box-seam me-1"></i> {{ filteredProducts.length }} Sản phẩm
+          </span>
+        </div>
+      </div>
+
+      <!-- KHÔNG TÌM THẤY SẢN PHẨM -->
+      <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
+        <i class="bi bi-search-heart display-1 text-warning opacity-50 d-block mb-3"></i>
+        <h5 class="fw-bold text-dark">Rất tiếc, không tìm thấy sản phẩm phù hợp!</h5>
+        <p class="text-muted small mb-0">Hãy thử điều chỉnh lại khoảng giá hoặc tìm kiếm từ khóa khác xem sao nhé.</p>
+      </div>
+
+      <!-- PRODUCT CARD THIẾT KẾ MỚI -->
+      <div v-for="product in filteredProducts" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+        <div class="card h-100 shadow-sm border-0 rounded-4 product-card position-relative overflow-hidden bg-white">
+          
+          <!-- KHU VỰC ẢNH SẢN PHẨM -->
+          <div class="product-img-wrapper p-3 position-relative text-center bg-light rounded-top-4" @click="viewDetail(product.id || product.Id)">
+            <!-- BADGE GIẢM GIÁ / MỚI -->
+            <span v-if="product.discountId || product.DiscountId" class="badge bg-danger position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8">
+              <i class="bi bi-fire me-1"></i>GIẢM GIÁ
+            </span>
+
+            <img :src="getProductImage(product)" class="img-fluid product-img-zoom" :alt="getProductName(product)">
+            
+            <!-- NÚT XEM NHANH KHI HOVER -->
+            <div class="hover-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-10">
+              <span class="btn btn-sm btn-light rounded-pill px-3 shadow fw-bold text-dark">
+                <i class="bi bi-eye-fill me-1 text-warning"></i> Xem chi tiết
+              </span>
+            </div>
+          </div>
+
+          <!-- THÔNG TIN SẢN PHẨM -->
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
             <div>
-              <div class="mb-1">
-                <span class="badge bg-light text-secondary border rounded-pill small">{{ getProductBrand(product) }}</span>
+              <div class="d-flex align-items-center justify-content-between mb-1">
+                <span class="badge bg-light text-secondary border rounded-pill fs-8">{{ getProductBrand(product) }}</span>
+                
               </div>
-              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="getProductName(product)">
+
+              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="getProductName(product)" @click="viewDetail(product.id || product.Id)" style="cursor: pointer;">
                 {{ getProductName(product) }}
               </h6>
             </div>
 
-            <div>
-              <h5 class="text-danger fw-bold mb-3">{{ formatPrice(product.price ?? product.Price) }}</h5>
-              <div class="d-flex gap-2">
-                <button class="btn btn-light btn-sm flex-grow-1 rounded-pill fw-medium text-secondary" @click="viewDetail(product.id || product.Id)">
-                  <i class="bi bi-eye"></i> Xem
-                </button>
-                <button class="btn btn-warning btn-sm flex-grow-1 rounded-pill fw-bold text-dark" @click="addToCart(product)">
-                  <i class="bi bi-cart-plus me-1"></i> Mua
-                </button>
+            <div class="mt-2">
+              <div class="d-flex align-items-baseline gap-2 mb-3">
+                <h5 class="text-danger fw-bold mb-0 fs-5">{{ formatPrice(product.price ?? product.Price) }}</h5>
               </div>
+
+              <!-- NÚT MUA HÀNG PHỦ ĐẦY CHIỀU NGANG -->
+              <button 
+                class="btn btn-warning w-100 rounded-pill fw-bold text-dark py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 btn-add-cart"
+                @click="addToCart(product)"
+              >
+                <i class="bi bi-cart-plus-fill fs-6"></i>
+                <span>Thêm vào giỏ</span>
+              </button>
             </div>
           </div>
+
         </div>
       </div>
+
     </div>
   </div>
 </template>
@@ -410,7 +441,6 @@ const addToCart = async (product) => {
       quantity: 1
     })
 
-    // Bắn Event thông báo cho Layout.vue biết để cập nhật badge ngay lập tức
     window.dispatchEvent(new CustomEvent('cart-updated'))
 
     if (await confirmDialog("Đã thêm sản phẩm vào giỏ hàng! Bạn có muốn đến trang Giỏ hàng ngay không?")) {
@@ -439,7 +469,7 @@ onUnmounted(() => {
 .custom-indicator { width: 12px !important; height: 12px !important; border-radius: 50% !important; background-color: rgba(255, 255, 255, 0.7) !important; border: none !important; margin: 0 4px !important; }
 .custom-indicator.active { background-color: #ffd400 !important; width: 28px !important; border-radius: 10px !important; }
 
-/* BỘ LỌC THƯƠNG HIỆU & GIÁ STICKY */
+/* BỘ LỌC STICKY */
 .filter-section { 
   background: #ffffff; 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; 
@@ -462,7 +492,7 @@ onUnmounted(() => {
 .btn-sort-pill { color: #6c757d; border: none; transition: all 0.2s ease; }
 .btn-sort-pill.active { background-color: #ffffff; color: #000000; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
 
-/* --- DUAL RANGE SLIDER --- */
+/* DUAL RANGE SLIDER */
 .range-slider-container {
   position: relative;
   width: 140px;
@@ -504,31 +534,65 @@ onUnmounted(() => {
   transition: transform 0.1s;
 }
 
-.dual-range::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-}
-
-.dual-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #0d6efd;
-  cursor: pointer;
-  pointer-events: auto;
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-}
+.dual-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
 .price-filter-box { border-color: #dee2e6 !important; }
 .price-badge { font-size: 11.5px; min-width: 165px; text-align: center; letter-spacing: -0.2px; }
 
-.product-card { transition: all 0.3s ease; border: 1px solid #f1f3f5 !important; }
-.product-card:hover { transform: translateY(-6px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important; }
-.product-img-container { height: 200px; background-color: #fafafa; }
-.product-hover-zoom { max-width: 100%; max-height: 100%; object-fit: contain; transition: transform 0.3s ease; }
-.product-card:hover .product-hover-zoom { transform: scale(1.06); }
+/* TIÊU ĐỀ SECTION MỚI */
+.section-badge-icon { width: 42px; height: 42px; }
+.fw-extrabold { font-weight: 800; }
+.tracking-tight { letter-spacing: -0.02em; }
+
+/* PRODUCT CARD MỚI HIỆN ĐẠI */
+.product-card { 
+  transition: transform 0.28s ease, box-shadow 0.28s ease; 
+  border: 1px solid #f1f3f5 !important; 
+}
+.product-card:hover { 
+  transform: translateY(-8px); 
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08) !important; 
+}
+
+.product-img-wrapper { 
+  height: 200px; 
+  cursor: pointer; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  overflow: hidden;
+}
+
+.product-img-zoom { 
+  max-height: 100%; 
+  object-fit: contain; 
+  transition: transform 0.35s ease; 
+}
+
+.product-card:hover .product-img-zoom { 
+  transform: scale(1.08); 
+}
+
+/* OVERLAY HOVER HIỆN NÚT XEM CHI TIẾT */
+.hover-overlay {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.product-card:hover .hover-overlay {
+  opacity: 1;
+}
+
+.btn-add-cart {
+  transition: background-color 0.2s, transform 0.15s ease;
+}
+.btn-add-cart:hover {
+  background-color: #e6be00 !important;
+  transform: translateY(-1px);
+}
+
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 .tracking-wider { letter-spacing: 0.03em; }
 .fs-7 { font-size: 12px; }
+.fs-8 { font-size: 11px; }
 </style>

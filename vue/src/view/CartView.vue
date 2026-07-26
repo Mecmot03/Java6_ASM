@@ -151,7 +151,6 @@ import { notify } from '../utils/notify'
 const router = useRouter()
 const cartItems = ref([])
 
-// Lấy UserId động từ localStorage (Nếu đã đăng nhập lấy id thật, chưa thì mặc định id = 1)
 const getUserId = () => {
   const userStorage = localStorage.getItem('user')
   if (userStorage) {
@@ -165,12 +164,10 @@ const getUserId = () => {
   return null
 }
 
-// Hàm phát sự kiện đồng bộ lại Badge số lượng giỏ hàng trên Navbar Header
 const notifyCartUpdate = () => {
   window.dispatchEvent(new CustomEvent('cart-updated'))
 }
 
-// Tải danh sách giỏ hàng
 const fetchCart = async () => {
   try {
     const userId = getUserId()
@@ -188,7 +185,6 @@ const fetchCart = async () => {
   }
 }
 
-// Cập nhật số lượng item
 const updateQuantity = async (item, newQty) => {
   if (newQty < 1) {
     await removeItem(item.id)
@@ -209,7 +205,6 @@ const updateQuantity = async (item, newQty) => {
   }
 }
 
-// Xóa 1 sản phẩm
 const removeItem = async (cartItemId) => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?"))) {
     return
@@ -230,7 +225,6 @@ const removeItem = async (cartItemId) => {
   }
 }
 
-// Xóa toàn bộ giỏ hàng
 const clearCart = async () => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa toàn bộ giỏ hàng?"))) {
     return
@@ -253,7 +247,6 @@ const clearCart = async () => {
   }
 }
 
-// Tính tổng tiền & số lượng
 const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.subTotal || 0), 0)
 })
@@ -267,18 +260,36 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
-// Tiến hành đặt hàng
+// 🟢 TIẾN HÀNH ĐẶT HÀNG (KIỂM TRA CHẶN CHÍNH XÁC ROLE_STAFF THUẦN TÚY)
 const checkout = () => {
   const token = localStorage.getItem('token')
-  if (!token) {
+  const userStorage = localStorage.getItem('user')
+
+  if (!token || !userStorage) {
     confirmDialog("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?").then((confirmed) => {
       if (confirmed) {
         router.push('/login')
       }
     })
-  } else {
-    router.push('/checkout')
+    return
   }
+
+  // Chuyển đối tượng user thành chuỗi in hoa để kiểm tra role
+  const userStr = JSON.stringify(userStorage).toUpperCase()
+  const isUser = userStr.includes('ROLE_USER') || userStr.includes('"USER"')
+  const isStaff = userStr.includes('ROLE_STAFF') || userStr.includes('"STAFF"')
+
+  // 🛑 Nếu là Nhân viên thuần túy (Không có ROLE_USER) -> Báo lỗi & Chuyển sang trang Duyệt đơn
+  if (isStaff && !isUser) {
+    confirmDialog("Tài khoản Nhân viên không thể thực hiện đặt hàng. Chuyển sang trang Quản lý Đơn hàng?").then((confirmed) => {
+      if (confirmed) {
+        router.push('/orders')
+      }
+    })
+    return
+  }
+
+  router.push('/checkout')
 }
 
 onMounted(() => {

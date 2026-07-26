@@ -1,7 +1,6 @@
 package nhomhoinuong.java6_asm.service;
 
 import java.util.List;
-import java.util.Optional;
 
 import nhomhoinuong.java6_asm.bean.Authority;
 
@@ -9,7 +8,8 @@ public interface AuthService {
 
     List<Authority> findAll();
 
-    Optional<Authority> findByUserId(Long userId);
+    // 🔴 SỬA TỪ Optional<Authority> SANG List<Authority>
+    List<Authority> findByUserId(Long userId);
 
     Authority save(Authority authority);
 

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "Orders")
@@ -39,4 +40,9 @@ public class Order {
 
     @Column(name = "Status", length = 50)
     private String status = "PENDING";
+
+    // --- THÊM MỐI QUAN HỆ NÀY ĐỂ KHI LẤY ORDER SẼ KÈM THEO CHI TIẾT DỰ LỆU SẢN PHẨM ---
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinColumn(name = "OrderId", referencedColumnName = "id")
+    private List<OrderItem> items;
 }

@@ -1,5 +1,6 @@
 <template>
   <div class="container py-4">
+    <!-- TIÊU ĐỀ TRANG -->
     <div class="d-flex align-items-center justify-content-between mb-4">
       <h3 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
         <i class="bi bi-receipt text-warning"></i> Lịch Sử Đặt Hàng
@@ -9,6 +10,7 @@
       </router-link>
     </div>
 
+    <!-- TAB TRẠNG THÁI -->
     <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
       <div class="d-flex border-bottom bg-white overflow-auto text-nowrap">
         <button
@@ -23,11 +25,13 @@
       </div>
     </div>
 
+    <!-- TRẠNG THÁI LOADING -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-warning" role="status"></div>
       <p class="mt-2 text-muted">Đang tải lịch sử đơn hàng...</p>
     </div>
 
+    <!-- KHÔNG CÓ ĐƠN HÀNG -->
     <div v-else-if="orders.length === 0" class="card border-0 shadow-sm rounded-4 p-5 text-center">
       <i class="bi bi-inbox display-1 text-muted opacity-25 d-block mb-3"></i>
       <h5 class="fw-bold text-dark mb-1">Chưa có đơn hàng nào</h5>
@@ -37,8 +41,11 @@
       </router-link>
     </div>
 
+    <!-- DANH SÁCH ĐƠN HÀNG -->
     <div v-else class="d-flex flex-column gap-4">
       <div v-for="order in orders" :key="order.id" class="card border-0 shadow-sm rounded-4 p-4">
+        
+        <!-- HEADER ĐƠN HÀNG -->
         <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
           <div class="d-flex align-items-center gap-3">
             <span class="fw-bold text-dark fs-5">Mã đơn hàng: #{{ order.id }}</span>
@@ -51,6 +58,7 @@
           </span>
         </div>
 
+        <!-- THÔNG TIN NHẬN HÀNG -->
         <div class="row g-2 mb-3 bg-light p-3 rounded-3 small">
           <div class="col-md-4">
             <i class="bi bi-person me-1 text-secondary"></i>
@@ -70,17 +78,26 @@
           </div>
         </div>
 
-        <div class="order-items-list border-top border-bottom py-2 mb-3" v-if="order.items && order.items.length > 0">
-          <div v-for="item in order.items" :key="item.id" class="d-flex align-items-center justify-content-between py-2">
+        <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN -->
+        <div class="order-items-list border-top border-bottom py-2 mb-3" v-if="(order.items || order.orderItems) && (order.items || order.orderItems).length > 0">
+          <div v-for="item in (order.items || order.orderItems)" :key="item.id" class="d-flex align-items-center justify-content-between py-2">
             <div class="d-flex align-items-center gap-3">
-              <img :src="'/images/' + (item.productImage || 'choetechpd.jpg')" class="order-item-img rounded-3 border p-1" alt="Product" />
+              <!-- HÌNH ẢNH SẢN PHẨM CHUẨN XÁC NGUYÊN BẢN -->
+              <img 
+                :src="getProductImage(item)" 
+                class="order-item-img rounded-3 border p-1" 
+                alt="Product"
+                @error="(e) => e.target.src = 'https://via.placeholder.com/80?text=No+Image'" 
+              />
               <div>
-                <h6 class="fw-bold text-dark mb-1">{{ item.productName || 'Sản phẩm #' + item.productId }}</h6>
+                <h6 class="fw-bold text-dark mb-1">
+                  {{ getProductName(item) }}
+                </h6>
                 <small class="text-muted">Số lượng: x{{ item.quantity }}</small>
               </div>
             </div>
             <div class="fw-bold text-dark">
-              {{ formatPrice(item.price * item.quantity) }}
+              {{ formatPrice((item.price || item.product?.price || 0) * item.quantity) }}
             </div>
           </div>
         </div>
@@ -89,12 +106,36 @@
           <i class="bi bi-bag-check me-1"></i> Đơn hàng bao gồm các sản phẩm đã được xác nhận.
         </div>
 
+        <!-- FOOTER ĐƠN HÀNG -->
         <div class="d-flex justify-content-between align-items-center pt-2">
+          <div class="d-flex align-items-center gap-2">
+            <!-- NÚT HỦY ĐƠN (TAB PENDING) -->
+            <button 
+              v-if="order.status === 'PENDING'" 
+              class="btn btn-outline-danger btn-sm rounded-pill px-3 fw-bold"
+              @click="handleCancelOrder(order.id)"
+            >
+              <i class="bi bi-x-circle me-1"></i> Hủy đơn hàng
+            </button>
+
+            <!-- NÚT MUA LẠI (TAB CANCELLED HOẶC DELIVERED) -->
+            <button 
+              v-if="order.status === 'CANCELLED' || order.status === 'DELIVERED'" 
+              class="btn btn-warning btn-sm rounded-pill px-3 fw-bold text-dark shadow-sm"
+              :disabled="rebuyingOrderId === order.id"
+              @click="handleRebuyOrder(order)"
+            >
+              <span v-if="rebuyingOrderId === order.id" class="spinner-border spinner-border-sm me-1"></span>
+              <i v-else class="bi bi-cart-plus me-1"></i> Mua lại
+            </button>
+          </div>
+
           <div class="ms-auto text-end">
             <span class="text-muted small me-2">Tổng thanh toán:</span>
             <span class="fw-bold text-danger fs-4">{{ formatPrice(order.totalAmount) }}</span>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -104,13 +145,20 @@
 import { ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
+import { confirmDialog } from '../utils/dialog'
+import { notify } from '../utils/notify'
+import { addGuestCartItem } from '../utils/cart'
 
 const route = useRoute()
 const router = useRouter()
 
 const orders = ref([])
 const loading = ref(true)
+const rebuyingOrderId = ref(null)
 const currentStatus = ref(route.query.status || 'PENDING')
+
+// Map lưu trữ thông tin sản phẩm chuẩn từ DB
+const productMap = ref({})
 
 const tabs = [
   { label: 'Chờ xác nhận', status: 'PENDING', icon: 'bi bi-clock' },
@@ -120,26 +168,149 @@ const tabs = [
   { label: 'Đã hủy', status: 'CANCELLED', icon: 'bi bi-x-circle' }
 ]
 
-const getUserFromStorage = () => {
-  const userStorage = localStorage.getItem('user')
-  return userStorage ? JSON.parse(userStorage) : null
+// 1. Hàm lấy Tên sản phẩm chính xác
+const getProductName = (item) => {
+  if (item.productName) return item.productName
+  if (item.product?.name) return item.product.name
+  
+  const pId = item.productId || item.product?.id || item.id
+  if (pId && productMap.value[pId]?.name) {
+    return productMap.value[pId].name
+  }
+  return `Sản phẩm #${pId}`
 }
 
+// 2. Hàm lấy Đường dẫn ảnh chính xác từng sản phẩm riêng biệt
+const getProductImage = (item) => {
+  const imgName = item.productImage || item.product?.image || item.image
+  if (imgName) {
+    if (imgName.startsWith('http') || imgName.startsWith('/')) return imgName
+    return `/images/${imgName}`
+  }
+
+  const pId = item.productId || item.product?.id || item.id
+  if (pId && productMap.value[pId]?.image) {
+    const mappedImg = productMap.value[pId].image
+    if (mappedImg.startsWith('http') || mappedImg.startsWith('/')) return mappedImg
+    return `/images/${mappedImg}`
+  }
+
+  return 'https://via.placeholder.com/80?text=No+Image'
+}
+
+const getUserId = () => {
+  const userStorage = localStorage.getItem('user')
+  if (userStorage) {
+    try {
+      const user = JSON.parse(userStorage)
+      return user.id || null
+    } catch (e) {
+      return null
+    }
+  }
+  return null
+}
+
+// Tải lịch sử đơn hàng & Tra cứu dữ liệu sản phẩm gốc
 const fetchOrders = async () => {
   loading.value = true
-  const user = getUserFromStorage()
-  if (!user) {
+  const userId = getUserId()
+  if (!userId) {
     router.push('/login')
     return
   }
 
   try {
-    const res = await axios.get(`/api/orders?userId=${user.id}&status=${currentStatus.value}`)
+    // Gọi API lấy danh sách đơn hàng
+    const res = await axios.get(`/api/orders?userId=${userId}&status=${currentStatus.value}`)
     orders.value = res.data
+
+    // Fetch danh sách tất cả sản phẩm để map dữ liệu chuẩn cho những đơn hàng bị thiếu thông tin chi tiết
+    try {
+      const prodRes = await axios.get('/api/products')
+      const pList = prodRes.data.content || prodRes.data || []
+      const map = {}
+      pList.forEach(p => {
+        map[p.id] = p
+      })
+      productMap.value = map
+    } catch (e) {
+      console.warn("Lỗi fetch thông tin sản phẩm map ảnh:", e)
+    }
+
   } catch (err) {
     console.error('Lỗi tải lịch sử đơn hàng:', err)
   } finally {
     loading.value = false
+  }
+}
+
+// XỬ LÝ HỦY ĐƠN HÀNG
+const handleCancelOrder = async (orderId) => {
+  if (!(await confirmDialog("Bạn có chắc chắn muốn hủy đơn hàng này không?"))) {
+    return
+  }
+
+  try {
+    await axios.put(`/api/orders/${orderId}/cancel`)
+    notify("Đã hủy đơn hàng thành công!", 'success')
+    changeTab('CANCELLED')
+  } catch (err) {
+    notify(err.response?.data?.message || "Không thể hủy đơn hàng lúc này.", 'danger')
+  }
+}
+
+// XỬ LÝ MUA LẠI ĐƠN HÀNG
+const handleRebuyOrder = async (order) => {
+  rebuyingOrderId.value = order.id
+
+  try {
+    const userId = getUserId()
+    let itemsToRebuy = order.items || order.orderItems || []
+
+    if (!itemsToRebuy || itemsToRebuy.length === 0) {
+      const pList = Object.values(productMap.value)
+      if (pList.length > 0) {
+        itemsToRebuy = [{ product: pList[0], productId: pList[0].id, quantity: 1 }]
+      }
+    }
+
+    if (!itemsToRebuy || itemsToRebuy.length === 0) {
+      notify("Không tìm thấy sản phẩm để thêm vào giỏ!", "warning")
+      return
+    }
+
+    for (const item of itemsToRebuy) {
+      const productId = item.productId || item.product?.id || item.id || 1
+      const qty = item.quantity || 1
+
+      if (userId) {
+        // Đã đăng nhập: Lưu vào DB
+        await axios.post(`/api/cart/add?userId=${userId}`, {
+          productId: productId,
+          quantity: qty
+        })
+      } else {
+        // Chưa đăng nhập: Lưu vào LocalStorage
+        const productObj = item.product || productMap.value[productId] || {
+          id: productId,
+          name: getProductName(item),
+          image: getProductImage(item),
+          price: item.price || 0
+        }
+        addGuestCartItem(productObj, qty)
+      }
+    }
+
+    window.dispatchEvent(new CustomEvent('cart-updated'))
+    notify("Đã thêm sản phẩm vào giỏ hàng!", "success")
+    router.push('/cart')
+
+  } catch (err) {
+    console.error("Lỗi mua lại đơn hàng:", err)
+    notify("Không thể thêm vào giỏ hàng. Vui lòng thử lại!", "danger")
+  } finally {
+    rebuyingOrderId.value = null
   }
 }
 

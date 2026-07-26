@@ -1,225 +1,165 @@
 <template>
-
-   <div class="container-fluid product-page">
-
-        <!-- Tiêu đề -->
-
-        <div class="d-flex justify-content-between align-items-center mb-4">
-
-            <h2 class="fw-bold">
-
-                Quản lý sản phẩm
-
-            </h2>
-
-        </div>
-
-
-
-        
-
-        <!-- Bảng -->
-
-        <ProductForm
-    :product="selectedProduct"
-    @save="saveProduct"
-    @cancel="cancelEdit"
-/>
-
-
-<!-- Thanh tìm kiếm -->
-
-        <div class="card shadow-sm border-0 mb-4">
-
-            <div class="card-body">
-
-                <div class="row">
-
-                    <div class="col-md-6">
-
-                        <input
-                            v-model="keyword"
-                            type="text"
-                            class="form-control"
-                            placeholder="Nhập tên sản phẩm..."
-                        >
-
-                    </div>
-
-                    <div class="col-md-2">
-
-                        <button
-                            class="btn btn-primary w-100"
-                            @click="searchProduct"
-                        >
-
-                            <i class="bi bi-search"></i>
-
-                            Tìm
-
-                        </button>
-
-                    </div>
-
-                    <div class="col-md-2">
-
-                        <button
-                            class="btn btn-secondary w-100"
-                            @click="loadProducts"
-                        >
-
-                            Làm mới
-
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <ProductTable
-    :products="products"
-    @edit="editProduct"
-    @delete="deleteProduct"
-/>
-
-
-
+  <div class="container-fluid product-page">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="fw-bold mb-1">Quản lý Sản phẩm</h3>
+        <p class="text-muted small mb-0">Quản lý toàn bộ thông tin sản phẩm và kho hàng</p>
+      </div>
+      <button class="btn btn-primary fw-bold px-3 shadow-sm" @click="openCreateModal">
+        <i class="bi bi-plus-lg me-1"></i> Thêm sản phẩm
+      </button>
     </div>
 
+    <!-- Thanh tìm kiếm -->
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body">
+        <div class="row g-2">
+          <div class="col-md-8">
+            <input
+              v-model="keyword"
+              type="text"
+              class="form-control"
+              placeholder="Nhập tên sản phẩm cần tìm..."
+              @keyup.enter="searchProduct"
+            >
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-primary w-100" @click="searchProduct">
+              <i class="bi bi-search me-1"></i> Tìm
+            </button>
+          </div>
+          <div class="col-md-2">
+            <button class="btn btn-secondary w-100" @click="loadProducts">
+              Làm mới
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bảng Sản phẩm -->
+    <ProductTable
+      :products="products"
+      @edit="openEditModal"
+      @delete="openDeleteModal"
+    />
+
+    <!-- Modal Form Sản phẩm (Thêm / Sửa Pop-up) -->
+    <ProductForm
+      :showModal="showFormModal"
+      :product="selectedProduct"
+      @save="saveProduct"
+      @close="closeFormModal"
+    />
+
+    <!-- Modal Xác nhận xóa Sản phẩm -->
+    <DeleteModal
+      :show="showDeleteModal"
+      title="Xác nhận xóa Sản phẩm"
+      :message="`Bạn có chắc chắn muốn xóa sản phẩm '${productToDelete?.name || ''}' không?`"
+      @close="showDeleteModal = false"
+      @confirm="confirmDeleteProduct"
+    />
+  </div>
 </template>
 
 <script setup>
-
 import { ref, onMounted } from 'vue'
-import { confirmDialog } from '../../utils/dialog'
 import { notify } from '../../utils/notify'
-
 import ProductService from '../../services/ProductService'
-
 import ProductTable from '../../components/admin/ProductTable.vue'
-
 import ProductForm from '../../components/admin/ProductForm.vue'
+import DeleteModal from '../../components/admin/DeleteModal.vue'
 
 const products = ref([])
-
 const keyword = ref('')
-
 const selectedProduct = ref({})
 
+const showFormModal = ref(false)
+const showDeleteModal = ref(false)
+const productToDelete = ref(null)
+
 const loadProducts = async () => {
-
+  keyword.value = ''
+  try {
     products.value = await ProductService.getAllProducts()
-
+  } catch (error) {
+    console.error("Lỗi tải danh sách sản phẩm:", error)
+  }
 }
 
 const searchProduct = () => {
-
-    if (keyword.value.trim() === '') {
-
-        loadProducts()
-
-        return
-
-    }
-
-    products.value = products.value.filter(product =>
-
-        product.name.toLowerCase().includes(
-
-            keyword.value.toLowerCase()
-
-        )
-
-    )
-
+  if (keyword.value.trim() === '') {
+    loadProducts()
+    return
+  }
+  products.value = products.value.filter(product =>
+    product.name.toLowerCase().includes(keyword.value.toLowerCase())
+  )
 }
 
-const deleteProduct = async (id) => {
-    if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này?"))) {
-        return
-    }
-
-    try {
-
-        await ProductService.deleteProduct(id)
-
-        loadProducts()
-
-    }
-
-    catch(error){
-
-        notify(error.response?.data?.message || "Xóa thất bại!", 'danger')
-
-    }
-
-}
-const editProduct = (product) => {
-
-    selectedProduct.value = { ...product }
-
+const openCreateModal = () => {
+  selectedProduct.value = {}
+  showFormModal.value = true
 }
 
-const cancelEdit = () => {
-
-    selectedProduct.value = {}
-
+const openEditModal = (product) => {
+  selectedProduct.value = { ...product }
+  showFormModal.value = true
 }
 
-const saveProduct = async(product)=>{
-
-    try{
-
-        if(product.id){
-
-            await ProductService.updateProduct(product.id,product)
-
-        }else{
-
-            await ProductService.createProduct(product)
-
-        }
-
-        selectedProduct.value={}
-
-        loadProducts()
-
-    }
-
-    catch(error){
-
-        notify(error.response?.data?.message || "Lưu sản phẩm thất bại!", 'danger')
-
-    }
-
+const closeFormModal = () => {
+  showFormModal.value = false
+  selectedProduct.value = {}
 }
 
+const saveProduct = async (product) => {
+  try {
+    if (product.id) {
+      await ProductService.updateProduct(product.id, product)
+      notify('Cập nhật sản phẩm thành công!', 'success')
+    } else {
+      await ProductService.createProduct(product)
+      notify('Thêm sản phẩm mới thành công!', 'success')
+    }
+    closeFormModal()
+    loadProducts()
+  } catch (error) {
+    notify(error.response?.data?.message || "Lưu sản phẩm thất bại!", 'danger')
+  }
+}
 
+const openDeleteModal = (productOrId) => {
+  if (typeof productOrId === 'object' && productOrId !== null) {
+    productToDelete.value = productOrId
+  } else {
+    productToDelete.value = products.value.find(p => p.id === productOrId) || { id: productOrId }
+  }
+  showDeleteModal.value = true
+}
+
+const confirmDeleteProduct = async () => {
+  if (!productToDelete.value) return
+  try {
+    const id = productToDelete.value.id || productToDelete.value
+    await ProductService.deleteProduct(id)
+    notify('Đã xóa sản phẩm thành công!', 'success')
+    loadProducts()
+  } catch (error) {
+    notify(error.response?.data?.message || "Xóa sản phẩm thất bại do vướng dữ liệu khóa ngoại!", 'danger')
+  } finally {
+    showDeleteModal.value = false
+    productToDelete.value = null
+  }
+}
 
 onMounted(() => {
-
-    loadProducts()
-
+  loadProducts()
 })
-
 </script>
 
 <style scoped>
-
-.card{
-
-    border-radius:12px;
-
-}
-
-.product-page{
-    background:#f5f6fa;
-    min-height:100vh;
-    padding:25px;
-}
-
+.card { border-radius: 12px; }
+.product-page { background: #f8f9fa; min-height: 100vh; padding: 25px; }
 </style>

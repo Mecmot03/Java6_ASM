@@ -15,6 +15,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import nhomhoinuong.java6_asm.bean.Authority;
 import nhomhoinuong.java6_asm.bean.User;
 import nhomhoinuong.java6_asm.dao.AuthorityDAO;
 import nhomhoinuong.java6_asm.dao.UserDAO;
@@ -25,7 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDAO userDAO;
-        private final AuthorityDAO authorityDAO;
+    private final AuthorityDAO authorityDAO;
 
     @Override
     protected void doFilterInternal(
@@ -34,11 +35,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-    	String authHeader = request.getHeader("Authorization");
-    	if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-    	    filterChain.doFilter(request, response); 
-    	    return;
-    	}
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String token = authHeader.substring(7);
 
@@ -51,12 +52,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         User user = userDAO.findByEmail(email).orElse(null);
 
-        if (user != null
-                && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            List<SimpleGrantedAuthority> authorities = authorityDAO.findByUser_Id(user.getId())
-                    .map(authority -> List.of(new SimpleGrantedAuthority(authority.getRole())))
-                    .orElseGet(() -> List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            // Lấy danh sách Authority của User từ DB
+            List<Authority> userAuthorities = authorityDAO.findByUser_Id(user.getId());
+
+            List<SimpleGrantedAuthority> authorities;
+            if (userAuthorities != null && !userAuthorities.isEmpty()) {
+                // Áp dụng lấy tên Role thông qua Object Role mới
+                authorities = userAuthorities.stream()
+                        .map(auth -> new SimpleGrantedAuthority(auth.getRole().getName()))
+                        .toList();
+            } else {
+                authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+            }
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(
