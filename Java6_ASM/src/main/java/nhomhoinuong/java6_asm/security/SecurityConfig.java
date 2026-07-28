@@ -44,8 +44,14 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
-                // 🟢 API Quản lý Đơn hàng: Cả ADMIN và STAFF đều được vào xác nhận/duyệt đơn
-                .requestMatchers("/api/orders/admin/**", "/api/staff/**").hasAnyRole("ADMIN", "STAFF")
+//                // 🟢 API Quản lý Đơn hàng: Cả ADMIN và STAFF đều được vào xác nhận/duyệt đơn
+//                .requestMatchers("/api/orders/admin/**", "/api/staff/**").hasAnyRole("ADMIN", "STAFF")
+//
+//                // 🔴 API Quản trị hệ thống (User, Sản phẩm, Danh mục...): BẮT BUỘC CHỈ ADMIN
+//                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+             // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
+                .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
 
                 // 🔴 API Quản trị hệ thống (User, Sản phẩm, Danh mục...): BẮT BUỘC CHỈ ADMIN
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
