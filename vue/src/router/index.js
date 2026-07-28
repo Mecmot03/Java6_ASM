@@ -30,11 +30,11 @@ const routes = [
             { path: '', name: 'Home', component: Home },
             { path: 'cart', name: 'Cart', component: CartView },
             
-            // 🔴 BẮT BUỘC CÓ ROLE_USER MỚI VÀO THANH TOÁN & XEM LỊCH SỬ
+            // 🟢 BẮT BUỘC CÓ ROLE_USER MỚI VÀO THANH TOÁN & XEM LỊCH SỬ CÁ NHÂN
             { path: 'checkout', name: 'Checkout', component: CheckoutView, meta: { requiresUserRole: true } },
             { path: 'order-history', name: 'OrderHistory', component: OrderHistory, meta: { requiresUserRole: true } },
             
-            // 🔴 BẮT BUỘC CÓ ROLE_STAFF MỚI VÀO DUYỆT ĐƠN HÀNG
+            // 🟢 BẮT BUỘC CHỈ CÓ ROLE_STAFF MỚI VÀO QUẢN LÝ / DUYỆT ĐƠN HÀNG
             { path: 'orders', name: 'Orders', component: OrderView, meta: { requiresStaffRole: true } },
             
             { path: 'user-info', name: 'UserInfo', component: UserInfo, meta: { requiresAuth: true } },
@@ -67,22 +67,33 @@ const router = createRouter({
     }
 })
 
-// 🔴 BẢO VỆ CHÍNH XÁC QUYỀN TRUY CẬP ĐƯỜNG DẪN
 router.beforeEach((to) => {
     const token = localStorage.getItem('token')
     const userRaw = localStorage.getItem('user')
 
-    const userStr = userRaw ? JSON.stringify(userRaw).toUpperCase() : ''
-    const isUser = userStr.includes('ROLE_USER') || userStr.includes('"USER"')
-    const isStaff = userStr.includes('ROLE_STAFF') || userStr.includes('"STAFF"')
-    const isAdmin = userStr.includes('ROLE_ADMIN') || userStr.includes('"ADMIN"')
+    let isUser = false
+    let isStaff = false
+    let isAdmin = false
+
+    if (userRaw) {
+        try {
+            const userObj = JSON.parse(userRaw)
+            const userStr = JSON.stringify(userObj).toUpperCase()
+            
+            isUser = userStr.includes('ROLE_USER') || userStr.includes('"USER"')
+            isStaff = userStr.includes('ROLE_STAFF') || userStr.includes('"STAFF"')
+            isAdmin = userStr.includes('ROLE_ADMIN') || userStr.includes('"ADMIN"')
+        } catch (e) {
+            console.error("Lỗi parse thông tin user từ localStorage:", e)
+        }
+    }
 
     // 1. Kiểm tra yêu cầu đăng nhập cơ bản
     if (to.meta?.requiresAuth && (!token || !userRaw)) {
         return { path: '/login', query: { redirect: to.fullPath } }
     }
 
-    // 2. Chức năng Mua hàng & Xem lịch sử cá nhân -> BẮT BUỘC CÓ ROLE_USER
+    // 2. Chức năng Mua hàng & Xem lịch sử cá nhân (/order-history) -> CHỈ CÓ ROLE_USER
     if (to.meta?.requiresUserRole) {
         if (!token || !userRaw) {
             return { path: '/login', query: { redirect: to.fullPath } }
@@ -94,17 +105,19 @@ router.beforeEach((to) => {
         }
     }
 
-    // 3. Chức năng Duyệt đơn hàng -> BẮT BUỘC CÓ ROLE_STAFF
+    // 3. Chức năng Quản lý/Duyệt đơn hàng (/orders) -> CHỈ DÀNH CHO ROLE_STAFF (ADMIN KHÔNG VÀO)
     if (to.meta?.requiresStaffRole) {
         if (!token || !userRaw) {
             return { path: '/login', query: { redirect: to.fullPath } }
         }
+        // Nếu không phải STAFF (bao gồm cả Admin hoặc User thường) -> Đuổi về đúng vị trí
         if (!isStaff) {
-            return isAdmin ? { path: '/admin' } : { path: '/' }
+            if (isAdmin) return { path: '/admin' }
+            return { path: '/' }
         }
     }
 
-    // 4. Trang Quản trị hệ thống -> BẮT BUỘC CÓ ROLE_ADMIN
+    // 4. Trang Quản trị hệ thống (/admin) -> BẮT BUỘC CHỈ CÓ ROLE_ADMIN
     if (to.meta?.requiresAdmin || to.path.startsWith('/admin')) {
         if (!token || !userRaw) {
             return { path: '/login', query: { redirect: to.fullPath } }
