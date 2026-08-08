@@ -147,12 +147,13 @@ import {
 } from '../utils/cart'
 import { confirmDialog } from '../utils/dialog'
 import { notify } from '../utils/notify'
+import { getAuthStorageItem } from '../utils/authStorage'
 
 const router = useRouter()
 const cartItems = ref([])
 
 const getUserId = () => {
-  const userStorage = localStorage.getItem('user')
+  const userStorage = getAuthStorageItem('user')
   if (userStorage) {
     try {
       const user = JSON.parse(userStorage)
@@ -262,8 +263,8 @@ const formatPrice = (price) => {
 
 // 🟢 TIẾN HÀNH ĐẶT HÀNG (KIỂM TRA CHẶN CHÍNH XÁC ROLE_STAFF THUẦN TÚY)
 const checkout = () => {
-  const token = localStorage.getItem('token')
-  const userStorage = localStorage.getItem('user')
+  const token = getAuthStorageItem('token')
+  const userStorage = getAuthStorageItem('user')
 
   if (!token || !userStorage) {
     confirmDialog("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?").then((confirmed) => {

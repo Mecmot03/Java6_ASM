@@ -283,6 +283,7 @@ import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { getGuestCartCount } from '../utils/cart'
 import { confirmDialog, resolveConfirmDialog } from '../utils/dialog'
+import { getAuthStorageItem, clearAuthStorage } from '../utils/authStorage'
 
 const router = useRouter()
 const route = useRoute()
@@ -434,7 +435,7 @@ const iconMap = {
 }
 
 const checkUserLogin = () => {
-  const userStorage = localStorage.getItem('user')
+  const userStorage = getAuthStorageItem('user')
   if (userStorage) {
     try {
       const parsed = JSON.parse(userStorage)
@@ -451,8 +452,7 @@ const handleLogout = () => {
   confirmDialog("Bạn có chắc chắn muốn đăng xuất khỏi tài khoản?").then((confirmed) => {
     if (!confirmed) return
 
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    clearAuthStorage()
     currentUser.value = null
     fetchCartCount()
     showToast("Đã đăng xuất thành công!", 'success')
@@ -495,7 +495,7 @@ const fetchCategories = async () => {
 
 const fetchCartCount = async () => {
   try {
-    const userStorage = localStorage.getItem('user')
+    const userStorage = getAuthStorageItem('user')
     if (!userStorage) {
       cartCount.value = getGuestCartCount()
       return
