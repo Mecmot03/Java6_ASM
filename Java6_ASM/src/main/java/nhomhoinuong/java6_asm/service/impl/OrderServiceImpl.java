@@ -1,16 +1,22 @@
 package nhomhoinuong.java6_asm.service.impl;
 
+import nhomhoinuong.java6_asm.bean.CartItem;
 import nhomhoinuong.java6_asm.bean.Order;
 import nhomhoinuong.java6_asm.bean.OrderItem;
+import nhomhoinuong.java6_asm.bean.Product;
+import nhomhoinuong.java6_asm.bean.User;
 import nhomhoinuong.java6_asm.dao.CartItemDAO;
 import nhomhoinuong.java6_asm.dao.OrderDAO;
 import nhomhoinuong.java6_asm.dao.OrderItemDAO;
+import nhomhoinuong.java6_asm.dao.UserDAO;
 import nhomhoinuong.java6_asm.dto.OrderRequest;
 import nhomhoinuong.java6_asm.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,34 +32,59 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private CartItemDAO cartItemDAO;
 
+    @Autowired
+    private UserDAO userDAO;
+
     @Override
     @Transactional
     public Order createOrder(OrderRequest dto) {
-        // 1. Lưu đơn hàng
+        // 1. Kiểm tra User
+        User user = userDAO.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + dto.getUserId()));
+
+        // 2. Lấy danh sách giỏ hàng từ DB
+        List<CartItem> cartItems = cartItemDAO.findByUserId(dto.getUserId());
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng của bạn đang trống!");
+        }
+
+        // 3. Khởi tạo Đơn hàng
         Order order = new Order();
         order.setUserId(dto.getUserId());
         order.setReceiverName(dto.getReceiverName());
         order.setReceiverPhone(dto.getReceiverPhone());
         order.setShippingAddress(dto.getShippingAddress());
         order.setPaymentMethod(dto.getPaymentMethod());
-        order.setTotalAmount(dto.getTotalAmount());
         order.setStatus("PENDING");
+        order.setOrderDate(LocalDateTime.now());
 
         Order savedOrder = orderDAO.save(order);
 
-        // 2. Lưu chi tiết sản phẩm trong đơn hàng
-        if (dto.getItems() != null) {
-            for (OrderRequest.OrderItemDTO itemDto : dto.getItems()) {
-                OrderItem item = new OrderItem();
-                item.setOrderId(savedOrder.getId());
-                item.setProductId(itemDto.getProductId());
-                item.setQuantity(itemDto.getQuantity());
-                item.setPrice(itemDto.getPrice());
-                orderItemDAO.save(item);
-            }
+        // 4. Lưu từng chi tiết sản phẩm & Tính tổng tiền chính xác từ DB
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        for (CartItem cartItem : cartItems) {
+            Product product = cartItem.getProduct();
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrderId(savedOrder.getId());
+            orderItem.setProductId(product.getId());
+            orderItem.setQuantity(cartItem.getQuantity());
+
+            BigDecimal unitPrice = product.getPrice();
+            orderItem.setPrice(unitPrice);
+
+            BigDecimal itemSubTotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            totalAmount = totalAmount.add(itemSubTotal);
+
+            orderItemDAO.save(orderItem);
         }
 
-        // 3. Xóa sạch giỏ hàng của user sau khi đặt thành công
+        // Cập nhật tổng tiền hoàn chỉnh
+        savedOrder.setTotalAmount(totalAmount);
+        savedOrder = orderDAO.save(savedOrder);
+
+        // 5. Tự động dọn sạch giỏ hàng trong DB
         cartItemDAO.deleteByUserId(dto.getUserId());
 
         return savedOrder;
@@ -62,13 +93,13 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<Order> getOrders(Long userId, String status) {
         if (userId == null) {
-            if (status != null && !status.isEmpty()) {
+            if (status != null && !status.trim().isEmpty()) {
                 return orderDAO.findAllByStatusOrderByOrderDateDesc(status);
             }
             return orderDAO.findAllByOrderByOrderDateDesc();
         }
 
-        if (status != null && !status.isEmpty()) {
+        if (status != null && !status.trim().isEmpty()) {
             return orderDAO.findByUserIdAndStatusOrderByOrderDateDesc(userId, status);
         }
         return orderDAO.findByUserIdOrderByOrderDateDesc(userId);
