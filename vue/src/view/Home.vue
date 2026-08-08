@@ -218,6 +218,7 @@ import axios from 'axios'
 import { addGuestCartItem } from '../utils/cart'
 import { confirmDialog } from '../utils/dialog'
 import { notify } from '../utils/notify'
+import { getAuthStorageItem } from '../utils/authStorage'
 
 const router = useRouter()
 const route = useRoute()
@@ -420,7 +421,7 @@ const viewDetail = (id) => {
 // Thêm vào giỏ hàng thật vào DB Spring Boot
 const addToCart = async (product) => {
   try {
-    const userStorage = localStorage.getItem('user')
+    const userStorage = getAuthStorageItem('user')
     const productId = product.id || product.Id
 
     if (!userStorage) {

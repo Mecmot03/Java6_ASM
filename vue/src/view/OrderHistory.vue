@@ -147,6 +147,7 @@ import axios from 'axios'
 import { confirmDialog } from '../utils/dialog'
 import { notify } from '../utils/notify'
 import { addGuestCartItem } from '../utils/cart'
+import { getAuthStorageItem } from '../utils/authStorage'
 
 const route = useRoute()
 const router = useRouter()
@@ -166,7 +167,7 @@ const tabs = [
 ]
 
 const getUserData = () => {
-  const userStorage = localStorage.getItem('user')
+  const userStorage = getAuthStorageItem('user')
   try {
     return userStorage ? JSON.parse(userStorage) : null
   } catch (e) {
@@ -200,7 +201,7 @@ const getProductImage = (item) => {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token')
+  const token = getAuthStorageItem('token')
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {}
 }
 

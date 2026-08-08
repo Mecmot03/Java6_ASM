@@ -21,6 +21,7 @@ import FavoritesView from '../view/FavoritesView.vue'
 import UserManagement from '../view/admin/UserManagement.vue'
 import ProductManagement from '../view/admin/ProductManagement.vue'
 import CategoryManagement from '../view/admin/CategoryManagement.vue'
+import { getAuthStorageItem } from '../utils/authStorage'
 
 const routes = [
     {
@@ -68,8 +69,8 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-    const token = localStorage.getItem('token')
-    const userRaw = localStorage.getItem('user')
+    const token = getAuthStorageItem('token')
+    const userRaw = getAuthStorageItem('user')
 
     let isUser = false
     let isStaff = false
@@ -84,7 +85,7 @@ router.beforeEach((to) => {
             isStaff = userStr.includes('ROLE_STAFF') || userStr.includes('"STAFF"')
             isAdmin = userStr.includes('ROLE_ADMIN') || userStr.includes('"ADMIN"')
         } catch (e) {
-            console.error("Lỗi parse thông tin user từ localStorage:", e)
+            console.error("Lỗi parse thông tin user từ storage:", e)
         }
     }
 
