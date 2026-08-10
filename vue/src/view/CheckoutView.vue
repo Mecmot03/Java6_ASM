@@ -185,7 +185,6 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { notify } from '../utils/notify'
 import { useRouter } from 'vue-router'
-import { getAuthStorageItem } from '../utils/authStorage'
 
 const router = useRouter()
 const cartItems = ref([])
@@ -203,7 +202,7 @@ const orderForm = ref({
 
 // Lấy thông tin user hiện tại
 const getUserFromStorage = () => {
-  const userStorage = getAuthStorageItem('user')
+  const userStorage = localStorage.getItem('user')
   if (userStorage) {
     try {
       return JSON.parse(userStorage)
