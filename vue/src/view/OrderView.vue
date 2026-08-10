@@ -161,7 +161,6 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { confirmDialog } from '../utils/dialog'
 import { notify } from '../utils/notify'
-import { getAuthStorageItem } from '../utils/authStorage'
 
 const route = useRoute()
 const router = useRouter()
@@ -180,7 +179,7 @@ const tabs = [
 ]
 
 const getUserFromStorage = () => {
-  const userStorage = getAuthStorageItem('user')
+  const userStorage = localStorage.getItem('user')
   try {
     return userStorage ? JSON.parse(userStorage) : null
   } catch (e) {
@@ -231,7 +230,7 @@ const getProductImage = (item) => {
 }
 
 const getAuthHeaders = () => {
-  const token = getAuthStorageItem('token')
+  const token = localStorage.getItem('token')
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {}
 }
 
