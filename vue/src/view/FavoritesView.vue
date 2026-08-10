@@ -67,14 +67,13 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { addGuestCartItem } from '../utils/cart'
 import { notify } from '../utils/notify'
-import { getAuthStorageItem } from '../utils/authStorage'
 
 const router = useRouter()
 const favorites = ref([])
 const loading = ref(true)
 
 const getUserId = () => {
-  const userStorage = getAuthStorageItem('user')
+  const userStorage = localStorage.getItem('user')
   if (userStorage) {
     try { return JSON.parse(userStorage).id || null } catch { return null }
   }

@@ -2,14 +2,11 @@ package nhomhoinuong.java6_asm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Authority;
@@ -36,8 +33,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final RoleDAO roleDAO;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final RestTemplate restTemplate = new RestTemplate();
 
+    // 🟢 LẤY TẤT CẢ CÁC ROLE CỦA USER DƯỚI DẠNG MẢNG LIST<STRING>
     private List<String> extractAllRoles(Long userId) {
         List<Authority> authorities = authorityDAO.findByUser_Id(userId);
         if (authorities == null || authorities.isEmpty()) {
@@ -73,6 +70,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException("Tài khoản đã bị khóa");
         }
 
+        // 🟢 LẤY ĐỦ DANH SÁCH ROLES VÀ TRUYỀN VÀO TOKEN & RESPONSE
         List<String> roles = extractAllRoles(user.getId());
         String token = jwtService.generateToken(user, roles);
         String primaryRole = extractPrimaryRole(user.getId());
@@ -109,61 +107,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return savedUser;
     }
 
-    // TOÀN BỘ LOGIC XÁC THỰC SOCIAL NẰM TRỌN VẸN Ở BACKEND
     @Override
-    @Transactional
     public LoginResponse socialLogin(SocialLoginRequest request) {
-        String email = "";
-        String fullName = "";
-        String avatar = "";
-
-        // 1. Backend gọi sang Google/Facebook verify token
-        if ("GOOGLE".equalsIgnoreCase(request.getProvider())) {
-            String url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getToken();
-            try {
-                Map<String, Object> googleUser = restTemplate.getForObject(url, Map.class);
-                if (googleUser == null || !googleUser.containsKey("email")) {
-                    throw new RuntimeException("Token Google không hợp lệ!");
-                }
-                email = (String) googleUser.get("email");
-                fullName = (String) googleUser.get("name");
-                avatar = (String) googleUser.get("picture");
-            } catch (Exception e) {
-                throw new RuntimeException("Xác thực Google thất bại: " + e.getMessage());
-            }
-        } else if ("FACEBOOK".equalsIgnoreCase(request.getProvider())) {
-            String url = "https://graph.facebook.com/v18.0/me?fields=id,name,email,picture&access_token=" + request.getToken();
-            try {
-                Map<String, Object> fbUser = restTemplate.getForObject(url, Map.class);
-                if (fbUser == null) {
-                    throw new RuntimeException("Token Facebook không hợp lệ!");
-                }
-                String fbId = (String) fbUser.get("id");
-                email = fbUser.containsKey("email") ? (String) fbUser.get("email") : fbId + "@facebook.com";
-                fullName = (String) fbUser.get("name");
-
-                if (fbUser.containsKey("picture")) {
-                    Map<String, Object> picture = (Map<String, Object>) fbUser.get("picture");
-                    Map<String, Object> data = (Map<String, Object>) picture.get("data");
-                    avatar = (String) data.get("url");
-                }
-            } catch (Exception e) {
-                throw new RuntimeException("Xác thực Facebook thất bại: " + e.getMessage());
-            }
-        } else {
-            throw new RuntimeException("Provider không hợp lệ!");
-        }
-
-        // 2. Tự tạo User mới nếu lần đầu đăng nhập, hoặc lấy User cũ
-        final String finalEmail = email;
-        final String finalFullName = fullName;
-        final String finalAvatar = avatar;
-
-        User user = userDAO.findByEmail(finalEmail).orElseGet(() -> {
+        User user = userDAO.findByEmail(request.getEmail()).orElseGet(() -> {
             User newUser = new User();
-            newUser.setFullName(finalFullName);
-            newUser.setEmail(finalEmail);
-            newUser.setAvatar(finalAvatar);
+            newUser.setFullName(request.getFullName());
+            newUser.setEmail(request.getEmail());
+            newUser.setAvatar(request.getAvatar());
             newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             newUser.setEnabled(true);
             newUser.setCreatedAt(LocalDateTime.now());
@@ -185,12 +135,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException("Tài khoản đã bị khóa");
         }
 
-        if (finalAvatar != null && !finalAvatar.equals(user.getAvatar())) {
-            user.setAvatar(finalAvatar);
+        if (request.getAvatar() != null && !request.getAvatar().equals(user.getAvatar())) {
+            user.setAvatar(request.getAvatar());
             userDAO.save(user);
         }
 
-        // 3. Trả về LoginResponse chứa Jwt Token + Roles
         List<String> roles = extractAllRoles(user.getId());
         String token = jwtService.generateToken(user, roles);
         String primaryRole = extractPrimaryRole(user.getId());

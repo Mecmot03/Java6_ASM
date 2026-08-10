@@ -315,7 +315,6 @@ import { useRoute, useRouter } from "vue-router"
 import { addGuestCartItem } from '../utils/cart'
 import { notify } from '../utils/notify'
 import { confirmDialog } from '../utils/dialog'
-import { getAuthStorageItem } from '../utils/authStorage'
 
 const route = useRoute()
 const router = useRouter()
@@ -383,7 +382,7 @@ const productImages = {
 }
 
 const getUserId = () => {
-  const userStorage = getAuthStorageItem('user')
+  const userStorage = localStorage.getItem('user')
   if (userStorage) {
     try { return JSON.parse(userStorage).id || null } catch { return null }
   }
@@ -572,7 +571,7 @@ const decrease = () => {
 
 const addToCart = async () => {
   try {
-    const userStorage = getAuthStorageItem('user')
+    const userStorage = localStorage.getItem('user')
 
     if (!userStorage) {
       addGuestCartItem(product.value, buyQuantity.value)

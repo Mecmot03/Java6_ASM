@@ -84,7 +84,6 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import axios from 'axios'
 import { getAuthConfig } from '../services/authRequest'
-import { getAuthStorageItem } from '../utils/authStorage'
 
 const originalUser = ref({})
 const saving = ref(false)
@@ -111,7 +110,7 @@ const isAdmin = computed(() => {
 })
 
 const loadProfile = () => {
-  const raw = getAuthStorageItem('user')
+  const raw = localStorage.getItem('user')
   if (!raw) {
     originalUser.value = {}
     return
