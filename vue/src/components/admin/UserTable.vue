@@ -26,7 +26,6 @@
             <td>{{ user.email }}</td>
             <td>{{ user.phone || '---' }}</td>
             <td>
-              <!-- Hiển thị nhiều Badge Quyền cùng lúc -->
               <div class="d-flex flex-wrap gap-1">
                 <span 
                   v-for="role in getUserRoles(user)" 
@@ -39,8 +38,8 @@
               </div>
             </td>
             <td>
-              <span class="badge" :class="user.enabled !== false ? 'bg-success' : 'bg-secondary'">
-                {{ user.enabled !== false ? 'Hoạt động' : 'Đã khóa' }}
+              <span class="badge" :class="isUserActive(user) ? 'bg-success' : 'bg-danger'">
+                {{ isUserActive(user) ? 'Hoạt động' : 'Đã khóa' }}
               </span>
             </td>
             <td class="text-center">
@@ -54,27 +53,20 @@
                 <i class="bi bi-pencil-square"></i>
               </button>
 
-              <!-- Nút Xóa -->
+              <!-- Nút Khóa / Mở khóa (Disabled nếu là chính Admin đang đăng nhập) -->
               <button
                 type="button"
-                class="btn btn-danger btn-sm me-2"
-                @click="$emit('delete', user)"
-                title="Xóa vĩnh viễn"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-
-              <!-- Nút Khóa / Mở khóa -->
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
+                class="btn btn-sm me-2"
+                :class="isUserActive(user) ? 'btn-outline-danger' : 'btn-outline-success'"
+                :disabled="isSelf(user.id)"
+                :title="isSelf(user.id) ? 'Bạn không thể tự khóa tài khoản của chính mình' : (isUserActive(user) ? 'Khóa tài khoản này' : 'Mở khóa tài khoản')"
                 @click="$emit('changeStatus', user)"
-                :title="user.enabled !== false ? 'Khóa tài khoản này' : 'Mở khóa tài khoản'"
               >
                 <i
-                  class="bi"
-                  :class="user.enabled !== false ? 'bi-lock-fill' : 'bi-unlock-fill'"
+                  class="bi me-1"
+                  :class="isUserActive(user) ? 'bi-lock-fill' : 'bi-unlock-fill'"
                 ></i>
+                {{ isUserActive(user) ? 'Khóa' : 'Mở khóa' }}
               </button>
             </td>
           </tr>
@@ -93,20 +85,32 @@
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   users: {
     type: Array,
     default: () => []
+  },
+  currentAdminId: {
+    type: [Number, String],
+    default: null
   }
 })
 
 defineEmits([
   'edit',
-  'delete',
   'changeStatus'
 ])
 
-// Lấy mảng danh sách quyền để render
+// Kiểm tra dòng dữ liệu này có phải chính Admin đang đăng nhập hay không
+const isSelf = (userId) => {
+  if (!props.currentAdminId || !userId) return false
+  return String(props.currentAdminId) === String(userId)
+}
+
+const isUserActive = (user) => {
+  return user.enabled !== false
+}
+
 const getUserRoles = (user) => {
   if (!user) return ['ROLE_USER']
   
@@ -125,7 +129,6 @@ const getUserRoles = (user) => {
   return roles.length > 0 ? roles : ['ROLE_USER']
 }
 
-// Phân biệt màu sắc từng Badge Quyền
 const getRoleBadgeClass = (roleName) => {
   switch (roleName) {
     case 'ROLE_ADMIN':

@@ -49,37 +49,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String email = jwtService.extractEmail(token);
-
         User user = userDAO.findByEmail(email).orElse(null);
 
-        if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            // Lấy danh sách Authority của User từ DB
-            List<Authority> userAuthorities = authorityDAO.findByUser_Id(user.getId());
-
-            List<SimpleGrantedAuthority> authorities;
-            if (userAuthorities != null && !userAuthorities.isEmpty()) {
-                // Áp dụng lấy tên Role thông qua Object Role mới
-                authorities = userAuthorities.stream()
-                        .map(auth -> new SimpleGrantedAuthority(auth.getRole().getName()))
-                        .toList();
-            } else {
-                authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        if (user != null) {
+            // Kiểm tra nếu tài khoản đã bị khóa trong DB
+            if (!Boolean.TRUE.equals(user.getEnabled())) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json;charset=UTF-8");
+                response.getWriter().write("{\"message\": \"Tài khoản của bạn đã bị khóa!\"}");
+                return;
             }
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            user,
-                            null,
-                            authorities
-                    );
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+                List<Authority> userAuthorities = authorityDAO.findByUser_Id(user.getId());
 
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
+                List<SimpleGrantedAuthority> authorities;
+                if (userAuthorities != null && !userAuthorities.isEmpty()) {
+                    authorities = userAuthorities.stream()
+                            .map(auth -> new SimpleGrantedAuthority(auth.getRole().getName()))
+                            .toList();
+                } else {
+                    authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                }
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                authorities
+                        );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
         }
 
         filterChain.doFilter(request, response);
