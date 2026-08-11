@@ -12,4 +12,5 @@ public interface OrderService {
     Order shipOrder(Long orderId);
     Order deliverOrder(Long orderId);
     Order cancelOrder(Long orderId);
+    void rebuyOrder(Long orderId, Long userId); // Thêm hàm mua lại đơn hàng
 }

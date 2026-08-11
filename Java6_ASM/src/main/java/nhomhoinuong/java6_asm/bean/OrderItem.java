@@ -26,4 +26,9 @@ public class OrderItem {
 
     @Column(name = "Price", precision = 18, scale = 2)
     private BigDecimal price;
+
+    // 🟢 THÊM MỐI QUAN HỆ NÀY ĐỂ TỰ ĐỘNG LẤY TÊN VÀ ẢNH TỪ BẢNG PRODUCTS
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "ProductId", insertable = false, updatable = false)
+    private Product product;
 }
