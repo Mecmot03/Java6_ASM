@@ -1,5 +1,6 @@
 package nhomhoinuong.java6_asm.dao;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,8 @@ public interface ProductDAO extends JpaRepository<Product, Long> {
            "     LOWER(c.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "AND (:categoryId IS NULL OR c.id = :categoryId) " +
            "AND (:brand IS NULL OR :brand = '' OR LOWER(p.brand) = LOWER(:brand)) " +
+           "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+           "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
            "ORDER BY " +
            "CASE WHEN :sortBy = 'price_asc' THEN p.price END ASC, " +
            "CASE WHEN :sortBy = 'price_desc' THEN p.price END DESC, " +
@@ -28,6 +31,8 @@ public interface ProductDAO extends JpaRepository<Product, Long> {
         @Param("keyword") String keyword,
         @Param("categoryId") Long categoryId,
         @Param("brand") String brand,
+        @Param("minPrice") BigDecimal minPrice,
+        @Param("maxPrice") BigDecimal maxPrice,
         @Param("sortBy") String sortBy
     );
 }

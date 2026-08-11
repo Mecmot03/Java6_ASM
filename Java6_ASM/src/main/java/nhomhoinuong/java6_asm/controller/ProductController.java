@@ -1,5 +1,6 @@
 package nhomhoinuong.java6_asm.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +26,10 @@ public class ProductController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String brand,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String sortBy) {
-        return productService.filterProducts(keyword, categoryId, brand, sortBy);
+        return productService.filterProducts(keyword, categoryId, brand, minPrice, maxPrice, sortBy);
     }
 
     @GetMapping("/{id}")

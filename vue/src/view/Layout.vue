@@ -15,8 +15,13 @@
               <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted">
                 <i class="bi bi-search"></i>
               </span>
-              <input type="text" class="form-control border-start-0 rounded-end-pill ps-0"
-                placeholder="Mua OPPO Reno16 Series..." v-model="searchQuery" @keyup.enter="handleSearch" />
+              <input 
+                type="text" 
+                class="form-control border-start-0 rounded-end-pill ps-0"
+                placeholder="Mua OPPO Reno16 Series..." 
+                v-model="searchQuery" 
+                @keyup.enter="handleSearch" 
+              />
             </div>
           </div>
 
@@ -38,9 +43,8 @@
               @click="handleUserArea"
             >
               <i class="bi bi-person-circle fs-5" :class="{ 'text-danger': isAdmin, 'text-primary': isStaff && !isAdmin }"></i>
-              <span class="text-truncate" style="max-width: 110px;"
-                :title="currentUser.fullName || currentUser.email || currentUser.username">
-                {{ currentUser.fullName || currentUser.email || currentUser.username }}
+              <span class="text-truncate" style="max-width: 110px;" :title="currentUser.fullName || currentUser.email">
+                {{ currentUser.fullName || currentUser.email }}
               </span>
             </button>
 
@@ -55,15 +59,18 @@
               <span>Lịch sử</span>
             </router-link>
 
-            <!-- 4. DROPDOWN THEO DÕI ĐƠN HÀNG (YÊU CẦU CÓ ROLE_STAFF) -->
-            <div v-if="currentUser && isStaff" class="dropdown">
-              <button class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
-                type="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <!-- 4. DROPDOWN QUẢN LÝ ĐƠN HÀNG (YÊU CẦU CÓ ROLE_STAFF HOẶC ROLE_ADMIN) -->
+            <div v-if="currentUser && (isStaff || isAdmin)" class="dropdown">
+              <button 
+                class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
+                type="button" 
+                data-bs-toggle="dropdown" 
+                aria-expanded="false"
+              >
                 <i class="bi bi-box-seam text-danger"></i>
                 <span class="fw-bold text-danger">Đơn hàng</span>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2"
-                style="min-width: 200px;">
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 mt-2 p-2" style="min-width: 200px;">
                 <li class="dropdown-header text-uppercase fw-bold fs-8 text-secondary">Trạng thái đơn hàng</li>
                 <li>
                   <router-link to="/orders?status=PENDING" class="dropdown-item rounded-2 py-1 small">
@@ -108,15 +115,21 @@
             <router-link to="/cart" class="nav-item-link position-relative">
               <i class="bi bi-cart3"></i>
               <span>Giỏ hàng</span>
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                v-if="cartCount > 0">
+              <span 
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                v-if="cartCount > 0"
+              >
                 {{ cartCount }}
               </span>
             </router-link>
 
             <!-- 7. NÚT ĐĂNG XUẤT -->
-            <button v-if="currentUser" class="btn btn-link nav-item-link text-danger text-decoration-none p-0 border-0"
-              @click="handleLogout" title="Đăng xuất">
+            <button 
+              v-if="currentUser" 
+              class="btn btn-link nav-item-link text-danger text-decoration-none p-0 border-0"
+              @click="handleLogout" 
+              title="Đăng xuất"
+            >
               <i class="bi bi-box-arrow-right"></i>
               <span>Đăng xuất</span>
             </button>
@@ -125,7 +138,7 @@
         </div>
       </div>
 
-      <!-- 2. DANH MỤC -->
+      <!-- 2. DANH MỤC NAV -->
       <nav class="categories-nav d-none d-md-block py-2 border-top border-dark border-opacity-10">
         <div class="container d-flex justify-content-between align-items-center text-nowrap overflow-x-auto gap-2">
           <a href="#" class="category-item" @click.prevent="selectCategory(null)">
@@ -133,27 +146,30 @@
             <span>Tất cả</span>
           </a>
 
-          <a v-for="menu in menuItems" :key="menu.id" href="#" class="category-item"
-            @click.prevent="selectCategory(menu.id)">
-            <img v-if="menu.img" :src="menu.img" :alt="menu.name" class="category-icon-img" />
-            <i v-else :class="menu.icon"></i>
+          <a 
+            v-for="menu in menuItems" 
+            :key="menu.id" 
+            href="#" 
+            class="category-item"
+            @click.prevent="selectCategory(menu.id)"
+          >
+            <i :class="menu.icon"></i>
             <span>{{ menu.name }}</span>
-            <i v-if="menu.hasSub" class="bi bi-chevron-down ms-1 small-arrow"></i>
           </a>
         </div>
       </nav>
     </header>
 
-    <!-- BANNER 2 BÊN -->
+    <!-- BANNER 2 BÊN (CHỈ HIỂN THỊ TẠI TRANG CHỦ) -->
     <div v-if="isHomePage" class="side-banner side-banner-left d-none d-xl-block">
       <router-link to="/flashsale">
-        <img src="/images/mi.png" alt="Banner Trai" class="img-fluid rounded-3 shadow-sm" />
+        <img src="/images/mi.png" alt="Banner Trái" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
     </div>
 
     <div v-if="isHomePage" class="side-banner side-banner-right d-none d-xl-block">
       <router-link to="/flashsale">
-        <img src="/images/ni.png" alt="Banner Phai" class="img-fluid rounded-3 shadow-sm" />
+        <img src="/images/ni.png" alt="Banner Phải" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
     </div>
 
@@ -168,7 +184,6 @@
       class="app-toast position-fixed end-0 top-0 m-4 shadow-lg rounded-4 px-4 py-3"
       :class="toastClasses"
       role="status"
-      aria-live="polite"
     >
       <div class="d-flex align-items-start gap-3">
         <i :class="toastIcon" class="fs-5 mt-1"></i>
@@ -216,12 +231,9 @@
           <div class="col-12 col-sm-6 col-md-3">
             <h6 class="fw-bold text-dark text-uppercase mb-3">Tổng đài hỗ trợ</h6>
             <ul class="list-unstyled footer-links">
-              <li>Gọi mua: <a href="tel:1900232460" class="fw-bold text-primary text-decoration-none">1900 232 460</a>
-                (8:00 - 21:30)</li>
-              <li>Khiếu nại: <a href="tel:18001062" class="fw-bold text-primary text-decoration-none">1800 1062</a>
-                (8:00 - 21:30)</li>
-              <li>Bảo hành: <a href="tel:1900232464" class="fw-bold text-primary text-decoration-none">1900 232 464</a>
-                (8:00 - 21:00)</li>
+              <li>Gọi mua: <a href="tel:1900232460" class="fw-bold text-primary text-decoration-none">1900 232 460</a> (8:00 - 21:30)</li>
+              <li>Khiếu nại: <a href="tel:18001062" class="fw-bold text-primary text-decoration-none">1800 1062</a> (8:00 - 21:30)</li>
+              <li>Bảo hành: <a href="tel:1900232464" class="fw-bold text-primary text-decoration-none">1900 232 464</a> (8:00 - 21:00)</li>
             </ul>
 
             <div class="mt-3">
@@ -320,7 +332,7 @@ const policyLinks = ref([
 
 const isHomePage = computed(() => route.path === '/')
 
-// 🟢 CHUẨN HÓA MẢNG ROLES ĐỂ QUÉT CHÍNH XÁC MỌI DẠNG DỮ LIỆU TỪ BACKEND
+// 🟢 CHUẨN HÓA MẢNG ROLES ĐƯỢC TRẢ VỀ TỪ BACKEND
 const userRoles = computed(() => {
   if (!currentUser.value) return []
 
@@ -332,19 +344,19 @@ const userRoles = computed(() => {
     return [String(currentUser.value.role).toUpperCase()]
   }
 
-  return [JSON.stringify(currentUser.value).toUpperCase()]
+  return []
 })
 
 const isAdmin = computed(() => {
-  return userRoles.value.some(r => r.includes('ADMIN') || r.includes('ROLE_ADMIN'))
+  return userRoles.value.some(r => r === 'ROLE_ADMIN' || r === 'ADMIN')
 })
 
 const isStaff = computed(() => {
-  return userRoles.value.some(r => r.includes('STAFF') || r.includes('ROLE_STAFF'))
+  return userRoles.value.some(r => r === 'ROLE_STAFF' || r === 'STAFF')
 })
 
 const isUser = computed(() => {
-  return userRoles.value.some(r => r.includes('USER') || r.includes('ROLE_USER'))
+  return userRoles.value.some(r => r === 'ROLE_USER' || r === 'USER') || userRoles.value.length === 0
 })
 
 const toastClasses = computed(() => {
@@ -409,9 +421,14 @@ const closeConfirm = (confirmed) => {
 const acceptConfirm = () => closeConfirm(true)
 const cancelConfirm = () => closeConfirm(false)
 
-const goHome = () => {
+const goHome = async () => {
   searchQuery.value = ''
-  router.push('/')
+  if (route.path === '/' && Object.keys(route.query).length === 0) {
+    // Nếu đang ở sẵn trang chủ nguyên bản, phát sự kiện tự tạo để Home.vue reset
+    window.dispatchEvent(new CustomEvent('reset-home-filters'))
+  } else {
+    await router.push({ path: '/', query: {} })
+  }
 }
 
 const handleUserArea = () => {
@@ -479,20 +496,22 @@ const handleScroll = () => {
   }
 }
 
+// Tải danh mục sản phẩm từ Backend
 const fetchCategories = async () => {
   try {
     const response = await axios.get('/api/categories')
-    menuItems.value = response.data.map(cat => ({
-      id: cat.id || cat.Id,
-      name: cat.name || cat.Name,
-      icon: iconMap[cat.name || cat.Name] || 'bi bi-grid',
-      hasSub: false
+    const list = response.data || []
+    menuItems.value = list.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      icon: iconMap[cat.name] || 'bi bi-grid'
     }))
   } catch (error) {
     menuItems.value = []
   }
 }
 
+// Tải số lượng giỏ hàng từ Backend
 const fetchCartCount = async () => {
   try {
     const userStorage = localStorage.getItem('user')
@@ -516,12 +535,16 @@ const fetchCartCount = async () => {
   }
 }
 
-const selectCategory = (categoryId) => {
+const selectCategory = async (categoryId) => {
   searchQuery.value = ''
   if (categoryId) {
-    router.push({ path: '/', query: { categoryId: categoryId } })
+    await router.push({ path: '/', query: { categoryId: categoryId } })
   } else {
-    router.push('/')
+    if (route.path === '/' && Object.keys(route.query).length === 0) {
+      window.dispatchEvent(new CustomEvent('reset-home-filters'))
+    } else {
+      await router.push({ path: '/', query: {} })
+    }
   }
 }
 
@@ -710,10 +733,6 @@ button.nav-item-link:hover {
   font-size: 16px;
 }
 
-.small-arrow {
-  font-size: 10px;
-}
-
 .categories-nav div::-webkit-scrollbar {
   display: none;
 }
@@ -760,7 +779,6 @@ button.nav-item-link:hover {
   color: #000;
 }
 
-/* CSS CHO FOOTER */
 .footer-links { font-size: 13px; }
 .footer-links li { margin-bottom: 8px; }
 .footer-links a { color: #4a4a4a; text-decoration: none; transition: color 0.2s; }

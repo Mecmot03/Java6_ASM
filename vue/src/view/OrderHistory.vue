@@ -50,7 +50,7 @@
           <div class="d-flex align-items-center gap-3">
             <span class="fw-bold text-dark fs-5">Mã đơn hàng: #{{ order.id }}</span>
             <small class="text-muted border-start ps-3">
-              <i class="bi bi-clock me-1"></i>{{ formatDate(order.orderDate || order.createdDate) }}
+              <i class="bi bi-clock me-1"></i>{{ formatDate(order.orderDate) }}
             </small>
           </div>
           <span class="badge rounded-pill px-3 py-2 fw-bold" :class="getStatusBadgeClass(order.status)">
@@ -70,7 +70,7 @@
           </div>
           <div class="col-md-4">
             <i class="bi bi-credit-card me-1 text-secondary"></i>
-            <strong>Thanh toán:</strong> {{ (order.paymentMethod === 'COD' || !order.paymentMethod) ? 'Thanh toán khi nhận (COD)' : 'Chuyển khoản' }}
+            <strong>Thanh toán:</strong> {{ order.paymentMethod === 'BANK' ? 'Chuyển khoản' : 'Thanh toán khi nhận (COD)' }}
           </div>
           <div class="col-12 mt-1">
             <i class="bi bi-geo-alt me-1 text-secondary"></i>
@@ -79,8 +79,8 @@
         </div>
 
         <!-- DANH SÁCH SẢN PHẨM TRONG ĐƠN -->
-        <div class="order-items-list border-top border-bottom py-2 mb-3" v-if="(order.items || order.orderItems) && (order.items || order.orderItems).length > 0">
-          <div v-for="item in (order.items || order.orderItems)" :key="item.id" class="d-flex align-items-center justify-content-between py-2">
+        <div class="order-items-list border-top border-bottom py-2 mb-3" v-if="order.items && order.items.length > 0">
+          <div v-for="item in order.items" :key="item.id" class="d-flex align-items-center justify-content-between py-2">
             <div class="d-flex align-items-center gap-3">
               <img 
                 :src="getProductImage(item)" 
@@ -90,13 +90,13 @@
               />
               <div>
                 <h6 class="fw-bold text-dark mb-1">
-                  {{ getProductName(item) }}
+                  {{ item.productName || item.product?.name || 'Sản phẩm #' + item.productId }}
                 </h6>
                 <small class="text-muted">Số lượng: x{{ item.quantity }}</small>
               </div>
             </div>
             <div class="fw-bold text-dark">
-              {{ formatPrice((item.price || item.product?.price || 0) * item.quantity) }}
+              {{ formatPrice((item.price || 0) * item.quantity) }}
             </div>
           </div>
         </div>
@@ -105,7 +105,7 @@
           <i class="bi bi-bag-check me-1"></i> Đơn hàng bao gồm các sản phẩm đã được xác nhận.
         </div>
 
-        <!-- FOOTER ĐƠN HÀNG (DÀNH CHO KHÁCH HÀNG THƯỜNG) -->
+        <!-- FOOTER ĐƠN HÀNG -->
         <div class="d-flex justify-content-between align-items-center pt-2">
           <div class="d-flex align-items-center gap-2">
             <!-- NÚT HỦY ĐƠN (KHI ĐƠN ĐANG CHỜ XÁC NHẬN) -->
@@ -122,7 +122,7 @@
               v-if="order.status === 'CANCELLED' || order.status === 'DELIVERED'" 
               class="btn btn-warning btn-sm rounded-pill px-3 fw-bold text-dark shadow-sm"
               :disabled="rebuyingOrderId === order.id"
-              @click="handleRebuyOrder(order)"
+              @click="handleRebuyOrder(order.id)"
             >
               <span v-if="rebuyingOrderId === order.id" class="spinner-border spinner-border-sm me-1"></span>
               <i v-else class="bi bi-cart-plus me-1"></i> Mua lại
@@ -131,7 +131,7 @@
 
           <div class="ms-auto text-end">
             <span class="text-muted small me-2">Tổng thanh toán:</span>
-            <span class="fw-bold text-danger fs-4">{{ formatPrice(order.totalAmount || order.totalPrice || 0) }}</span>
+            <span class="fw-bold text-danger fs-4">{{ formatPrice(order.totalAmount || 0) }}</span>
           </div>
         </div>
 
@@ -146,7 +146,6 @@ import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { confirmDialog } from '../utils/dialog'
 import { notify } from '../utils/notify'
-import { addGuestCartItem } from '../utils/cart'
 
 const route = useRoute()
 const router = useRouter()
@@ -155,7 +154,6 @@ const orders = ref([])
 const loading = ref(true)
 const rebuyingOrderId = ref(null)
 const currentStatus = ref(route.query.status || 'PENDING')
-const productMap = ref({})
 
 const tabs = [
   { label: 'Chờ xác nhận', status: 'PENDING', icon: 'bi bi-clock' },
@@ -174,27 +172,11 @@ const getUserData = () => {
   }
 }
 
-const getProductName = (item) => {
-  if (item.productName) return item.productName
-  if (item.product?.name) return item.product.name
-  const pId = item.productId || item.product?.id || item.id
-  if (pId && productMap.value[pId]?.name) {
-    return productMap.value[pId].name
-  }
-  return `Sản phẩm #${pId}`
-}
-
 const getProductImage = (item) => {
   const imgName = item.productImage || item.product?.image || item.image
   if (imgName) {
     if (imgName.startsWith('http') || imgName.startsWith('/')) return imgName
     return `/images/${imgName}`
-  }
-  const pId = item.productId || item.product?.id || item.id
-  if (pId && productMap.value[pId]?.image) {
-    const mappedImg = productMap.value[pId].image
-    if (mappedImg.startsWith('http') || mappedImg.startsWith('/')) return mappedImg
-    return `/images/${mappedImg}`
   }
   return 'https://via.placeholder.com/80?text=No+Image'
 }
@@ -204,6 +186,7 @@ const getAuthHeaders = () => {
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {}
 }
 
+// Tải lịch sử đơn hàng từ Backend
 const fetchOrders = async () => {
   loading.value = true
   const user = getUserData()
@@ -213,7 +196,6 @@ const fetchOrders = async () => {
   }
 
   try {
-    // Luôn lọc theo userId cá nhân đối với trang Lịch sử đơn hàng
     const query = new URLSearchParams({ 
       status: currentStatus.value,
       userId: user.id
@@ -221,17 +203,6 @@ const fetchOrders = async () => {
 
     const res = await axios.get(`/api/orders?${query.toString()}`, getAuthHeaders())
     orders.value = res.data || []
-
-    try {
-      const prodRes = await axios.get('/api/products')
-      const pList = prodRes.data.content || prodRes.data || []
-      const map = {}
-      pList.forEach(p => { map[p.id] = p })
-      productMap.value = map
-    } catch (e) {
-      console.warn("Lỗi fetch thông tin sản phẩm:", e)
-    }
-
   } catch (err) {
     console.error('Lỗi tải danh sách đơn hàng:', err)
   } finally {
@@ -239,6 +210,7 @@ const fetchOrders = async () => {
   }
 }
 
+// Gọi API Hủy đơn hàng
 const handleCancelOrder = async (orderId) => {
   if (!(await confirmDialog("Bạn có chắc chắn muốn hủy đơn hàng này không?"))) return
 
@@ -251,44 +223,22 @@ const handleCancelOrder = async (orderId) => {
   }
 }
 
-const handleRebuyOrder = async (order) => {
-  rebuyingOrderId.value = order.id
+// Gọi API Mua lại đơn hàng (Giao hoàn toàn cho Backend xử lý)
+const handleRebuyOrder = async (orderId) => {
+  const user = getUserData()
+  if (!user || !user.id) return
+
+  rebuyingOrderId.value = orderId
   try {
-    const user = getUserData()
-    let itemsToRebuy = order.items || order.orderItems || []
-
-    if (!itemsToRebuy || itemsToRebuy.length === 0) {
-      notify("Không tìm thấy sản phẩm để thêm vào giỏ!", "warning")
-      return
-    }
-
-    for (const item of itemsToRebuy) {
-      const productId = item.productId || item.product?.id || item.id
-      const qty = item.quantity || 1
-
-      if (user && user.id) {
-        await axios.post(`/api/cart/add?userId=${user.id}`, {
-          productId: productId,
-          quantity: qty
-        }, getAuthHeaders())
-      } else {
-        const productObj = item.product || productMap.value[productId] || {
-          id: productId,
-          name: getProductName(item),
-          image: getProductImage(item),
-          price: item.price || 0
-        }
-        addGuestCartItem(productObj, qty)
-      }
-    }
-
+    await axios.post(`/api/orders/${orderId}/rebuy?userId=${user.id}`, {}, getAuthHeaders())
+    
+    // Phát sự kiện cập nhật giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
     notify("Đã thêm các sản phẩm vào giỏ hàng!", "success")
     router.push('/cart')
-
   } catch (err) {
     console.error("Lỗi mua lại đơn hàng:", err)
-    notify("Không thể thêm vào giỏ hàng. Vui lòng thử lại!", "danger")
+    notify(err.response?.data || "Không thể thêm vào giỏ hàng. Vui lòng thử lại!", "danger")
   } finally {
     rebuyingOrderId.value = null
   }
