@@ -66,8 +66,9 @@
           </div>
 
           <!-- Nút submit -->
-          <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm mb-3 text-dark">
-            ĐĂNG NHẬP
+          <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm mb-3 text-dark" :disabled="loading">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+            <span v-else>ĐĂNG NHẬP</span>
           </button>
 
           <!-- Hoặc đăng nhập bằng -->
@@ -105,6 +106,7 @@ import { mergeGuestCartIntoBackend } from '../utils/cart'
 const router = useRouter()
 const route = useRoute()
 const showPassword = ref(false)
+const loading = ref(false)
 
 const loginForm = ref({
   email: '',
@@ -130,19 +132,20 @@ onMounted(() => {
    }(document, 'script', 'facebook-jssdk'));
 })
 
+// Đăng nhập thường
 const handleLogin = async () => {
   if (!loginForm.value.email.trim() || !loginForm.value.password.trim()) {
     notify('Vui lòng nhập đầy đủ email và mật khẩu.', 'warning')
     return
   }
 
+  loading.value = true
   try {
     const response = await axios.post('/api/auth/login', {
       email: loginForm.value.email,
       password: loginForm.value.password
     })
 
-    // 🔴 CHỈ LƯU VÀO STORAGE KHI BACKEND TRẢ VỀ TOKEN THẬT
     if (response.data && response.data.token) {
       await saveSessionAndRedirect(response.data)
     } else {
@@ -150,55 +153,51 @@ const handleLogin = async () => {
     }
 
   } catch (error) {
-    // Nếu sai mật khẩu hoặc lỗi server, KHÔNG ĐƯỢC lưu gì vào localStorage
-    const msg = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!'
+    const msg = error.response?.data?.message || error.response?.data || 'Email hoặc mật khẩu không chính xác!'
     notify(msg, 'danger')
+  } finally {
+    loading.value = false
   }
 }
 
+// Đăng nhập Google: Chỉ gửi Token về Backend
 const loginWithGoogle = () => {
   googleTokenLogin({
     clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com'
   }).then(async (response) => {
     try {
-      const res = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${response.access_token}`)
-      const googleUser = res.data
-
       const backendRes = await axios.post('/api/auth/social-login', {
-        email: googleUser.email,
-        fullName: googleUser.name,
-        avatar: googleUser.picture,
+        token: response.access_token,
         provider: 'GOOGLE'
       })
       await saveSessionAndRedirect(backendRes.data)
     } catch (err) {
-      notify("Đăng nhập Google thất bại!", 'danger')
+      console.error("Lỗi Google Login:", err)
+      notify(err.response?.data?.message || "Đăng nhập Google thất bại!", 'danger')
     }
   })
 }
 
+// Đăng nhập Facebook: Chỉ gửi Token về Backend
 const loginWithFacebook = () => {
   window.FB.login((response) => {
     if (response.authResponse) {
       const accessToken = response.authResponse.accessToken;
-      axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
-        .then(async (res) => {
-          const fbUser = res.data;
-          const backendRes = await axios.post('/api/auth/social-login', {
-            email: `${fbUser.id}@facebook.com`,
-            fullName: fbUser.name,
-            avatar: fbUser.picture?.data?.url,
-            provider: 'FACEBOOK'
-          });
-          await saveSessionAndRedirect(backendRes.data);
-        })
-        .catch(() => notify("Không thể lấy thông tin tài khoản Facebook!", 'danger'));
+      axios.post('/api/auth/social-login', {
+        token: accessToken,
+        provider: 'FACEBOOK'
+      })
+      .then(async (backendRes) => {
+        await saveSessionAndRedirect(backendRes.data);
+      })
+      .catch((err) => notify(err.response?.data?.message || "Không thể xác thực tài khoản Facebook!", 'danger'));
     } else {
       notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
-  }, { scope: 'public_profile' });
+  }, { scope: 'public_profile,email' });
 }
 
+// Lưu Session và Điều hướng người dùng
 const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
   const userObj = data.user || data
@@ -217,11 +216,13 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-  // ƯU TIÊN KIỂM TRA ROLE ADMIN TRƯỚC VÀ ĐƯA VÀO /admin/users
+  // Điều hướng dựa trên quyền
   const userString = JSON.stringify(userObj).toUpperCase()
   
   if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
     router.push('/admin/users')
+  } else if (userString.includes('ROLE_STAFF') || userString.includes('"STAFF"')) {
+    router.push('/orders?status=PENDING')
   } else {
     const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirectPath)

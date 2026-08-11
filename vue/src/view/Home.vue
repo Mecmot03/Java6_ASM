@@ -121,10 +121,9 @@
       </div>
     </div>
 
-    <!-- DANH SÁCH SẢN PHẨM (THIẾT KẾ MỚI VỚI NGUYÊN NĂNG LỰC FILTER) -->
+    <!-- DANH SÁCH SẢN PHẨM -->
     <div class="row g-4">
       
-      <!-- TIÊU ĐỀ KHỐI SẢN PHẨM HIỆN ĐẠI -->
       <div class="col-12">
         <div class="d-flex align-items-center justify-content-between p-3 bg-white rounded-4 shadow-sm border border-light">
           <div class="d-flex align-items-center gap-3">
@@ -142,32 +141,29 @@
           </div>
 
           <span class="badge bg-dark text-warning rounded-pill px-3 py-2 fw-bold fs-7 shadow-sm">
-            <i class="bi bi-box-seam me-1"></i> {{ filteredProducts.length }} Sản phẩm
+            <i class="bi bi-box-seam me-1"></i> {{ products.length }} Sản phẩm
           </span>
         </div>
       </div>
 
       <!-- KHÔNG TÌM THẤY SẢN PHẨM -->
-      <div v-if="filteredProducts.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
+      <div v-if="products.length === 0" class="col-12 text-center py-5 my-3 bg-white rounded-4 shadow-sm">
         <i class="bi bi-search-heart display-1 text-warning opacity-50 d-block mb-3"></i>
         <h5 class="fw-bold text-dark">Rất tiếc, không tìm thấy sản phẩm phù hợp!</h5>
         <p class="text-muted small mb-0">Hãy thử điều chỉnh lại khoảng giá hoặc tìm kiếm từ khóa khác xem sao nhé.</p>
       </div>
 
-      <!-- PRODUCT CARD THIẾT KẾ MỚI -->
-      <div v-for="product in filteredProducts" :key="product.id || product.Id" class="col-12 col-sm-6 col-md-4 col-lg-3">
+      <!-- PRODUCT CARD -->
+      <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
         <div class="card h-100 shadow-sm border-0 rounded-4 product-card position-relative overflow-hidden bg-white">
           
-          <!-- KHU VỰC ẢNH SẢN PHẨM -->
-          <div class="product-img-wrapper p-3 position-relative text-center bg-light rounded-top-4" @click="viewDetail(product.id || product.Id)">
-            <!-- BADGE GIẢM GIÁ / MỚI -->
-            <span v-if="product.discountId || product.DiscountId" class="badge bg-danger position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8">
+          <div class="product-img-wrapper p-3 position-relative text-center bg-light rounded-top-4" @click="viewDetail(product.id)">
+            <span v-if="product.discountId" class="badge bg-danger position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8">
               <i class="bi bi-fire me-1"></i>GIẢM GIÁ
             </span>
 
-            <img :src="getProductImage(product)" class="img-fluid product-img-zoom" :alt="getProductName(product)">
+            <img :src="getProductImage(product)" class="img-fluid product-img-zoom" :alt="product.name">
             
-            <!-- NÚT XEM NHANH KHI HOVER -->
             <div class="hover-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-10">
               <span class="btn btn-sm btn-light rounded-pill px-3 shadow fw-bold text-dark">
                 <i class="bi bi-eye-fill me-1 text-warning"></i> Xem chi tiết
@@ -175,25 +171,22 @@
             </div>
           </div>
 
-          <!-- THÔNG TIN SẢN PHẨM -->
           <div class="card-body p-3 d-flex flex-column justify-content-between">
             <div>
               <div class="d-flex align-items-center justify-content-between mb-1">
-                <span class="badge bg-light text-secondary border rounded-pill fs-8">{{ getProductBrand(product) }}</span>
-                
+                <span class="badge bg-light text-secondary border rounded-pill fs-8">{{ product.brand || 'Khác' }}</span>
               </div>
 
-              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="getProductName(product)" @click="viewDetail(product.id || product.Id)" style="cursor: pointer;">
-                {{ getProductName(product) }}
+              <h6 class="card-title fw-bold text-dark text-truncate mb-2" :title="product.name" @click="viewDetail(product.id)" style="cursor: pointer;">
+                {{ product.name }}
               </h6>
             </div>
 
             <div class="mt-2">
               <div class="d-flex align-items-baseline gap-2 mb-3">
-                <h5 class="text-danger fw-bold mb-0 fs-5">{{ formatPrice(product.price ?? product.Price) }}</h5>
+                <h5 class="text-danger fw-bold mb-0 fs-5">{{ formatPrice(product.price) }}</h5>
               </div>
 
-              <!-- NÚT MUA HÀNG PHỦ ĐẦY CHIỀU NGANG -->
               <button 
                 class="btn btn-warning w-100 rounded-pill fw-bold text-dark py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 btn-add-cart"
                 @click="addToCart(product)"
@@ -230,7 +223,6 @@ const selectedBrand = ref('')
 const sortBy = ref('default')
 const priceSort = ref('')
 
-// Quản lý khoảng giá 2 đầu
 const tempMinPrice = ref(0)
 const tempMaxPrice = ref(100000000)
 const appliedMinPrice = ref(0)
@@ -239,7 +231,6 @@ const MAX_ALLOWED_PRICE = 100000000
 
 const availableBrands = ref(['Apple', 'Samsung', 'Xiaomi', 'Dell', 'Logitech', 'Sony', 'Razer', 'Asus', 'Anker'])
 
-// Quản lý trạng thái cuộn mượt bằng requestAnimationFrame
 const isScrollingUp = ref(false)
 let lastScrollPos = 0
 let ticking = false
@@ -248,7 +239,6 @@ const handleHomeScroll = () => {
   if (!ticking) {
     window.requestAnimationFrame(() => {
       const currentScroll = window.scrollY || document.documentElement.scrollTop
-      
       if (currentScroll <= 120) {
         isScrollingUp.value = false
       } else {
@@ -264,21 +254,18 @@ const handleHomeScroll = () => {
   }
 }
 
-// Đảm bảo nút Min không vượt nút Max
 const enforceMinPrice = () => {
   if (tempMinPrice.value > tempMaxPrice.value - 500000) {
     tempMinPrice.value = tempMaxPrice.value - 500000
   }
 }
 
-// Đảm bảo nút Max không bé hơn nút Min
 const enforceMaxPrice = () => {
   if (tempMaxPrice.value < tempMinPrice.value + 500000) {
     tempMaxPrice.value = tempMinPrice.value + 500000
   }
 }
 
-// Tính dải màu vàng hiển thị ở giữa 2 nút kéo
 const trackStyle = computed(() => {
   const minPercent = (tempMinPrice.value / MAX_ALLOWED_PRICE) * 100
   const maxPercent = (tempMaxPrice.value / MAX_ALLOWED_PRICE) * 100
@@ -292,20 +279,27 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 }
 
-const isAuthError = (error) => {
-  const status = error?.response?.status
-  return status === 401 || status === 403
+// 🟢 ĐẶT LẠI TOÀN BỘ BỘ LỌC VỀ MẶC ĐỊNH KHÔNG CÓ LỌC GIÁ / THƯƠNG HIỆU
+const resetFilters = () => {
+  keyword.value = ''
+  selectedCategoryId.value = null
+  selectedCategoryName.value = ''
+  selectedBrand.value = ''
+  sortBy.value = 'default'
+  priceSort.value = ''
+  tempMinPrice.value = 0
+  tempMaxPrice.value = MAX_ALLOWED_PRICE
+  appliedMinPrice.value = 0
+  appliedMaxPrice.value = MAX_ALLOWED_PRICE
 }
 
-// Lọc sản phẩm theo khoảng giá Min - Max đã áp dụng
-const filteredProducts = computed(() => {
-  return products.value.filter(product => {
-    const price = Number(product.price ?? product.Price ?? 0)
-    if (price === 0) return true
-    return price >= appliedMinPrice.value && price <= appliedMaxPrice.value
-  })
-})
+// 🟢 XỬ LÝ SỰ KIỆN KHI BẤM LOGO / TẤT CẢ TỪ HEADER
+const handleResetEvent = () => {
+  resetFilters()
+  fetchFilteredProducts()
+}
 
+// Gọi API Lọc sản phẩm trực tiếp từ Backend
 const fetchFilteredProducts = async () => {
   try {
     const params = {}
@@ -319,26 +313,22 @@ const fetchFilteredProducts = async () => {
     if (selectedBrand.value && selectedBrand.value.trim() !== '') {
       params.brand = selectedBrand.value.trim()
     }
+    if (appliedMinPrice.value > 0) {
+      params.minPrice = appliedMinPrice.value
+    }
+    if (appliedMaxPrice.value < MAX_ALLOWED_PRICE) {
+      params.maxPrice = appliedMaxPrice.value
+    }
     if (sortBy.value && sortBy.value !== 'default') {
       params.sortBy = sortBy.value
     }
     
     const response = await axios.get('/api/products/filter', { params })
-
-    if (Array.isArray(response.data)) {
-      products.value = response.data
-    } else if (response.data && response.data.content) {
-      products.value = response.data.content
-    } else if (response.data && response.data.data) {
-      products.value = response.data.data
-    } else {
-      products.value = []
-    }
+    const resData = response.data
+    products.value = Array.isArray(resData) ? resData : (resData.content || resData.data || [])
 
   } catch (error) {
-    if (!isAuthError(error)) {
-      console.error("Lỗi tải sản phẩm:", error)
-    }
+    console.error("Lỗi tải sản phẩm:", error)
     products.value = []
   }
 }
@@ -349,40 +339,41 @@ const fetchCategoryName = async (catId) => {
     return
   }
   try {
-    const res = await axios.get('/api/categories')
-    const found = res.data.find(c => (c.id || c.Id) == catId)
-    if (found) selectedCategoryName.value = found.name || found.Name
+    const res = await axios.get(`/api/categories/${catId}`)
+    selectedCategoryName.value = res.data?.name || ''
   } catch (e) {
-    if (!isAuthError(e)) {
-      console.error("Lỗi lấy thông tin danh mục:", e)
-    }
     selectedCategoryName.value = ''
   }
 }
 
-const getProductName = (p) => p.name || p.Name || 'Sản phẩm'
-const getProductBrand = (p) => p.brand || p.Brand || 'Khác'
 const getProductImage = (p) => {
-  const img = p.image || p.Image
+  const img = p.image
   return img ? '/images/' + img : 'https://via.placeholder.com/200'
 }
 
+// 🟢 THEO DÕI SỰ THAY ĐỔI CỦA ROUTE QUERY
 watch(
-  () => [route.query.keyword, route.query.categoryId],
-  async ([newKeyword, newCatId]) => {
-    keyword.value = newKeyword ? newKeyword.trim() : ''
-    selectedCategoryId.value = newCatId || null
-    selectedBrand.value = '' 
-    
-    if (!newCatId) {
-      selectedCategoryName.value = ''
+  () => route.query,
+  async (newQuery) => {
+    // Nếu chuyển về URL trang chủ thuần túy không tham số
+    if (!newQuery.keyword && !newQuery.categoryId) {
+      resetFilters()
+      fetchFilteredProducts()
     } else {
-      await fetchCategoryName(newCatId)
+      keyword.value = newQuery.keyword ? newQuery.keyword.trim() : ''
+      selectedCategoryId.value = newQuery.categoryId || null
+      selectedBrand.value = '' 
+      
+      if (newQuery.categoryId) {
+        await fetchCategoryName(newQuery.categoryId)
+      } else {
+        selectedCategoryName.value = ''
+      }
+      
+      fetchFilteredProducts()
     }
-    
-    fetchFilteredProducts()
   },
-  { immediate: true }
+  { immediate: true, deep: true }
 )
 
 const selectBrand = (brand) => {
@@ -406,6 +397,7 @@ const onPriceSortChange = () => {
 const applyPriceFilter = () => {
   appliedMinPrice.value = tempMinPrice.value
   appliedMaxPrice.value = tempMaxPrice.value
+  fetchFilteredProducts()
 }
 
 const formatPrice = (price) => {
@@ -417,11 +409,10 @@ const viewDetail = (id) => {
   router.push('/product/' + id)
 }
 
-// Thêm vào giỏ hàng thật vào DB Spring Boot
 const addToCart = async (product) => {
   try {
     const userStorage = localStorage.getItem('user')
-    const productId = product.id || product.Id
+    const productId = product.id
 
     if (!userStorage) {
       addGuestCartItem(product, 1)
@@ -448,17 +439,19 @@ const addToCart = async (product) => {
     }
   } catch (error) {
     console.error("Lỗi thêm vào giỏ hàng:", error)
-    notify(error.response?.data?.message || "Không thể thêm vào giỏ hàng. Vui lòng kiểm tra lại Backend!", 'danger')
+    notify(error.response?.data?.message || "Không thể thêm vào giỏ hàng!", 'danger')
   }
 }
 
 onMounted(() => {
   window.addEventListener('scroll', handleHomeScroll, { passive: true })
+  window.addEventListener('reset-home-filters', handleResetEvent) // 🟢 LẮNG NGHE SỰ KIỆN TỪ HEADER
   fetchFilteredProducts()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleHomeScroll)
+  window.removeEventListener('reset-home-filters', handleResetEvent) // 🟢 HỦY LẮNG NGHE
 })
 </script>
 
@@ -539,12 +532,10 @@ onUnmounted(() => {
 .price-filter-box { border-color: #dee2e6 !important; }
 .price-badge { font-size: 11.5px; min-width: 165px; text-align: center; letter-spacing: -0.2px; }
 
-/* TIÊU ĐỀ SECTION MỚI */
 .section-badge-icon { width: 42px; height: 42px; }
 .fw-extrabold { font-weight: 800; }
 .tracking-tight { letter-spacing: -0.02em; }
 
-/* PRODUCT CARD MỚI HIỆN ĐẠI */
 .product-card { 
   transition: transform 0.28s ease, box-shadow 0.28s ease; 
   border: 1px solid #f1f3f5 !important; 
@@ -573,7 +564,6 @@ onUnmounted(() => {
   transform: scale(1.08); 
 }
 
-/* OVERLAY HOVER HIỆN NÚT XEM CHI TIẾT */
 .hover-overlay {
   opacity: 0;
   transition: opacity 0.25s ease;

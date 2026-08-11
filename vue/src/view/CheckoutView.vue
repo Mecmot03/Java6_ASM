@@ -106,7 +106,7 @@
               <i class="bi bi-cash-stack fs-4 text-success"></i>
             </label>
 
-            <!-- VNPAY / CHUYỂN KHOẢN -->
+            <!-- CHUYỂN KHOẢN -->
             <label class="payment-option d-flex align-items-center justify-content-between p-3 border rounded-3 cursor-pointer" :class="{ 'active-border': orderForm.paymentMethod === 'BANK' }">
               <div class="d-flex align-items-center gap-3">
                 <input type="radio" name="payment" value="BANK" v-model="orderForm.paymentMethod" />
@@ -121,7 +121,7 @@
         </div>
       </div>
 
-      <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN -->
+      <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN DỰ TÍNH -->
       <div class="col-lg-5">
         <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top z-1" style="top: 100px;">
           <h5 class="fw-bold text-dark mb-3">Sản phẩm thanh toán ({{ totalQuantity }})</h5>
@@ -130,22 +130,22 @@
           <div class="checkout-items-list mb-3 pe-1 overflow-auto" style="max-height: 280px;">
             <div v-for="item in cartItems" :key="item.id" class="d-flex align-items-center justify-content-between py-2 border-bottom">
               <div class="d-flex align-items-center gap-3">
-                <img :src="'/images/' + item.productImage" :alt="item.productName" class="checkout-img rounded-3 border p-1" />
+                <img :src="'/images/' + (item.productImage || item.product?.image)" :alt="item.productName || item.product?.name" class="checkout-img rounded-3 border p-1" />
                 <div>
-                  <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 180px;" :title="item.productName">
-                    {{ item.productName }}
+                  <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 180px;" :title="item.productName || item.product?.name">
+                    {{ item.productName || item.product?.name }}
                   </h6>
                   <small class="text-muted">x{{ item.quantity }}</small>
                 </div>
               </div>
-              <span class="fw-bold text-dark small">{{ formatPrice(item.subTotal) }}</span>
+              <span class="fw-bold text-dark small">{{ formatPrice(item.subTotal || (item.product?.price * item.quantity)) }}</span>
             </div>
           </div>
 
-          <!-- TỔNG CỘNG -->
+          <!-- TỔNG CỘNG XEM TRƯỚC -->
           <div class="d-flex justify-content-between mb-2 text-secondary">
             <span>Tạm tính:</span>
-            <span class="fw-medium text-dark">{{ formatPrice(totalAmount) }}</span>
+            <span class="fw-medium text-dark">{{ formatPrice(previewTotalAmount) }}</span>
           </div>
 
           <div class="d-flex justify-content-between mb-3 text-secondary">
@@ -157,7 +157,7 @@
 
           <div class="d-flex justify-content-between mb-4 align-items-center">
             <span class="fw-bold text-dark fs-5">Tổng thanh toán:</span>
-            <span class="fw-bold text-danger fs-3">{{ formatPrice(totalAmount) }}</span>
+            <span class="fw-bold text-danger fs-3">{{ formatPrice(previewTotalAmount) }}</span>
           </div>
 
           <!-- NÚT XÁC NHẬN ĐẶT HÀNG -->
@@ -200,7 +200,7 @@ const orderForm = ref({
   paymentMethod: 'COD'
 })
 
-// Lấy thông tin user hiện tại
+// Lấy thông tin người dùng từ LocalStorage
 const getUserFromStorage = () => {
   const userStorage = localStorage.getItem('user')
   if (userStorage) {
@@ -213,7 +213,7 @@ const getUserFromStorage = () => {
   return null
 }
 
-// Tải dữ liệu giỏ hàng & điền thông tin mặc định
+// Tải danh sách giỏ hàng
 const fetchCheckoutData = async () => {
   loading.value = true
   const user = getUserFromStorage()
@@ -225,7 +225,7 @@ const fetchCheckoutData = async () => {
     return
   }
 
-  // Tự điền thông tin sẵn có từ tài khoản người dùng
+  // Điền sẵn thông tin từ thông tin tài khoản
   orderForm.value.fullName = user.fullName || user.username || ''
   orderForm.value.email = user.email || ''
   orderForm.value.phone = user.phone || ''
@@ -241,11 +241,15 @@ const fetchCheckoutData = async () => {
   }
 }
 
-// Tính toán tổng tiền
-const totalAmount = computed(() => {
-  return cartItems.value.reduce((sum, item) => sum + (item.subTotal || 0), 0)
+// Tính tổng tiền xem trước trên UI
+const previewTotalAmount = computed(() => {
+  return cartItems.value.reduce((sum, item) => {
+    const itemPrice = item.subTotal || (item.product?.price * item.quantity) || 0
+    return sum + itemPrice
+  }, 0)
 })
 
+// Tính tổng số lượng món hàng
 const totalQuantity = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
 })
@@ -261,7 +265,7 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
-// Xử lý nút ĐẶT HÀNG
+// Xử lý gửi đơn hàng
 const handlePlaceOrder = async () => {
   const user = getUserFromStorage()
   if (!user) return
@@ -279,6 +283,7 @@ const handlePlaceOrder = async () => {
 
   submitting.value = true
 
+  // Chuẩn hóa payload theo đúng OrderRequest ở Backend
   const orderPayload = {
     userId: user.id,
     receiverName: orderForm.value.fullName,
@@ -287,23 +292,21 @@ const handlePlaceOrder = async () => {
     shippingAddress: orderForm.value.address,
     note: orderForm.value.note,
     paymentMethod: orderForm.value.paymentMethod,
-    totalAmount: totalAmount.value,
-    items: cartItems.value
+    items: cartItems.value.map(item => ({
+      productId: item.productId || item.product?.id,
+      quantity: item.quantity
+    }))
   }
 
   try {
-    // Gọi API lưu Đơn hàng vào Database
+    // Gửi request lên Backend
     await axios.post('/api/orders/create', orderPayload)
 
-    // Làm sạch giỏ hàng sau khi đặt thành công
-    await axios.delete(`/api/cart/clear?userId=${user.id}`)
-    
-    // Cập nhật lại Badge giỏ hàng trên Header
+    // Phát sự kiện cập nhật lại giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
 
     notify("Đặt hàng thành công! Đơn hàng của bạn đang chờ xác nhận.", 'success')
     
-    // Chuyển hướng theo vai trò
     if (isAdminUser()) {
       router.push('/orders?status=PENDING')
     } else {
@@ -311,7 +314,7 @@ const handlePlaceOrder = async () => {
     }
   } catch (err) {
     console.error("Lỗi khi tạo đơn hàng:", err)
-    notify(err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!", 'danger')
+    notify(err.response?.data || err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!", 'danger')
   } finally {
     submitting.value = false
   }

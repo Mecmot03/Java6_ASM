@@ -35,6 +35,17 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrders(userId, status));
     }
 
+    // API MUA LẠI ĐƠN HÀNG
+    @PostMapping("/{orderId}/rebuy")
+    public ResponseEntity<?> rebuyOrder(@PathVariable Long orderId, @RequestParam Long userId) {
+        try {
+            orderService.rebuyOrder(orderId, userId);
+            return ResponseEntity.ok("Đã thêm toàn bộ sản phẩm vào giỏ hàng thành công.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Lỗi khi mua lại đơn hàng: " + e.getMessage());
+        }
+    }
+
     @PutMapping("/{orderId}/confirm")
     public ResponseEntity<?> confirmOrder(@PathVariable Long orderId) {
         try {

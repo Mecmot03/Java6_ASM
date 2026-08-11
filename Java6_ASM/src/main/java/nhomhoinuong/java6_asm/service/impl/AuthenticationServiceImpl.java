@@ -2,11 +2,13 @@ package nhomhoinuong.java6_asm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Authority;
@@ -34,7 +36,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    // 🟢 LẤY TẤT CẢ CÁC ROLE CỦA USER DƯỚI DẠNG MẢNG LIST<STRING>
     private List<String> extractAllRoles(Long userId) {
         List<Authority> authorities = authorityDAO.findByUser_Id(userId);
         if (authorities == null || authorities.isEmpty()) {
@@ -70,7 +71,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException("Tài khoản đã bị khóa");
         }
 
-        // 🟢 LẤY ĐỦ DANH SÁCH ROLES VÀ TRUYỀN VÀO TOKEN & RESPONSE
         List<String> roles = extractAllRoles(user.getId());
         String token = jwtService.generateToken(user, roles);
         String primaryRole = extractPrimaryRole(user.getId());
@@ -109,11 +109,49 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse socialLogin(SocialLoginRequest request) {
-        User user = userDAO.findByEmail(request.getEmail()).orElseGet(() -> {
+        String email = request.getEmail();
+        String fullName = request.getFullName();
+        String avatar = request.getAvatar();
+
+        // Nếu client gửi Token, Backend chủ động xác thực trực tiếp với Provider
+        if (request.getToken() != null && !request.getToken().isBlank()) {
+            RestTemplate restTemplate = new RestTemplate();
+            try {
+                if ("GOOGLE".equalsIgnoreCase(request.getProvider())) {
+                    String url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getToken();
+                    Map<String, Object> googleUserInfo = restTemplate.getForObject(url, Map.class);
+                    if (googleUserInfo != null && googleUserInfo.containsKey("email")) {
+                        email = (String) googleUserInfo.get("email");
+                        fullName = (String) googleUserInfo.get("name");
+                        avatar = (String) googleUserInfo.get("picture");
+                    }
+                } else if ("FACEBOOK".equalsIgnoreCase(request.getProvider())) {
+                    String url = "https://graph.facebook.com/v18.0/me?fields=id,name,email,picture&access_token=" + request.getToken();
+                    Map<String, Object> fbUserInfo = restTemplate.getForObject(url, Map.class);
+                    if (fbUserInfo != null) {
+                        String fbEmail = (String) fbUserInfo.get("email");
+                        email = (fbEmail != null && !fbEmail.isBlank()) ? fbEmail : fbUserInfo.get("id") + "@facebook.com";
+                        fullName = (String) fbUserInfo.get("name");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi xác thực Token Social Login: " + e.getMessage());
+            }
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Không thể xác thực thông tin tài khoản Social!");
+        }
+
+        final String finalEmail = email;
+        final String finalFullName = (fullName != null && !fullName.isBlank()) ? fullName : "Social User";
+        final String finalAvatar = avatar;
+
+        User user = userDAO.findByEmail(finalEmail).orElseGet(() -> {
             User newUser = new User();
-            newUser.setFullName(request.getFullName());
-            newUser.setEmail(request.getEmail());
-            newUser.setAvatar(request.getAvatar());
+            newUser.setFullName(finalFullName);
+            newUser.setEmail(finalEmail);
+            newUser.setAvatar(finalAvatar);
             newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             newUser.setEnabled(true);
             newUser.setCreatedAt(LocalDateTime.now());
@@ -135,8 +173,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException("Tài khoản đã bị khóa");
         }
 
-        if (request.getAvatar() != null && !request.getAvatar().equals(user.getAvatar())) {
-            user.setAvatar(request.getAvatar());
+        if (finalAvatar != null && !finalAvatar.equals(user.getAvatar())) {
+            user.setAvatar(finalAvatar);
             userDAO.save(user);
         }
 
