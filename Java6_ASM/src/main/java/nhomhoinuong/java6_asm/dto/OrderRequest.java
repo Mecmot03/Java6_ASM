@@ -1,10 +1,10 @@
 package nhomhoinuong.java6_asm.dto;
 
 import lombok.Data;
-<<<<<<< HEAD
-=======
+//<<<<<<< HEAD
+//=======
 import java.util.List;
->>>>>>> main
+//>>>>>>> main
 
 @Data
 public class OrderRequest {
@@ -15,8 +15,8 @@ public class OrderRequest {
     private String shippingAddress;
     private String note;
     private String paymentMethod;
-<<<<<<< HEAD
-=======
+//<<<<<<< HEAD
+//=======
     private List<OrderItemDTO> items;
 
     @Data
@@ -24,5 +24,5 @@ public class OrderRequest {
         private Long productId;
         private Integer quantity;
     }
->>>>>>> main
+//>>>>>>> main
 }

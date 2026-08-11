@@ -44,15 +44,15 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
-<<<<<<< HEAD
+//<<<<<<< HEAD
                 
              // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
                 .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
-=======
+//=======
                 // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
                 .requestMatchers("/api/orders/create").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
->>>>>>> main
+//>>>>>>> main
 
                 // 3. CHỈ ROLE_STAFF mới được Duyệt / Cập nhật trạng thái đơn hàng (Xác nhận, Giao, Hủy)
                 .requestMatchers("/api/orders/**").hasRole("STAFF")
