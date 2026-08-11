@@ -126,7 +126,7 @@
             <!-- 7. NÚT ĐĂNG XUẤT -->
             <button 
               v-if="currentUser" 
-              class="btn btn-link nav-item-link text-danger text-decoration-none p-0 border-0"
+              class="btn btn-link nav-item-link text-danger fw-bold text-decoration-none p-0 border-0"
               @click="handleLogout" 
               title="Đăng xuất"
             >

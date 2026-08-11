@@ -145,7 +145,7 @@
           <!-- TỔNG CỘNG XEM TRƯỚC -->
           <div class="d-flex justify-content-between mb-2 text-secondary">
             <span>Tạm tính:</span>
-            <span class="fw-medium text-dark">{{ formatPrice(previewTotalAmount) }}</span>
+            <span class="fw-medium text-dark">{{ formatPrice(totalAmount) }}</span>
           </div>
 
           <div class="d-flex justify-content-between mb-3 text-secondary">
@@ -157,7 +157,7 @@
 
           <div class="d-flex justify-content-between mb-4 align-items-center">
             <span class="fw-bold text-dark fs-5">Tổng thanh toán:</span>
-            <span class="fw-bold text-danger fs-3">{{ formatPrice(previewTotalAmount) }}</span>
+            <span class="fw-bold text-danger fs-3">{{ formatPrice(totalAmount) }}</span>
           </div>
 
           <!-- NÚT XÁC NHẬN ĐẶT HÀNG -->
@@ -191,7 +191,6 @@ const cartItems = ref([])
 const loading = ref(true)
 const submitting = ref(false)
 
-// Lấy thông tin user hiện tại từ Storage
 const user = JSON.parse(localStorage.getItem('user') || '{}')
 
 const orderForm = ref({
@@ -233,7 +232,6 @@ const previewTotalAmount = computed(() => {
   }, 0)
 })
 
-// Tính tổng số lượng món hàng
 const totalQuantity = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
 })
@@ -254,7 +252,18 @@ const handlePlaceOrder = async () => {
     return
   }
 
+  if (!cartItems.value.length) {
+    notify('Giỏ hàng của bạn đang trống!', 'warning')
+    return
+  }
+
   submitting.value = true
+
+  // 🔴 Bổ sung danh sách mảng items đúng định dạng DTO Backend yêu cầu
+  const itemsPayload = cartItems.value.map(item => ({
+    productId: item.product?.id || item.productId || item.id,
+    quantity: item.quantity
+  }))
 
   const orderPayload = {
     userId: user.id,
@@ -263,10 +272,7 @@ const handlePlaceOrder = async () => {
     shippingAddress: orderForm.value.address,
     note: orderForm.value.note,
     paymentMethod: orderForm.value.paymentMethod,
-    items: cartItems.value.map(item => ({
-      productId: item.productId || item.product?.id,
-      quantity: item.quantity
-    }))
+    items: itemsPayload
   }
 
   try {
@@ -274,7 +280,6 @@ const handlePlaceOrder = async () => {
 
     // Cập nhật Badge giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
-
     notify("Đặt hàng thành công!", 'success')
     
     if (isAdminUser()) {

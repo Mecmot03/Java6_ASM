@@ -197,17 +197,20 @@ const loginWithFacebook = () => {
   }, { scope: 'public_profile,email' });
 }
 
-// Lưu Session và Điều hướng người dùng
 const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
   const userObj = data.user || data
 
-  if (token) localStorage.setItem('token', token)
+  if (token) {
+    localStorage.setItem('token', token)
+    // Cấu hình default header cho axios để các request sau tự động gửi Token
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  }
   localStorage.setItem('user', JSON.stringify(userObj))
 
   try {
-    if (userObj.id) {
-      await mergeGuestCartIntoBackend(userObj.id, axios)
+    if (data.id || userObj.id) {
+      await mergeGuestCartIntoBackend(data.id || userObj.id, axios)
     }
   } catch (error) {
     console.error('Không thể đồng bộ giỏ khách:', error)
@@ -216,12 +219,13 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-  // Điều hướng dựa trên quyền
-  const userString = JSON.stringify(userObj).toUpperCase()
-  
-  if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
+  // Kiểm tra role chính xác từ Response Backend (data.role hoặc data.roles)
+  const role = data.role || userObj.role || ''
+  const roles = data.roles || userObj.roles || []
+
+  if (role === 'ROLE_ADMIN' || roles.includes('ROLE_ADMIN')) {
     router.push('/admin/users')
-  } else if (userString.includes('ROLE_STAFF') || userString.includes('"STAFF"')) {
+  } else if (role === 'ROLE_STAFF' || roles.includes('ROLE_STAFF')) {
     router.push('/orders?status=PENDING')
   } else {
     const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'

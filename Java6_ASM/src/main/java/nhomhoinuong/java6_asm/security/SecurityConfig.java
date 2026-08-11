@@ -34,7 +34,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 1. API Công khai (Xem sản phẩm, danh mục, giỏ hàng, auth...)
+                // 1. PUBLIC API (Không cần đăng nhập)
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/products/**",
@@ -44,20 +44,22 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
-//<<<<<<< HEAD
+
                 
              // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
                 .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
-//=======
-                // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
+               // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
                 .requestMatchers("/api/orders/create").hasRole("USER")
                 .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
-//>>>>>>> main
 
-                // 3. CHỈ ROLE_STAFF mới được Duyệt / Cập nhật trạng thái đơn hàng (Xác nhận, Giao, Hủy)
-                .requestMatchers("/api/orders/**").hasRole("STAFF")
 
-                // 4. CHỈ ROLE_ADMIN mới được vào Các API Quản trị hệ thống (Quản lý User, Sản phẩm...)
+                // 3. XEM DANH SÁCH ĐƠN: CHỈ ROLE_USER 
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER")
+
+                // 4. CHỈ ROLE_STAFF: Mới được Duyệt/Cập nhật đơn hàng (ADMIN không được duyệt nếu không có ROLE_STAFF)
+                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("STAFF")
+
+                // 5. CHỈ ROLE_ADMIN: Mới được vào trang Quản trị Hệ thống
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Các API còn lại yêu cầu đăng nhập

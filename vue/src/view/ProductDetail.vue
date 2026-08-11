@@ -53,9 +53,9 @@
             <div class="d-flex align-items-center gap-2 mb-3">
               <div class="text-warning small">
                 <i class="bi bi-star-fill me-1"></i>
-                <span class="fw-bold text-dark">{{ averageRating }}</span>
+                <span class="fw-bold text-dark">{{ reviewSummary.averageRating }}</span>
               </div>
-              <span class="text-muted small">({{ comments.length }} đánh giá)</span>
+              <span class="text-muted small">({{ reviewSummary.totalReviews }} đánh giá)</span>
               <span class="text-muted small">|</span>
               <span class="text-muted small">Mã SP: <strong>#{{ product.id }}</strong></span>
             </div>
@@ -144,7 +144,7 @@
               :class="{ active: activeTab === 'reviews' }"
               @click="activeTab = 'reviews'"
             >
-              Đánh giá & Bình luận ({{ comments.length }})
+              Đánh giá & Bình luận ({{ reviewSummary.totalReviews }})
             </button>
           </li>
         </ul>
@@ -165,13 +165,13 @@
         <div v-if="activeTab === 'reviews'">
           <div class="row g-4 bg-light rounded-4 p-4 mb-4 align-items-center">
             
-            <!-- 1. Điểm trung bình -->
+            <!-- 1. Điểm trung bình từ Backend -->
             <div class="col-lg-3 text-center border-end-lg">
-              <h1 class="display-3 fw-bold text-dark mb-0">{{ averageRating }}</h1>
+              <h1 class="display-3 fw-bold text-dark mb-0">{{ reviewSummary.averageRating }}</h1>
               <div class="text-warning my-1 fs-5">
-                <i v-for="s in 5" :key="s" class="bi" :class="s <= Math.round(averageRating) ? 'bi-star-fill' : 'bi-star text-muted'"></i>
+                <i v-for="s in 5" :key="s" class="bi" :class="s <= Math.round(reviewSummary.averageRating) ? 'bi-star-fill' : 'bi-star text-muted'"></i>
               </div>
-              <span class="text-muted small">Dựa trên <strong>{{ comments.length }}</strong> đánh giá</span>
+              <span class="text-muted small">Dựa trên <strong>{{ reviewSummary.totalReviews }}</strong> đánh giá</span>
             </div>
 
             <!-- 2. Cột thanh tiến trình 1 - 5 sao -->
@@ -189,7 +189,7 @@
               </div>
             </div>
 
-            <!-- 3. Form gửi đánh giá (Xử lý 1 tài khoản / 1 lần) -->
+            <!-- 3. Form gửi đánh giá -->
             <div class="col-lg-4 border-start-lg ps-lg-4">
               <h6 class="fw-bold text-dark mb-2">Đánh giá sản phẩm</h6>
               
@@ -222,7 +222,7 @@
                     v-model="newCommentContent"
                     type="text"
                     class="form-control rounded-pill px-3"
-                    placeholder="Chia sẻ nhận xét của bạn..."
+                    placeholder="Nhập nhận xét (không bắt buộc)..."
                     @keyup.enter="submitComment"
                   />
                   <button class="btn btn-warning rounded-pill px-4 fw-bold text-dark text-nowrap" @click="submitComment">
@@ -242,7 +242,7 @@
               :class="filterStar === 0 ? 'btn-dark' : 'btn-outline-secondary'"
               @click="filterStar = 0"
             >
-              Tất cả ({{ comments.length }})
+              Tất cả ({{ reviewSummary.totalReviews }})
             </button>
             <button
               v-for="s in [5, 4, 3, 2, 1]"
@@ -278,7 +278,11 @@
                   <i v-for="s in 5" :key="s" class="bi" :class="s <= comment.rating ? 'bi-star-fill' : 'bi-star text-muted'"></i>
                 </div>
               </div>
-              <p class="text-secondary small mb-0 ms-5">{{ comment.content }}</p>
+              
+              <!-- Chỉ hiển thị nội dung nếu có nhập nhận xét -->
+              <p v-if="comment.content && comment.content.trim()" class="text-secondary small mb-0 ms-5">
+                {{ comment.content }}
+              </p>
             </div>
           </div>
         </div>
@@ -331,6 +335,17 @@ const isFavorite = ref(false)
 const newRating = ref(5)
 const newCommentContent = ref("")
 const filterStar = ref(0)
+
+// 🔴 Biến lưu thống kê đánh giá từ Backend
+const reviewSummary = ref({
+  averageRating: '5.0',
+  totalReviews: 0,
+  count5Star: 0,
+  count4Star: 0,
+  count3Star: 0,
+  count2Star: 0,
+  count1Star: 0
+})
 
 const productImages = {
   "iphone16.jpg": ["iphone16.jpg", "iphone16_2.jpg", "iphone16_3.jpg", "iphone16_4.jpg"],
@@ -397,20 +412,14 @@ const calculatedPrice = computed(() => {
   return product.value.price
 })
 
-/* ================= ĐÁNH GIÁ & KIỂM TRA ĐÃ ĐÁNH GIÁ ================= */
-const averageRating = computed(() => {
-  if (!comments.value.length) return '5.0'
-  const sum = comments.value.reduce((acc, c) => acc + (c.rating || 5), 0)
-  return (sum / comments.value.length).toFixed(1)
-})
-
+/* ================= ĐÁNH GIÁ ĐỌC TỪ BACKEND SUMMARY ================= */
 const getRatingCount = (star) => {
-  return comments.value.filter(c => (c.rating || 5) === star).length
+  return reviewSummary.value[`count${star}Star`] || 0
 }
 
 const getRatingPercent = (star) => {
-  if (!comments.value.length) return 0
-  return Math.round((getRatingCount(star) / comments.value.length) * 100)
+  if (!reviewSummary.value.totalReviews) return 0
+  return Math.round((getRatingCount(star) / reviewSummary.value.totalReviews) * 100)
 }
 
 const filteredComments = computed(() => {
@@ -436,6 +445,7 @@ const fetchProduct = async () => {
     selectedImage.value = 0
     buyQuantity.value = 1
     fetchComments()
+    fetchReviewSummary()
     checkFavoriteStatus()
   } catch (error) {
     product.value = {}
@@ -460,6 +470,16 @@ const fetchComments = async () => {
   }
 }
 
+// 🔴 Gọi API lấy thống kê từ Backend
+const fetchReviewSummary = async () => {
+  try {
+    const response = await axios.get(`/api/comments/product/${route.params.id}/summary`)
+    reviewSummary.value = response.data
+  } catch (error) {
+    console.error("Lỗi lấy thống kê đánh giá:", error)
+  }
+}
+
 const submitComment = async () => {
   const userId = getUserId()
   if (!userId) {
@@ -473,21 +493,17 @@ const submitComment = async () => {
     return
   }
 
-  if (!newCommentContent.value.trim()) {
-    notify("Vui lòng nhập nội dung nhận xét!", "warning")
-    return
-  }
-
   try {
     await axios.post('/api/comments', {
       userId: userId,
       productId: product.value.id,
-      content: newCommentContent.value,
+      content: newCommentContent.value ? newCommentContent.value.trim() : "",
       rating: newRating.value
     })
     notify("Đã gửi đánh giá thành công!", "success")
     newCommentContent.value = ""
     fetchComments()
+    fetchReviewSummary() // Cập nhật lại thống kê mới
   } catch (error) {
     const errorMsg = error?.response?.data || "Không thể gửi bình luận lúc này!"
     notify(typeof errorMsg === 'string' ? errorMsg : "Bạn đã đánh giá sản phẩm này rồi!", "warning")
