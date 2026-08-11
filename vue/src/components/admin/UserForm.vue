@@ -35,7 +35,9 @@
               <!-- SĐT -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Số điện thoại</label>
-                <input v-model="form.phone" class="form-control" placeholder="0901234567">
+                <!-- <input v-model="form.phone" class="form-control" placeholder="0901234567"> -->
+                 <input v-model="form.phone" class="form-control" placeholder="0901234567" maxlength="10">
+                 
               </div>
 
               <!-- Địa chỉ -->
@@ -168,30 +170,77 @@ const save = () => {
   const fullName = String(form.fullName || '').trim()
   const email = String(form.email || '').trim()
   const password = String(form.password || '').trim()
+  const phone = String(form.phone || '').trim()
 
-  if (!fullName || !email) {
-    notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
+  // =========================
+  // VALIDATE HỌ TÊN
+  // =========================
+  if (!fullName) {
+    alert('Vui lòng nhập họ và tên.')
     return
   }
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
-    notify('Email không đúng định dạng.', 'warning')
+
+  // =========================
+  // VALIDATE EMAIL
+  // =========================
+  if (!email) {
+    alert('Vui lòng nhập email.')
     return
   }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  if (!emailRegex.test(email)) {
+    alert('Email không đúng định dạng.')
+    return
+  }
+
+  // =========================
+  // VALIDATE PASSWORD
+  // =========================
   if (!form.id && !password) {
-    notify('Vui lòng nhập mật khẩu cho tài khoản mới.', 'warning')
-    return
-  }
-  if (!selectedRoles.value || selectedRoles.value.length === 0) {
-    notify('Vui lòng chọn ít nhất 1 quyền hạn!', 'warning')
+    alert('Vui lòng nhập mật khẩu cho tài khoản mới.')
     return
   }
 
-  // Tạo payload chứa đủ các kiểu cấu trúc mảng để Backend Spring Boot khớp dễ dàng
+  // =========================
+// VALIDATE SỐ ĐIỆN THOẠI
+// =========================
+if (!phone) {
+  alert('Vui lòng nhập số điện thoại.')
+  return
+}
+
+const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/
+
+if (!phoneRegex.test(phone)) {
+  alert('Số điện thoại không đúng định dạng.')
+  return
+}
+
+  // =========================
+  // VALIDATE QUYỀN
+  // =========================
+  if (!selectedRoles.value || selectedRoles.value.length === 0) {
+    alert('Vui lòng chọn ít nhất 1 quyền hạn!')
+    return
+  }
+
+  // =========================
+  // TẠO PAYLOAD
+  // =========================
   const payload = {
     ...form,
+    fullName,
+    email,
+    password,
+    phone,
     role: selectedRoles.value[0],
     roles: selectedRoles.value,
-    authorities: selectedRoles.value.map(r => ({ authority: r, role: { id: r } }))
+    authorities: selectedRoles.value.map(r => ({
+      authority: r,
+      role: { id: r }
+    }))
   }
 
   emit('save', payload)

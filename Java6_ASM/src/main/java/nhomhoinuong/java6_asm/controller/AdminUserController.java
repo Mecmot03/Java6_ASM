@@ -10,6 +10,8 @@ import nhomhoinuong.java6_asm.dto.UserRequest;
 import nhomhoinuong.java6_asm.dto.UserResponse;
 import nhomhoinuong.java6_asm.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
@@ -42,9 +44,12 @@ public class AdminUserController {
     // ==========================
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(
-            @RequestBody UserRequest request) {
+//    public UserResponse createUser(
+//            @RequestBody UserRequest request) {
 
+    public UserResponse createUser(
+            @Valid @RequestBody UserRequest request) {
+    	
         return userService.createUser(request);
 
     }
@@ -53,10 +58,14 @@ public class AdminUserController {
     // Cập nhật User
     // ==========================
     @PutMapping("/{id}")
+//    public UserResponse updateUser(
+//            @PathVariable Long id,
+//            @RequestBody UserRequest request) {
+
     public UserResponse updateUser(
             @PathVariable Long id,
-            @RequestBody UserRequest request) {
-
+            @Valid @RequestBody UserRequest request) {
+    	
         return userService.updateUser(id, request);
 
     }

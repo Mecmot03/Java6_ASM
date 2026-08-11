@@ -44,9 +44,14 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
-                // 2. CHỈ ROLE_USER: Mới được tạo đơn & Mua lại đơn
+
+                
+             // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
+                .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
+               // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
                 .requestMatchers("/api/orders/create").hasRole("USER")
-                .requestMatchers("/api/orders/{orderId}/rebuy").hasRole("USER")
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
+
 
                 // 3. XEM DANH SÁCH ĐƠN: Cho phép cả USER, STAFF và ADMIN để xem/xử lý đơn
                 .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "STAFF", "ADMIN")
