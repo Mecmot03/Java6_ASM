@@ -68,7 +68,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
-            throw new RuntimeException("Tài khoản đã bị khóa");
+            throw new RuntimeException("Tài khoản đã bị khóa!");
         }
 
         List<String> roles = extractAllRoles(user.getId());
@@ -113,7 +113,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String fullName = request.getFullName();
         String avatar = request.getAvatar();
 
-        // Nếu client gửi Token, Backend chủ động xác thực trực tiếp với Provider
         if (request.getToken() != null && !request.getToken().isBlank()) {
             RestTemplate restTemplate = new RestTemplate();
             try {
@@ -170,7 +169,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         });
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
-            throw new RuntimeException("Tài khoản đã bị khóa");
+            throw new RuntimeException("Tài khoản đã bị khóa!");
         }
 
         if (finalAvatar != null && !finalAvatar.equals(user.getAvatar())) {

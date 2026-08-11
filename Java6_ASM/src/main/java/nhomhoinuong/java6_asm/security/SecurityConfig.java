@@ -53,13 +53,16 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
 
 
-                // 3. XEM DANH SÁCH ĐƠN: CHỈ ROLE_USER 
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER")
+                // 3. XEM DANH SÁCH ĐƠN: Cho phép cả USER, STAFF và ADMIN để xem/xử lý đơn
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "STAFF", "ADMIN")
 
-                // 4. CHỈ ROLE_STAFF: Mới được Duyệt/Cập nhật đơn hàng (ADMIN không được duyệt nếu không có ROLE_STAFF)
-                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasRole("STAFF")
+                // 4. HỦY ĐƠN HÀNG: Cả USER, STAFF, ADMIN đều có thể gửi yêu cầu hủy đơn
+                .requestMatchers(HttpMethod.PUT, "/api/orders/{orderId}/cancel").hasAnyRole("USER", "STAFF", "ADMIN")
 
-                // 5. CHỈ ROLE_ADMIN: Mới được vào trang Quản trị Hệ thống
+                // 5. DUYỆT & CẬP NHẬT ĐƠN HÀNG: Cho phép cả STAFF và ADMIN duyệt đơn
+                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasAnyRole("STAFF", "ADMIN")
+
+                // 6. CHỈ ROLE_ADMIN: Mới được vào trang Quản trị Hệ thống
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Các API còn lại yêu cầu đăng nhập

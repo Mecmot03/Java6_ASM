@@ -11,11 +11,11 @@
       </button>
     </div>
 
-    <!-- Thanh tìm kiếm -->
+    <!-- Thanh tìm kiếm & Thanh Lọc Trạng thái -->
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
-        <div class="row g-2">
-          <div class="col-md-8">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-6">
             <input
               v-model="keyword"
               type="text"
@@ -24,13 +24,28 @@
               @keyup.enter="searchProduct"
             >
           </div>
-          <div class="col-md-2">
+
+          <!-- Dropdown Lọc trạng thái -->
+          <div class="col-md-3">
+            <div class="d-flex align-items-center gap-2">
+              <label class="text-secondary small text-nowrap mb-0 fw-bold">Trạng thái:</label>
+              <select 
+                v-model="statusFilter" 
+                class="form-select fw-semibold border-secondary-subtle"
+                @change="searchProduct"
+              >
+                <option :value="null">Tất cả sản phẩm</option>
+                <option :value="true">Đang bán</option>
+                <option :value="false">Ngừng bán</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3 d-flex gap-2">
             <button class="btn btn-primary w-100" @click="searchProduct">
               <i class="bi bi-search me-1"></i> Tìm
             </button>
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-secondary w-100" @click="loadProducts">
+            <button class="btn btn-secondary w-100" @click="resetSearch">
               Làm mới
             </button>
           </div>
@@ -40,12 +55,12 @@
 
     <!-- Bảng Sản phẩm -->
     <ProductTable
-      :products="products"
+      :products="filteredProducts"
       @edit="openEditModal"
       @delete="openDeleteModal"
     />
 
-    <!-- Modal Form Sản phẩm (Thêm / Sửa Pop-up) -->
+    <!-- Modal Form Sản phẩm -->
     <ProductForm
       :showModal="showFormModal"
       :product="selectedProduct"
@@ -65,38 +80,64 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { notify } from '../../utils/notify'
 import ProductService from '../../services/ProductService'
 import ProductTable from '../../components/admin/ProductTable.vue'
 import ProductForm from '../../components/admin/ProductForm.vue'
 import DeleteModal from '../../components/admin/DeleteModal.vue'
 
-const products = ref([])
+const rawProducts = ref([])
 const keyword = ref('')
+const searchSubmitted = ref('')
+const statusFilter = ref(null) // null | true | false
 const selectedProduct = ref({})
 
 const showFormModal = ref(false)
 const showDeleteModal = ref(false)
 const productToDelete = ref(null)
 
+// Tải danh sách tất cả sản phẩm
 const loadProducts = async () => {
-  keyword.value = ''
   try {
-    products.value = await ProductService.getAllProducts()
+    const params = {
+      keyword: keyword.value.trim() || null,
+      status: statusFilter.value
+    }
+    const res = await ProductService.filterProducts(params)
+    rawProducts.value = Array.isArray(res) ? res : (res?.data || [])
   } catch (error) {
     console.error("Lỗi tải danh sách sản phẩm:", error)
   }
 }
 
+// Lọc kết hợp Client-side để đảm bảo hoạt động kể cả khi Backend không lọc đúng
+const filteredProducts = computed(() => {
+  return rawProducts.value.filter(product => {
+    // 1. Lọc theo tên sản phẩm
+    const key = searchSubmitted.value.trim().toLowerCase()
+    const matchesKeyword = !key || (product.name && product.name.toLowerCase().includes(key))
+
+    // 2. Lọc theo trạng thái
+    let matchesStatus = true
+    if (statusFilter.value !== null) {
+      matchesStatus = product.status === statusFilter.value
+    }
+
+    return matchesKeyword && matchesStatus
+  })
+})
+
 const searchProduct = () => {
-  if (keyword.value.trim() === '') {
-    loadProducts()
-    return
-  }
-  products.value = products.value.filter(product =>
-    product.name.toLowerCase().includes(keyword.value.toLowerCase())
-  )
+  searchSubmitted.value = keyword.value
+  loadProducts()
+}
+
+const resetSearch = () => {
+  keyword.value = ''
+  searchSubmitted.value = ''
+  statusFilter.value = null
+  loadProducts()
 }
 
 const openCreateModal = () => {
@@ -134,7 +175,7 @@ const openDeleteModal = (productOrId) => {
   if (typeof productOrId === 'object' && productOrId !== null) {
     productToDelete.value = productOrId
   } else {
-    productToDelete.value = products.value.find(p => p.id === productOrId) || { id: productOrId }
+    productToDelete.value = rawProducts.value.find(p => p.id === productOrId) || { id: productOrId }
   }
   showDeleteModal.value = true
 }
