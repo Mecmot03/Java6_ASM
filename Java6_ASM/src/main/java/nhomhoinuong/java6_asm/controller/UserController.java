@@ -9,6 +9,8 @@ import nhomhoinuong.java6_asm.dto.UserRequest;
 import nhomhoinuong.java6_asm.dto.UserResponse;
 import nhomhoinuong.java6_asm.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -35,18 +37,29 @@ public class UserController {
     // ==========================
     // Thêm User
     // ==========================
+//    @PostMapping
+//    public UserResponse createUser(@RequestBody UserRequest request) {
+//        return userService.createUser(request);
+//    }
     @PostMapping
-    public UserResponse createUser(@RequestBody UserRequest request) {
+    public UserResponse createUser(@Valid @RequestBody UserRequest request) {
         return userService.createUser(request);
     }
 
     // ==========================
     // Cập nhật User
     // ==========================
+//    @PutMapping("/{id}")
+//    public UserResponse updateUser(
+//            @PathVariable Long id,
+//            @RequestBody UserRequest request) {
+//
+//        return userService.updateUser(id, request);
+//    }
     @PutMapping("/{id}")
     public UserResponse updateUser(
             @PathVariable Long id,
-            @RequestBody UserRequest request) {
+            @Valid @RequestBody UserRequest request) {
 
         return userService.updateUser(id, request);
     }

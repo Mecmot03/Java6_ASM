@@ -214,4 +214,29 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .roles(roles)
                 .build();
     }
+    
+    
+    
+    @Override
+    public UserResponse getCurrentUser(Long userId) {
+
+        User user = userDAO.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy User"));
+
+        List<String> roles = extractAllRoles(user.getId());
+        String primaryRole = extractPrimaryRole(user.getId());
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phone(user.getPhone())
+                .address(user.getAddress())
+                .avatar(user.getAvatar())
+                .enabled(user.getEnabled())
+                .role(primaryRole)
+                .roles(roles)
+                .build();
+    }
+    
 }

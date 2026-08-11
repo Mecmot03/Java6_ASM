@@ -1,14 +1,34 @@
 package nhomhoinuong.java6_asm.service.impl;
 
+//<<<<<<< HEAD
+import nhomhoinuong.java6_asm.bean.CartItem;
+import nhomhoinuong.java6_asm.bean.Order;
+import nhomhoinuong.java6_asm.bean.OrderItem;
+import nhomhoinuong.java6_asm.bean.Product;
+import nhomhoinuong.java6_asm.bean.User;
+import nhomhoinuong.java6_asm.dao.CartItemDAO;
+import nhomhoinuong.java6_asm.dao.OrderDAO;
+import nhomhoinuong.java6_asm.dao.OrderItemDAO;
+import nhomhoinuong.java6_asm.dao.UserDAO;
+import nhomhoinuong.java6_asm.dto.OrderRequest;
+import nhomhoinuong.java6_asm.service.OrderService;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import nhomhoinuong.java6_asm.bean.CartItem;
 import nhomhoinuong.java6_asm.bean.Order;
@@ -24,6 +44,7 @@ import nhomhoinuong.java6_asm.dto.OrderRequest;
 import nhomhoinuong.java6_asm.service.EmailService;
 import nhomhoinuong.java6_asm.service.OrderService;
 
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
@@ -37,9 +58,11 @@ public class OrderServiceImpl implements OrderService {
     private CartItemDAO cartItemDAO;
 
     @Autowired
+
     private ProductDAO productDAO;
 
     @Autowired
+
     private UserDAO userDAO;
 
     @Autowired
@@ -48,16 +71,25 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order createOrder(OrderRequest dto) {
-        // 1. Kiểm tra User tồn tại
+
+        // 1. Kiểm tra User
         User user = userDAO.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + dto.getUserId()));
 
-        // 2. Kiểm tra danh sách món hàng trong request
+        // 2. Lấy danh sách giỏ hàng từ DB
+        List<CartItem> cartItems = cartItemDAO.findByUserId(dto.getUserId());
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng của bạn đang trống!");
+        }
+
+        // 3. Khởi tạo Đơn hàng
+
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new RuntimeException("Giỏ hàng trống, không thể tiến hành đặt hàng!");
         }
 
-        // 3. Khởi tạo đối tượng Đơn hàng
+        // 1. Khởi tạo đối tượng Order
+
         Order order = new Order();
         order.setUserId(dto.getUserId());
         order.setReceiverName(dto.getReceiverName());
@@ -70,7 +102,7 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItemsToSave = new ArrayList<>();
 
-        // 4. Kiểm tra kho, trừ tồn kho và tính tổng tiền thực tế
+        // 2. Lấy giá tiền chuẩn từ CSDL và kiểm tra kho
         for (OrderRequest.OrderItemDTO itemDto : dto.getItems()) {
             Product product = productDAO.findById(itemDto.getProductId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm ID " + itemDto.getProductId() + " không tồn tại!"));
@@ -108,7 +140,8 @@ public class OrderServiceImpl implements OrderService {
             orderItemDAO.save(item);
         }
 
-        // 7. Dọn sạch giỏ hàng của User trong CSDL
+        // 5. Xóa giỏ hàng của User
+
         cartItemDAO.deleteByUserId(dto.getUserId());
 
         // 8. 🔴 Gửi Email hóa đơn tự động về Email người dùng

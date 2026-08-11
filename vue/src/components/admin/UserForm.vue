@@ -16,29 +16,26 @@
               <!-- Họ tên -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
-                <!-- NEW: Thêm ref="inputFullName" -->
                 <input ref="inputFullName" v-model="form.fullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
               </div>
 
               <!-- Email -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                <!-- NEW: Thêm ref="inputEmail" -->
                 <input ref="inputEmail" type="email" v-model="form.email" class="form-control" placeholder="example@gmail.com" required>
               </div>
 
               <!-- Mật khẩu -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Mật khẩu <span v-if="!form.id" class="text-danger">*</span></label>
-                <!-- NEW: Thêm ref="inputPassword" -->
                 <input ref="inputPassword" type="password" v-model="form.password" class="form-control"
                   :placeholder="form.id ? 'Để trống nếu không muốn đổi' : 'Nhập mật khẩu'">
               </div>
 
               <!-- SĐT -->
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Số điện thoại</label>
-                <input v-model="form.phone" class="form-control" placeholder="0901234567">
+                <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                <input ref="inputPhone" v-model="form.phone" class="form-control" placeholder="0901234567" maxlength="10">
               </div>
 
               <!-- Địa chỉ -->
@@ -48,7 +45,6 @@
               </div>
 
               <!-- Phân quyền hệ thống (Checkbox đa chọn) -->
-              <!-- NEW: Thêm ref="roleSection" -->
               <div class="col-12" ref="roleSection">
                 <label class="form-label fw-semibold d-block">Phân quyền hệ thống <span class="text-danger">*</span></label>
                 <div class="p-3 border rounded bg-light d-flex flex-wrap gap-4">
@@ -108,7 +104,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch, nextTick } from 'vue' // NEW: Thêm nextTick
+import { reactive, ref, watch, nextTick } from 'vue'
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -121,10 +117,11 @@ const props = defineProps({
 
 const emit = defineEmits(['save', 'close'])
 
-// NEW: Khai báo Element Refs hỗ trợ tự cuộn & focus
+// Khai báo Element Refs hỗ trợ tự cuộn & focus
 const inputFullName = ref(null)
 const inputEmail = ref(null)
 const inputPassword = ref(null)
+const inputPhone = ref(null)
 const roleSection = ref(null)
 
 const emptyForm = {
@@ -139,7 +136,7 @@ const emptyForm = {
 const form = reactive({ ...emptyForm })
 const selectedRoles = ref(['ROLE_USER'])
 
-// NEW: Hàm cuộn mượt và focus vào element lỗi
+// Hàm cuộn mượt và focus vào element lỗi
 const focusElement = async (el) => {
   await nextTick()
   if (el) {
@@ -185,38 +182,70 @@ const save = () => {
   const fullName = String(form.fullName || '').trim()
   const email = String(form.email || '').trim()
   const password = String(form.password || '').trim()
+  const phone = String(form.phone || '').trim()
 
+  // 1. Validate Họ Tên
   if (!fullName) {
-    notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
-    focusElement(inputFullName.value) // NEW: Cuộn và focus
+    notify('Vui lòng nhập họ và tên.', 'warning')
+    focusElement(inputFullName.value)
     return
   }
+
+  // 2. Validate Email
   if (!email) {
-    notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
-    focusElement(inputEmail.value) // NEW: Cuộn và focus
+    notify('Vui lòng nhập email.', 'warning')
+    focusElement(inputEmail.value)
     return
   }
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
     notify('Email không đúng định dạng.', 'warning')
-    focusElement(inputEmail.value) // NEW: Cuộn và focus
+    focusElement(inputEmail.value)
     return
   }
+
+  // 3. Validate Mật khẩu (Chỉ bắt buộc khi thêm mới)
   if (!form.id && !password) {
     notify('Vui lòng nhập mật khẩu cho tài khoản mới.', 'warning')
-    focusElement(inputPassword.value) // NEW: Cuộn và focus
-    return
-  }
-  if (!selectedRoles.value || selectedRoles.value.length === 0) {
-    notify('Vui lòng chọn ít nhất 1 quyền hạn!', 'warning')
-    focusElement(roleSection.value) // NEW: Cuộn đến khung chọn quyền
+    focusElement(inputPassword.value)
     return
   }
 
+  // 4. Validate Số điện thoại
+  if (!phone) {
+    notify('Vui lòng nhập số điện thoại.', 'warning')
+    focusElement(inputPhone.value)
+    return
+  }
+
+  const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/
+  if (!phoneRegex.test(phone)) {
+    notify('Số điện thoại không đúng định dạng (bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số).', 'warning')
+    focusElement(inputPhone.value)
+    return
+  }
+
+  // 5. Validate Phân quyền
+  if (!selectedRoles.value || selectedRoles.value.length === 0) {
+    notify('Vui lòng chọn ít nhất 1 quyền hạn!', 'warning')
+    focusElement(roleSection.value)
+    return
+  }
+
+  // Tạo payload gửi đi
   const payload = {
     ...form,
+    fullName,
+    email,
+    password,
+    phone,
     role: selectedRoles.value[0],
     roles: selectedRoles.value,
-    authorities: selectedRoles.value.map(r => ({ authority: r, role: { id: r } }))
+    authorities: selectedRoles.value.map(r => ({
+      authority: r,
+      role: { id: r }
+    }))
   }
 
   emit('save', payload)

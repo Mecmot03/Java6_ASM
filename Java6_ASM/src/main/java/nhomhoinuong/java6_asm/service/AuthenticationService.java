@@ -17,5 +17,6 @@ public interface AuthenticationService {
     LoginResponse socialLogin(SocialLoginRequest request); 
 
     UserResponse updateCurrentUser(Long userId, UserRequest request);
-
+//
+    UserResponse getCurrentUser(Long userId);
 }
