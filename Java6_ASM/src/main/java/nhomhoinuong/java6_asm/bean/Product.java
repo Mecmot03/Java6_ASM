@@ -56,7 +56,7 @@ public class Product implements Serializable {
 
     @Column(name = "Status")
     @JsonProperty("status")
-    private Boolean status;
+    private Boolean status = true; // Mặc định true để tránh nhận giá trị null
 
     @Column(name = "CreatedAt")
     @JsonProperty("createdAt")
@@ -86,7 +86,7 @@ public class Product implements Serializable {
         this.updatedAt = updatedAt;
     }
 
-    // GETTERS & SETTERS THỦ CÔNG (Đảm bảo 100% Jackson đọc được)
+    // GETTERS & SETTERS
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
