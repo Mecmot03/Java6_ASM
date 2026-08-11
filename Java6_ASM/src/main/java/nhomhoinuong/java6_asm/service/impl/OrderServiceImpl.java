@@ -1,34 +1,15 @@
 package nhomhoinuong.java6_asm.service.impl;
 
-<<<<<<< HEAD
-import nhomhoinuong.java6_asm.bean.CartItem;
-import nhomhoinuong.java6_asm.bean.Order;
-import nhomhoinuong.java6_asm.bean.OrderItem;
-import nhomhoinuong.java6_asm.bean.Product;
-import nhomhoinuong.java6_asm.bean.User;
-import nhomhoinuong.java6_asm.dao.CartItemDAO;
-import nhomhoinuong.java6_asm.dao.OrderDAO;
-import nhomhoinuong.java6_asm.dao.OrderItemDAO;
-import nhomhoinuong.java6_asm.dao.UserDAO;
-import nhomhoinuong.java6_asm.dto.OrderRequest;
-import nhomhoinuong.java6_asm.service.OrderService;
-=======
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
->>>>>>> main
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-<<<<<<< HEAD
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-=======
 import nhomhoinuong.java6_asm.bean.CartItem;
 import nhomhoinuong.java6_asm.bean.Order;
 import nhomhoinuong.java6_asm.bean.OrderItem;
@@ -40,8 +21,8 @@ import nhomhoinuong.java6_asm.dao.OrderItemDAO;
 import nhomhoinuong.java6_asm.dao.ProductDAO;
 import nhomhoinuong.java6_asm.dao.UserDAO;
 import nhomhoinuong.java6_asm.dto.OrderRequest;
+import nhomhoinuong.java6_asm.service.EmailService;
 import nhomhoinuong.java6_asm.service.OrderService;
->>>>>>> main
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -56,36 +37,27 @@ public class OrderServiceImpl implements OrderService {
     private CartItemDAO cartItemDAO;
 
     @Autowired
-<<<<<<< HEAD
-=======
     private ProductDAO productDAO;
 
     @Autowired
->>>>>>> main
     private UserDAO userDAO;
+
+    @Autowired
+    private EmailService emailService;
 
     @Override
     @Transactional
     public Order createOrder(OrderRequest dto) {
-<<<<<<< HEAD
-        // 1. Kiểm tra User
+        // 1. Kiểm tra User tồn tại
         User user = userDAO.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + dto.getUserId()));
 
-        // 2. Lấy danh sách giỏ hàng từ DB
-        List<CartItem> cartItems = cartItemDAO.findByUserId(dto.getUserId());
-        if (cartItems.isEmpty()) {
-            throw new RuntimeException("Giỏ hàng của bạn đang trống!");
-        }
-
-        // 3. Khởi tạo Đơn hàng
-=======
+        // 2. Kiểm tra danh sách món hàng trong request
         if (dto.getItems() == null || dto.getItems().isEmpty()) {
             throw new RuntimeException("Giỏ hàng trống, không thể tiến hành đặt hàng!");
         }
 
-        // 1. Khởi tạo đối tượng Order
->>>>>>> main
+        // 3. Khởi tạo đối tượng Đơn hàng
         Order order = new Order();
         order.setUserId(dto.getUserId());
         order.setReceiverName(dto.getReceiverName());
@@ -98,53 +70,26 @@ public class OrderServiceImpl implements OrderService {
         BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
         List<OrderItem> orderItemsToSave = new ArrayList<>();
 
-<<<<<<< HEAD
-        // 4. Lưu từng chi tiết sản phẩm & Tính tổng tiền chính xác từ DB
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
-        for (CartItem cartItem : cartItems) {
-            Product product = cartItem.getProduct();
-
-            OrderItem orderItem = new OrderItem();
-            orderItem.setOrderId(savedOrder.getId());
-            orderItem.setProductId(product.getId());
-            orderItem.setQuantity(cartItem.getQuantity());
-
-            BigDecimal unitPrice = product.getPrice();
-            orderItem.setPrice(unitPrice);
-
-            BigDecimal itemSubTotal = unitPrice.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
-            totalAmount = totalAmount.add(itemSubTotal);
-
-            orderItemDAO.save(orderItem);
-        }
-
-        // Cập nhật tổng tiền hoàn chỉnh
-        savedOrder.setTotalAmount(totalAmount);
-        savedOrder = orderDAO.save(savedOrder);
-
-        // 5. Tự động dọn sạch giỏ hàng trong DB
-=======
-        // 2. Lấy giá tiền chuẩn từ CSDL và kiểm tra kho
+        // 4. Kiểm tra kho, trừ tồn kho và tính tổng tiền thực tế
         for (OrderRequest.OrderItemDTO itemDto : dto.getItems()) {
             Product product = productDAO.findById(itemDto.getProductId())
                     .orElseThrow(() -> new RuntimeException("Sản phẩm ID " + itemDto.getProductId() + " không tồn tại!"));
 
-            // Kiểm tra tồn kho
+            // Kiểm tra số lượng tồn kho
             if (product.getQuantity() < itemDto.getQuantity()) {
                 throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ số lượng trong kho!");
             }
 
-            // Trừ số lượng kho trong CSDL
+            // Trừ số lượng tồn kho
             product.setQuantity(product.getQuantity() - itemDto.getQuantity());
             productDAO.save(product);
 
-            // Tính tiền bằng đơn giá thực tế trong DB
+            // Lấy giá chuẩn từ CSDL
             BigDecimal itemPrice = product.getPrice();
             BigDecimal subTotal = itemPrice.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
             calculatedTotalAmount = calculatedTotalAmount.add(subTotal);
 
-            // Tạo Chi tiết đơn hàng
+            // Tạo Chi tiết đơn hàng tạm thời
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(product.getId());
             orderItem.setQuantity(itemDto.getQuantity());
@@ -153,19 +98,23 @@ public class OrderServiceImpl implements OrderService {
             orderItemsToSave.add(orderItem);
         }
 
-        // 3. Gán tổng tiền và Lưu Đơn hàng
+        // 5. Gán tổng tiền và Lưu đơn hàng vào CSDL
         order.setTotalAmount(calculatedTotalAmount);
         Order savedOrder = orderDAO.save(order);
 
-        // 4. Lưu từng Chi tiết đơn hàng
+        // 6. Gán orderId vừa tạo cho từng OrderItem và Lưu
         for (OrderItem item : orderItemsToSave) {
             item.setOrderId(savedOrder.getId());
             orderItemDAO.save(item);
         }
 
-        // 5. Xóa giỏ hàng của User
->>>>>>> main
+        // 7. Dọn sạch giỏ hàng của User trong CSDL
         cartItemDAO.deleteByUserId(dto.getUserId());
+
+        // 8. 🔴 Gửi Email hóa đơn tự động về Email người dùng
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            emailService.sendOrderInvoice(user.getEmail(), savedOrder);
+        }
 
         return savedOrder;
     }
@@ -221,7 +170,6 @@ public class OrderServiceImpl implements OrderService {
         return orderDAO.save(order);
     }
 
-    // --- NGHIỆP VỤ MUA LẠI ĐƠN HÀNG (LƯU VÀO CSDL CART_ITEMS) ---
     @Override
     @Transactional
     public void rebuyOrder(Long orderId, Long userId) {
