@@ -1,4 +1,4 @@
- package nhomhoinuong.java6_asm.service.impl;
+package nhomhoinuong.java6_asm.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,6 +23,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getProductById(Long id) {
+        // Trả về trực tiếp sản phẩm theo ID để phục vụ quản lý và cập nhật
         return productDAO.findById(id).orElse(null);
     }
 
@@ -39,7 +40,6 @@ public class ProductServiceImpl implements ProductService {
         String cleanBrand = (brand != null && !brand.trim().isEmpty()) ? brand.trim() : null;
         String cleanSort = (sortBy != null && !sortBy.trim().isEmpty()) ? sortBy.trim() : null;
 
-        // Truyền status vào DAO query
         return productDAO.filterProducts(cleanKeyword, categoryId, cleanBrand, minPrice, maxPrice, cleanSort, status);
     }
 

@@ -10,10 +10,11 @@
           <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
         </div>
         <form @submit.prevent="submitForm" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="mb-3">
               <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" v-model="formData.name" required placeholder="Ví dụ: Bàn phím" />
+              <!-- NEW: Thêm ref="inputCategoryName" -->
+              <input ref="inputCategoryName" type="text" class="form-control" v-model="formData.name" required placeholder="Ví dụ: Bàn phím" />
             </div>
             
             <div class="mb-3">
@@ -66,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue' // NEW: Thêm nextTick
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -81,6 +82,9 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'save'])
 
+// NEW: Khai báo Element Ref hỗ trợ tự cuộn & focus
+const inputCategoryName = ref(null)
+
 const formData = ref({
   id: null,
   name: '',
@@ -90,6 +94,15 @@ const formData = ref({
 })
 
 const imagePreview = ref('')
+
+// NEW: Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
+}
 
 const getImageUrl = (imageName) => {
   if (!imageName) return 'https://placehold.co/48x48?text=No+Img'
@@ -121,6 +134,7 @@ const handleImageError = (e) => {
 const submitForm = () => {
   if (!formData.value.name.trim()) {
     notify('Vui lòng nhập tên danh mục.', 'warning')
+    focusElement(inputCategoryName.value) // NEW: Cuộn và focus
     return
   }
   emit('save', formData.value)

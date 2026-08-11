@@ -11,7 +11,7 @@
         </div>
 
         <form @submit.prevent="saveProduct" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
               <!-- ID (Chỉ hiển thị khi cập nhật) -->
               <div v-if="isEdit" class="col-md-2">
@@ -22,13 +22,15 @@
               <!-- Tên sản phẩm -->
               <div :class="isEdit ? 'col-md-10' : 'col-md-12'">
                 <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
-                <input v-model="form.name" class="form-control" placeholder="Ví dụ: Laptop Dell XPS 15" required>
+                <!-- NEW: Thêm ref="inputName" -->
+                <input ref="inputName" v-model="form.name" class="form-control" placeholder="Ví dụ: Laptop Dell XPS 15" required>
               </div>
 
               <!-- Danh mục -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
-                <select class="form-select" v-model="form.category">
+                <!-- NEW: Thêm ref="inputCategory" -->
+                <select ref="inputCategory" class="form-select" v-model="form.category">
                   <option :value="null">-- Chọn danh mục --</option>
                   <option v-for="item in categories" :key="item.id" :value="item">
                     {{ item.name }}
@@ -39,7 +41,8 @@
               <!-- Thương hiệu -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Thương hiệu <span class="text-danger">*</span></label>
-                <select class="form-select" v-model="form.brand">
+                <!-- NEW: Thêm ref="inputBrand" -->
+                <select ref="inputBrand" class="form-select" v-model="form.brand">
                   <option disabled value="">-- Chọn thương hiệu --</option>
                   <option v-for="brand in brands" :key="brand" :value="brand">
                     {{ brand }}
@@ -103,7 +106,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, computed, ref, onMounted } from "vue"
+import { reactive, watch, computed, ref, onMounted, nextTick } from "vue" // NEW: Thêm nextTick
 import CategoryService from "../../services/CategoryService"
 import { notify } from '../../utils/notify'
 
@@ -119,6 +122,11 @@ const emit = defineEmits(["save", "close"])
 
 const categories = ref([])
 const previewImage = ref("")
+
+// NEW: Khai báo Element Refs hỗ trợ tự cuộn & focus
+const inputName = ref(null)
+const inputCategory = ref(null)
+const inputBrand = ref(null)
 
 const brands = ["Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Asus", "Acer", "Dell", "HP", "Lenovo", "MSI", "Logitech", "Razer", "Corsair", "SteelSeries", "HyperX", "Kingston", "Baseus", "Anker", "UGREEN"]
 
@@ -142,6 +150,15 @@ const loadCategories = async () => {
     categories.value = await CategoryService.getAllCategories()
   } catch (error) {
     console.error("Lỗi tải danh mục:", error)
+  }
+}
+
+// NEW: Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
   }
 }
 
@@ -176,14 +193,17 @@ const chooseImage = (event) => {
 const saveProduct = () => {
   if (!String(form.name || '').trim()) {
     notify('Vui lòng nhập tên sản phẩm.', 'warning')
+    focusElement(inputName.value) // NEW: Cuộn và focus
     return
   }
   if (!form.category) {
     notify('Vui lòng chọn danh mục.', 'warning')
+    focusElement(inputCategory.value) // NEW: Cuộn và focus
     return
   }
   if (!String(form.brand || '').trim()) {
     notify('Vui lòng chọn thương hiệu.', 'warning')
+    focusElement(inputBrand.value) // NEW: Cuộn và focus
     return
   }
   emit("save", { ...form })

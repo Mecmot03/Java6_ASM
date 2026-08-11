@@ -11,24 +11,27 @@
         </div>
 
         <form @submit.prevent="save" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
               <!-- Họ tên -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
-                <input v-model="form.fullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+                <!-- NEW: Thêm ref="inputFullName" -->
+                <input ref="inputFullName" v-model="form.fullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
               </div>
 
               <!-- Email -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                <input type="email" v-model="form.email" class="form-control" placeholder="example@gmail.com" required>
+                <!-- NEW: Thêm ref="inputEmail" -->
+                <input ref="inputEmail" type="email" v-model="form.email" class="form-control" placeholder="example@gmail.com" required>
               </div>
 
               <!-- Mật khẩu -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Mật khẩu <span v-if="!form.id" class="text-danger">*</span></label>
-                <input type="password" v-model="form.password" class="form-control"
+                <!-- NEW: Thêm ref="inputPassword" -->
+                <input ref="inputPassword" type="password" v-model="form.password" class="form-control"
                   :placeholder="form.id ? 'Để trống nếu không muốn đổi' : 'Nhập mật khẩu'">
               </div>
 
@@ -45,7 +48,8 @@
               </div>
 
               <!-- Phân quyền hệ thống (Checkbox đa chọn) -->
-              <div class="col-12">
+              <!-- NEW: Thêm ref="roleSection" -->
+              <div class="col-12" ref="roleSection">
                 <label class="form-label fw-semibold d-block">Phân quyền hệ thống <span class="text-danger">*</span></label>
                 <div class="p-3 border rounded bg-light d-flex flex-wrap gap-4">
                   <div class="form-check">
@@ -104,7 +108,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, nextTick } from 'vue' // NEW: Thêm nextTick
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -116,6 +120,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['save', 'close'])
+
+// NEW: Khai báo Element Refs hỗ trợ tự cuộn & focus
+const inputFullName = ref(null)
+const inputEmail = ref(null)
+const inputPassword = ref(null)
+const roleSection = ref(null)
 
 const emptyForm = {
   id: null,
@@ -129,12 +139,20 @@ const emptyForm = {
 const form = reactive({ ...emptyForm })
 const selectedRoles = ref(['ROLE_USER'])
 
+// NEW: Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
+}
+
 // Trích xuất tất cả vai trò mà User đang có
 const extractUserRoles = (userData) => {
   if (!userData) return ['ROLE_USER']
   const rolesFound = new Set()
 
-  // 1. Nếu backend trả mảng authorities hoặc roles
   const list = userData.authorities || userData.roles || []
   if (Array.isArray(list)) {
     list.forEach(item => {
@@ -143,7 +161,6 @@ const extractUserRoles = (userData) => {
     })
   }
 
-  // 2. Tự động kiểm tra qua JSON string để không bỏ sót
   const str = JSON.stringify(userData).toUpperCase()
   if (str.includes('ROLE_ADMIN')) rolesFound.add('ROLE_ADMIN')
   if (str.includes('ROLE_STAFF')) rolesFound.add('ROLE_STAFF')
@@ -169,24 +186,32 @@ const save = () => {
   const email = String(form.email || '').trim()
   const password = String(form.password || '').trim()
 
-  if (!fullName || !email) {
+  if (!fullName) {
     notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
+    focusElement(inputFullName.value) // NEW: Cuộn và focus
+    return
+  }
+  if (!email) {
+    notify('Vui lòng nhập đầy đủ họ tên và email.', 'warning')
+    focusElement(inputEmail.value) // NEW: Cuộn và focus
     return
   }
   if (!/^\S+@\S+\.\S+$/.test(email)) {
     notify('Email không đúng định dạng.', 'warning')
+    focusElement(inputEmail.value) // NEW: Cuộn và focus
     return
   }
   if (!form.id && !password) {
     notify('Vui lòng nhập mật khẩu cho tài khoản mới.', 'warning')
+    focusElement(inputPassword.value) // NEW: Cuộn và focus
     return
   }
   if (!selectedRoles.value || selectedRoles.value.length === 0) {
     notify('Vui lòng chọn ít nhất 1 quyền hạn!', 'warning')
+    focusElement(roleSection.value) // NEW: Cuộn đến khung chọn quyền
     return
   }
 
-  // Tạo payload chứa đủ các kiểu cấu trúc mảng để Backend Spring Boot khớp dễ dàng
   const payload = {
     ...form,
     role: selectedRoles.value[0],

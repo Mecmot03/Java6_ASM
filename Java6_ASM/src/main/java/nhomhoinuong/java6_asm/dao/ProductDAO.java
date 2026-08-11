@@ -13,7 +13,11 @@ import nhomhoinuong.java6_asm.bean.Product;
 public interface ProductDAO extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p LEFT JOIN p.category c WHERE " +
-           "(:status IS NULL OR p.status = :status) " +
+           // ==========================================
+           // 🆕 NEW: Bắt buộc danh mục của sản phẩm phải đang hoạt động (status khác false)
+           // ==========================================
+           "(c.status IS NULL OR c.status = true) " +
+           "AND (:status IS NULL OR p.status = :status) " +
            "AND (:keyword IS NULL OR " +
            "     LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "     LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

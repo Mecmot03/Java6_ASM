@@ -15,17 +15,18 @@
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
         <div class="row g-2 align-items-center">
+          <!-- Ô tìm kiếm (Tự động lọc ngay khi gõ) -->
           <div class="col-md-6">
             <input
               v-model="keyword"
               class="form-control"
               placeholder="Nhập họ tên, email hoặc username cần tìm..."
-              @keyup.enter="searchUser"
+              @input="searchUser"
             >
           </div>
           
           <!-- Dropdown Lọc trạng thái -->
-          <div class="col-md-3">
+          <div class="col-md-4">
             <div class="d-flex align-items-center gap-2">
               <label class="text-secondary small text-nowrap mb-0 fw-bold">Trạng thái:</label>
               <select 
@@ -39,10 +40,8 @@
             </div>
           </div>
 
-          <div class="col-md-3 d-flex gap-2">
-            <button class="btn btn-primary w-100" @click="searchUser">
-              <i class="bi bi-search me-1"></i> Tìm
-            </button>
+          <!-- Nút làm mới -->
+          <div class="col-md-2">
             <button class="btn btn-secondary w-100" @click="resetFilters">
               Làm mới
             </button>
