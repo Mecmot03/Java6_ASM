@@ -10,6 +10,8 @@ import nhomhoinuong.java6_asm.dto.UserRequest;
 import nhomhoinuong.java6_asm.dto.UserResponse;
 import nhomhoinuong.java6_asm.service.UserService;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")

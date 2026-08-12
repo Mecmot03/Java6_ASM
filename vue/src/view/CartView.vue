@@ -280,6 +280,8 @@ const formatPrice = (price) => {
 
 const checkout = () => {
   const userStorage = localStorage.getItem('user')
+  
+  // 1. Kiểm tra chưa đăng nhập
   if (!userStorage) {
     confirmDialog("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?").then((confirmed) => {
       if (confirmed) {
@@ -288,6 +290,38 @@ const checkout = () => {
     })
     return
   }
+
+  // 2. Kiểm tra Role Admin/Staff
+  try {
+    const userData = JSON.parse(userStorage)
+    const user = userData.user || userData
+
+    let roles = []
+    if (Array.isArray(user.roles)) {
+      roles = user.roles.map(r => typeof r === 'object' ? r.name || r.role : String(r))
+    } else if (user.role) {
+      roles = [typeof user.role === 'object' ? user.role.name || user.role.role : String(user.role)]
+    }
+
+    const upperRoles = roles.map(r => String(r).toUpperCase())
+    const isAdminOrStaff = upperRoles.some(r => 
+      r.includes('ADMIN') || r.includes('STAFF') || r.includes('EMPLOYEE')
+    )
+
+    if (isAdminOrStaff) {
+      window.dispatchEvent(new CustomEvent('app-notify', {
+        detail: { 
+          message: 'Tài khoản Quản trị / Nhân viên không được phép đặt hàng!', 
+          type: 'warning' 
+        }
+      }))
+      return
+    }
+  } catch (e) {
+    console.error("Lỗi parse thông tin user:", e)
+  }
+
+  // 3. Khách hàng hợp lệ -> Cho sang checkout
   router.push('/checkout')
 }
 

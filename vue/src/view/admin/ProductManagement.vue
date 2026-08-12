@@ -11,26 +11,40 @@
       </button>
     </div>
 
-    <!-- Thanh tìm kiếm -->
+    <!-- Thanh tìm kiếm & Thanh Lọc Trạng thái -->
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
-        <div class="row g-2">
-          <div class="col-md-8">
+        <div class="row g-2 align-items-center">
+          <!-- 🆕 Ô tìm kiếm (Tự động lọc trực tiếp ngay khi gõ) -->
+          <div class="col-md-6">
             <input
               v-model="keyword"
               type="text"
               class="form-control"
-              placeholder="Nhập tên, danh mục hoặc thương hiệu..."
-              @keyup.enter="searchProduct"
+              placeholder="Nhập tên sản phẩm cần tìm..."
+              @input="handleFilter"
             >
           </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary w-100" @click="searchProduct">
-              <i class="bi bi-search me-1"></i> Tìm
-            </button>
+
+          <!-- Dropdown Lọc trạng thái kèm nhãn -->
+          <div class="col-md-4">
+            <div class="d-flex align-items-center gap-2">
+              <label class="text-secondary small text-nowrap mb-0 fw-bold">Trạng thái:</label>
+              <select 
+                v-model="statusFilter" 
+                class="form-select fw-semibold border-secondary-subtle"
+                @change="handleFilter"
+              >
+                <option :value="null">Tất cả sản phẩm</option>
+                <option :value="true">Đang bán</option>
+                <option :value="false">Ngừng bán</option>
+              </select>
+            </div>
           </div>
+
+          <!-- Nút làm mới -->
           <div class="col-md-2">
-            <button class="btn btn-secondary w-100" @click="loadProducts">
+            <button class="btn btn-secondary w-100" @click="resetFilter">
               Làm mới
             </button>
           </div>
@@ -40,7 +54,7 @@
 
     <!-- Bảng Sản phẩm -->
     <ProductTable
-      :products="products"
+      :products="filteredProducts"
       @edit="openEditModal"
       @delete="openDeleteModal"
     />
@@ -72,37 +86,51 @@ import ProductTable from '../../components/admin/ProductTable.vue'
 import ProductForm from '../../components/admin/ProductForm.vue'
 import DeleteModal from '../../components/admin/DeleteModal.vue'
 
-const products = ref([])
-const allProducts = ref([])
+const allProducts = ref([])     // 🆕 Kho chứa toàn bộ danh sách gốc từ server
+const filteredProducts = ref([]) // 🆕 Danh sách hiển thị sau khi lọc
 const keyword = ref('')
+const statusFilter = ref(null)  // null | true | false
 const selectedProduct = ref({})
 
 const showFormModal = ref(false)
 const showDeleteModal = ref(false)
 const productToDelete = ref(null)
 
+// Tải tất cả sản phẩm ban đầu và lưu vào kho gốc
 const loadProducts = async () => {
-  keyword.value = ''
   try {
-    const data = await ProductService.getAllProducts()
-    allProducts.value = data || []
-    products.value = [...allProducts.value]
+    const res = await ProductService.getAllProducts ? await ProductService.getAllProducts() : await ProductService.filterProducts({})
+    allProducts.value = Array.isArray(res) ? res : (res?.data || [])
+    handleFilter() // Hiển thị toàn bộ ban đầu
   } catch (error) {
     console.error("Lỗi tải danh sách sản phẩm:", error)
+    notify("Không thể tải danh sách sản phẩm", "danger")
   }
 }
 
-const searchProduct = () => {
-  const kw = keyword.value.trim().toLowerCase()
-  if (!kw) {
-    products.value = [...allProducts.value]
-    return
+// 🆕 Hàm lọc trực tiếp trên mảng gốc (mượt mà, không lag, không gọi lại API liên tục)
+const handleFilter = () => {
+  let result = [...allProducts.value]
+
+  // 1. Lọc theo trạng thái
+  if (statusFilter.value !== null) {
+    result = result.filter(product => product.status === statusFilter.value)
   }
-  products.value = allProducts.value.filter(product =>
-    (product.name && product.name.toLowerCase().includes(kw)) ||
-    (product.brand && product.brand.toLowerCase().includes(kw)) ||
-    (product.category?.name && product.category.name.toLowerCase().includes(kw))
-  )
+
+  // 2. Lọc theo từ khóa tên sản phẩm
+  if (keyword.value.trim() !== '') {
+    const key = keyword.value.trim().toLowerCase()
+    result = result.filter(product => product.name && product.name.toLowerCase().includes(key))
+  }
+
+  filteredProducts.value = result
+}
+
+// 🆕 Làm mới bộ lọc
+const resetFilter = () => {
+  keyword.value = ''
+  statusFilter.value = null
+  filteredProducts.value = [...allProducts.value]
 }
 
 const openCreateModal = () => {
@@ -130,7 +158,7 @@ const saveProduct = async (productData) => {
       notify('Thêm sản phẩm mới thành công!', 'success')
     }
     closeFormModal()
-    await loadProducts()
+    await loadProducts() // Tải lại dữ liệu mới từ server và áp dụng lại bộ lọc
   } catch (error) {
     console.error("Lỗi lưu sản phẩm:", error)
     notify(error.response?.data?.message || error.response?.data || "Lưu sản phẩm thất bại!", 'danger')
@@ -160,6 +188,7 @@ const confirmDeleteProduct = async () => {
   try {
     await ProductService.deleteProduct(targetId)
     notify('Đã xóa sản phẩm thành công!', 'success')
+    await loadProducts()
   } catch (error) {
     console.error("Lỗi khi xóa sản phẩm:", error)
     const errorMsg = error.response?.data?.message || error.response?.data || "Xóa sản phẩm thất bại!"

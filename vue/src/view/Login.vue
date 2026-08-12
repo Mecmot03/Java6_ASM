@@ -114,10 +114,19 @@ const loginForm = ref({
   remember: false
 })
 
+// Bóc tách thông báo lỗi chuẩn xác từ Response Backend
+const extractErrorMessage = (error, defaultMsg) => {
+  if (!error.response) return defaultMsg
+  const data = error.response.data
+  if (typeof data === 'string' && data.trim()) return data
+  if (data && typeof data === 'object' && data.message) return data.message
+  return defaultMsg
+}
+
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
-      appId      : '1037782925805986', 
+      appId      : '1472135091617561', 
       cookie     : true,
       xfbml      : true,
       version    : 'v18.0'
@@ -153,7 +162,7 @@ const handleLogin = async () => {
     }
 
   } catch (error) {
-    const msg = error.response?.data?.message || error.response?.data || 'Email hoặc mật khẩu không chính xác!'
+    const msg = extractErrorMessage(error, 'Email hoặc mật khẩu không chính xác!')
     notify(msg, 'danger')
   } finally {
     loading.value = false
@@ -173,7 +182,8 @@ const loginWithGoogle = () => {
       await saveSessionAndRedirect(backendRes.data)
     } catch (err) {
       console.error("Lỗi Google Login:", err)
-      notify(err.response?.data?.message || "Đăng nhập Google thất bại!", 'danger')
+      const msg = extractErrorMessage(err, "Đăng nhập Google thất bại!")
+      notify(msg, 'danger')
     }
   })
 }
@@ -190,22 +200,30 @@ const loginWithFacebook = () => {
       .then(async (backendRes) => {
         await saveSessionAndRedirect(backendRes.data);
       })
-      .catch((err) => notify(err.response?.data?.message || "Không thể xác thực tài khoản Facebook!", 'danger'));
+      .catch((err) => {
+        const msg = extractErrorMessage(err, "Không thể xác thực tài khoản Facebook!")
+        notify(msg, 'danger')
+      });
     } else {
       notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
   }, { scope: 'public_profile,email' });
 }
 
+// Lưu session và điều hướng (Có kiểm tra token chặt chẽ)
 const saveSessionAndRedirect = async (data) => {
-  const token = data.token || data.accessToken || ''
-  const userObj = data.user || data
+  const token = data?.token || data?.accessToken || ''
+  const userObj = data?.user || data
 
-  if (token) {
-    localStorage.setItem('token', token)
-    // Cấu hình default header cho axios để các request sau tự động gửi Token
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  // Kiểm tra nếu không có Token thì dừng ngay lập tức
+  if (!token) {
+    const errorMsg = data?.message || (typeof data === 'string' ? data : 'Tài khoản của bạn đã bị khóa hoặc không hợp lệ!')
+    notify(errorMsg, 'danger')
+    return
   }
+
+  localStorage.setItem('token', token)
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
   localStorage.setItem('user', JSON.stringify(userObj))
 
   try {
@@ -219,7 +237,6 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-  // Kiểm tra role chính xác từ Response Backend (data.role hoặc data.roles)
   const role = data.role || userObj.role || ''
   const roles = data.roles || userObj.roles || []
 

@@ -316,7 +316,9 @@ const handleResetEvent = () => {
 
 const fetchFilteredProducts = async () => {
   try {
-    const params = {}
+    const params = {
+      status: true // 🟢 CHỈ LẤY SẢN PHẨM ĐANG BÁN (status = true)
+    }
 
     if (keyword.value && keyword.value.trim() !== '') {
       params.keyword = keyword.value.trim()

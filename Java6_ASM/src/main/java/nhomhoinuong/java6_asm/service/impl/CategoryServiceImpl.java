@@ -87,9 +87,16 @@ public class CategoryServiceImpl implements CategoryService {
                     .forEach(orderItemDAO::delete);
 
             productDAO.delete(product);
-        }
-
-        // 3. Xóa vĩnh viễn danh mục khỏi CSDL
+          // 3. Xóa vĩnh viễn danh mục khỏi CSDL
         categoryDAO.delete(category);
+        }
+      
+    @Override
+    public List<Category> findByStatus(Boolean status) {
+        // 🛠️ FIX: Tránh lỗi truyền tham số null vào câu lệnh truy vấn của JPA
+        if (status == null) {
+            return categoryDAO.findAll();
+        }
+        return categoryDAO.findByStatus(status);
     }
 }

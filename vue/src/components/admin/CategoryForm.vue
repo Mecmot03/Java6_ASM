@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue'
+import { ref, reactive, watch, nextTick } from 'vue'
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -91,6 +91,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['close', 'save'])
+
+// NEW: Khai báo Element Ref hỗ trợ tự cuộn & focus
+const inputCategoryName = ref(null)
 
 const formData = ref({
   id: null,
@@ -108,6 +111,14 @@ const imagePreview = ref('')
 
 const clearErrors = () => {
   errors.name = ''
+}
+// NEW: Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
 }
 
 const getImageUrl = (imageName) => {
@@ -148,6 +159,7 @@ const submitForm = () => {
   if (!String(formData.value.name || '').trim()) {
     errors.name = 'Vui lòng nhập tên danh mục!'
     notify('Vui lòng nhập đầy đủ thông tin bắt buộc.', 'warning')
+    focusElement(inputCategoryName.value) // NEW: Cuộn và focus
     return
   }
 

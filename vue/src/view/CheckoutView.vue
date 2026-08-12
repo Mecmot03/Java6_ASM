@@ -138,11 +138,11 @@
                   <small class="text-muted">x{{ item.quantity }}</small>
                 </div>
               </div>
-              <span class="fw-bold text-dark small">{{ formatPrice((item.product?.price || item.price || 0) * item.quantity) }}</span>
+              <span class="fw-bold text-dark small">{{ formatPrice(item.subTotal || ((item.product?.price || item.price || 0) * item.quantity)) }}</span>
             </div>
           </div>
 
-          <!-- TỔNG CỘNG HÌNH THỨC -->
+          <!-- TỔNG CỘNG XEM TRƯỚC -->
           <div class="d-flex justify-content-between mb-2 text-secondary">
             <span>Tạm tính:</span>
             <span class="fw-medium text-dark">{{ formatPrice(totalAmount) }}</span>
@@ -202,6 +202,12 @@ const orderForm = ref({
   paymentMethod: 'COD'
 })
 
+// Kiểm tra quyền Admin
+const isAdminUser = () => {
+  return user.role === 'ROLE_ADMIN' || user.role === 'ADMIN'
+}
+
+// Tải thông tin giỏ hàng khi component mount
 onMounted(async () => {
   if (!user.id) {
     notify("Vui lòng đăng nhập để tiến hành đặt hàng!", 'warning')
@@ -218,8 +224,12 @@ onMounted(async () => {
   }
 })
 
-const totalAmount = computed(() => {
-  return cartItems.value.reduce((sum, item) => sum + ((item.product?.price || item.price || 0) * item.quantity), 0)
+// Tính tổng tiền xem trước trên UI
+const previewTotalAmount = computed(() => {
+  return cartItems.value.reduce((sum, item) => {
+    const itemPrice = item.subTotal || ((item.product?.price || item.price || 0) * item.quantity)
+    return sum + itemPrice
+  }, 0)
 })
 
 const totalQuantity = computed(() => {
@@ -260,6 +270,7 @@ const handlePlaceOrder = async () => {
     receiverName: orderForm.value.fullName,
     receiverPhone: orderForm.value.phone,
     shippingAddress: orderForm.value.address,
+    note: orderForm.value.note,
     paymentMethod: orderForm.value.paymentMethod,
     items: itemsPayload
   }
@@ -267,11 +278,15 @@ const handlePlaceOrder = async () => {
   try {
     await axios.post('/api/orders/create', orderPayload)
 
+    // Cập nhật Badge giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
     notify("Đặt hàng thành công!", 'success')
     
-    const isAdmin = user.role === 'ROLE_ADMIN' || user.role === 'ADMIN'
-    router.push(isAdmin ? '/orders?status=PENDING' : '/order-history?status=PENDING')
+    if (isAdminUser()) {
+      router.push('/orders?status=PENDING')
+    } else {
+      router.push('/order-history?status=PENDING')
+    }
   } catch (err) {
     console.error("Lỗi đặt hàng:", err)
     notify(err.response?.data?.message || err.response?.data || "Đặt hàng thất bại. Vui lòng thử lại!", 'danger')

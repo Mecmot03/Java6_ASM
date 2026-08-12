@@ -11,7 +11,7 @@
         </div>
 
         <form @submit.prevent="saveProduct" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
               <!-- ID (Chỉ hiển thị khi cập nhật) -->
               <div v-if="isEdit" class="col-md-2">
@@ -23,6 +23,7 @@
               <div :class="isEdit ? 'col-md-10' : 'col-md-12'">
                 <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
                 <input 
+                ref="inputName"
                   v-model="form.name" 
                   class="form-control" 
                   :class="{ 'is-invalid': errors.name }"
@@ -37,6 +38,7 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
                 <select 
+                ref="inputCategory"
                   class="form-select" 
                   :class="{ 'is-invalid': errors.category }"
                   v-model="form.category"
@@ -55,6 +57,7 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Thương hiệu <span class="text-danger">*</span></label>
                 <select 
+                ref="inputBrand"
                   class="form-select" 
                   :class="{ 'is-invalid': errors.brand }"
                   v-model="form.brand"
@@ -145,7 +148,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, computed, ref, onMounted } from "vue"
+import { reactive, watch, computed, ref, onMounted, nextTick } from "vue" // NEW: Thêm nextTick
 import CategoryService from "../../services/CategoryService"
 import { notify } from '../../utils/notify'
 
@@ -170,6 +173,10 @@ const errors = reactive({
   price: "",
   quantity: ""
 })
+// NEW: Khai báo Element Refs hỗ trợ tự cuộn & focus
+const inputName = ref(null)
+const inputCategory = ref(null)
+const inputBrand = ref(null)
 
 const brands = ["Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Asus", "Acer", "Dell", "HP", "Lenovo", "MSI", "Logitech", "Razer", "Corsair", "SteelSeries", "HyperX", "Kingston", "Baseus", "Anker", "UGREEN"]
 
@@ -202,6 +209,13 @@ const clearErrors = () => {
   errors.brand = ""
   errors.price = ""
   errors.quantity = ""
+// NEW: Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
 }
 
 watch(() => props.product, (value) => {
@@ -243,18 +257,24 @@ const saveProduct = () => {
   if (!String(form.name || '').trim()) {
     errors.name = "Vui lòng nhập tên sản phẩm!"
     hasError = true
+    focusElement(inputName.value) // NEW: Cuộn và focus
+    return
   }
 
   // 2. Kiểm tra Danh mục
   if (!form.category) {
     errors.category = "Vui lòng chọn danh mục sản phẩm!"
     hasError = true
+        focusElement(inputCategory.value) // NEW: Cuộn và focus
+    return
   }
 
   // 3. Kiểm tra Thương hiệu
   if (!String(form.brand || '').trim()) {
     errors.brand = "Vui lòng chọn thương hiệu!"
     hasError = true
+    focusElement(inputBrand.value)
+    return
   }
 
   // Ép kiểu dữ liệu về dạng số

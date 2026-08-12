@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import nhomhoinuong.java6_asm.bean.Category;
 import nhomhoinuong.java6_asm.service.CategoryService;
 
-@CrossOrigin(origins = "http://localhost:5173") // <-- THÊM DÒNG NÀY VÀO ĐẦU CẢ 2 CONTROLLER
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/categories")
 public class CategoryController {
@@ -18,6 +18,12 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<List<Category>> getAll() {
         return ResponseEntity.ok(categoryService.findAll());
+    }
+
+    // 🆕 BỔ SUNG ENDPOINT NÀY ĐỂ KHỚP VỚI FRONTEND SERVICE
+    @GetMapping("/filter")
+    public ResponseEntity<List<Category>> filterCategories(@RequestParam(required = false) Boolean status) {
+        return ResponseEntity.ok(categoryService.findByStatus(status));
     }
 
     @GetMapping("/{id}")

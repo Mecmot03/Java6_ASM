@@ -109,8 +109,29 @@ const isAdmin = computed(() => {
   return role === 'ROLE_ADMIN' || role === 'ADMIN'
 })
 
-const loadProfile = () => {
+// const loadProfile = () => {
+//   const raw = localStorage.getItem('user')
+//   if (!raw) {
+//     originalUser.value = {}
+//     return
+//   }
+
+//   try {
+//     const user = JSON.parse(raw) || {}
+//     originalUser.value = user
+//     form.fullName = user.fullName || ''
+//     form.email = user.email || ''
+//     form.phone = user.phone || ''
+//     form.address = user.address || ''
+//     form.password = ''
+//   } catch (error) {
+//     originalUser.value = {}
+//   }
+// }
+
+const loadProfile = async () => {
   const raw = localStorage.getItem('user')
+
   if (!raw) {
     originalUser.value = {}
     return
@@ -118,14 +139,37 @@ const loadProfile = () => {
 
   try {
     const user = JSON.parse(raw) || {}
+
+    // Lấy thông tin mới nhất từ Backend
+    const response = await axios.get('/api/auth/me', getAuthConfig())
+    const latestUser = response.data || {}
+
+    originalUser.value = {
+      ...user,
+      ...latestUser
+    }
+
+    form.fullName = latestUser.fullName || user.fullName || ''
+    form.email = latestUser.email || user.email || ''
+    form.phone = latestUser.phone || user.phone || ''
+    form.address = latestUser.address || user.address || ''
+    form.password = ''
+
+    // Cập nhật lại localStorage/sessionStorage
+    localStorage.setItem('user', JSON.stringify(originalUser.value))
+
+  } catch (error) {
+    console.error('Không lấy được thông tin User:', error)
+
+    // Nếu API lỗi thì vẫn dùng dữ liệu localStorage
+    const user = JSON.parse(raw) || {}
+
     originalUser.value = user
     form.fullName = user.fullName || ''
     form.email = user.email || ''
     form.phone = user.phone || ''
     form.address = user.address || ''
     form.password = ''
-  } catch (error) {
-    originalUser.value = {}
   }
 }
 

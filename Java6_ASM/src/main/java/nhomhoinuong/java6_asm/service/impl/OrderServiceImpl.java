@@ -1,14 +1,33 @@
 package nhomhoinuong.java6_asm.service.impl;
 
+import nhomhoinuong.java6_asm.bean.CartItem;
+import nhomhoinuong.java6_asm.bean.Order;
+import nhomhoinuong.java6_asm.bean.OrderItem;
+import nhomhoinuong.java6_asm.bean.Product;
+import nhomhoinuong.java6_asm.bean.User;
+import nhomhoinuong.java6_asm.dao.CartItemDAO;
+import nhomhoinuong.java6_asm.dao.OrderDAO;
+import nhomhoinuong.java6_asm.dao.OrderItemDAO;
+import nhomhoinuong.java6_asm.dao.UserDAO;
+import nhomhoinuong.java6_asm.dto.OrderRequest;
+import nhomhoinuong.java6_asm.service.OrderService;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 import nhomhoinuong.java6_asm.bean.CartItem;
 import nhomhoinuong.java6_asm.bean.Order;
@@ -24,206 +43,209 @@ import nhomhoinuong.java6_asm.dto.OrderRequest;
 import nhomhoinuong.java6_asm.service.EmailService;
 import nhomhoinuong.java6_asm.service.OrderService;
 
+
 @Service
 public class OrderServiceImpl implements OrderService {
 
-	@Autowired
-	private OrderDAO orderDAO;
+    @Autowired
+    private OrderDAO orderDAO;
 
-	@Autowired
-	private OrderItemDAO orderItemDAO;
+    @Autowired
+    private OrderItemDAO orderItemDAO;
 
-	@Autowired
-	private CartItemDAO cartItemDAO;
+    @Autowired
+    private CartItemDAO cartItemDAO;
 
-	@Autowired
-	private ProductDAO productDAO;
+    @Autowired
 
-	@Autowired
-	private UserDAO userDAO;
+    private ProductDAO productDAO;
 
-	@Autowired
-	private EmailService emailService;
+    @Autowired
 
-	@Override
-	@Transactional
-	public Order createOrder(OrderRequest dto) {
-		// 1. Kiểm tra User tồn tại
-		User user = userDAO.findById(dto.getUserId())
-				.orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + dto.getUserId()));
+    private UserDAO userDAO;
 
-		// 2. Kiểm tra danh sách món hàng trong request
-		if (dto.getItems() == null || dto.getItems().isEmpty()) {
-			throw new RuntimeException("Giỏ hàng trống, không thể tiến hành đặt hàng!");
-		}
+    @Autowired
+    private EmailService emailService;
 
-		// 3. Khởi tạo đối tượng Đơn hàng
-		Order order = new Order();
-		order.setUserId(dto.getUserId());
-		order.setReceiverName(dto.getReceiverName());
-		order.setReceiverPhone(dto.getReceiverPhone());
-		order.setShippingAddress(dto.getShippingAddress());
-		order.setPaymentMethod(dto.getPaymentMethod());
-		order.setStatus("PENDING");
-		order.setOrderDate(LocalDateTime.now());
+    @Override
+    @Transactional
+    public Order createOrder(OrderRequest dto) {
 
-		BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
-		List<OrderItem> orderItemsToSave = new ArrayList<>();
+        // 1. Kiểm tra User
+        User user = userDAO.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng ID: " + dto.getUserId()));
 
-		// 4. Kiểm tra kho, trừ tồn kho và tính tổng tiền thực tế
-		for (OrderRequest.OrderItemDTO itemDto : dto.getItems()) {
-			Product product = productDAO.findById(itemDto.getProductId()).orElseThrow(
-					() -> new RuntimeException("Sản phẩm ID " + itemDto.getProductId() + " không tồn tại!"));
+        // 2. Lấy danh sách giỏ hàng từ DB
+        List<CartItem> cartItems = cartItemDAO.findByUserId(dto.getUserId());
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng của bạn đang trống!");
+        }
 
-			// Kiểm tra số lượng tồn kho
-			if (product.getQuantity() < itemDto.getQuantity()) {
-				throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ số lượng trong kho!");
-			}
+        // 3. Khởi tạo Đơn hàng
 
-			// Trừ số lượng tồn kho
-			product.setQuantity(product.getQuantity() - itemDto.getQuantity());
-			productDAO.save(product);
+        if (dto.getItems() == null || dto.getItems().isEmpty()) {
+            throw new RuntimeException("Giỏ hàng trống, không thể tiến hành đặt hàng!");
+        }
 
-			// Lấy giá chuẩn từ CSDL
-			BigDecimal itemPrice = product.getPrice();
-			BigDecimal subTotal = itemPrice.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
-			calculatedTotalAmount = calculatedTotalAmount.add(subTotal);
+        // 1. Khởi tạo đối tượng Order
 
-			// Tạo Chi tiết đơn hàng tạm thời
-			OrderItem orderItem = new OrderItem();
-			orderItem.setProductId(product.getId());
-			orderItem.setQuantity(itemDto.getQuantity());
-			orderItem.setPrice(itemPrice);
+        Order order = new Order();
+        order.setUserId(dto.getUserId());
+        order.setReceiverName(dto.getReceiverName());
+        order.setReceiverPhone(dto.getReceiverPhone());
+        order.setShippingAddress(dto.getShippingAddress());
+        order.setPaymentMethod(dto.getPaymentMethod());
+        order.setStatus("PENDING");
+        order.setOrderDate(LocalDateTime.now());
 
-			orderItemsToSave.add(orderItem);
-		}
+        BigDecimal calculatedTotalAmount = BigDecimal.ZERO;
+        List<OrderItem> orderItemsToSave = new ArrayList<>();
 
-		// 5. Gán tổng tiền và Lưu đơn hàng vào CSDL
-		order.setTotalAmount(calculatedTotalAmount);
-		Order savedOrder = orderDAO.save(order);
+        // 2. Lấy giá tiền chuẩn từ CSDL và kiểm tra kho
+        for (OrderRequest.OrderItemDTO itemDto : dto.getItems()) {
+            Product product = productDAO.findById(itemDto.getProductId())
+                    .orElseThrow(() -> new RuntimeException("Sản phẩm ID " + itemDto.getProductId() + " không tồn tại!"));
 
-		// 6. Gán orderId vừa tạo cho từng OrderItem và Lưu
-		for (OrderItem item : orderItemsToSave) {
-			item.setOrderId(savedOrder.getId());
-			orderItemDAO.save(item);
-		}
+            // Kiểm tra số lượng tồn kho
+            if (product.getQuantity() < itemDto.getQuantity()) {
+                throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ số lượng trong kho!");
+            }
 
-		// 7. Dọn sạch giỏ hàng của User trong CSDL
-		cartItemDAO.deleteByUserId(dto.getUserId());
+            // Trừ số lượng tồn kho
+            product.setQuantity(product.getQuantity() - itemDto.getQuantity());
+            productDAO.save(product);
 
-		// 8. 🔴 Gửi Email hóa đơn tự động về Email người dùng
-		if (user.getEmail() != null && !user.getEmail().isBlank()) {
-			emailService.sendOrderInvoice(user.getEmail(), savedOrder);
-		}
+            // Lấy giá chuẩn từ CSDL
+            BigDecimal itemPrice = product.getPrice();
+            BigDecimal subTotal = itemPrice.multiply(BigDecimal.valueOf(itemDto.getQuantity()));
+            calculatedTotalAmount = calculatedTotalAmount.add(subTotal);
 
-		return savedOrder;
-	}
+            // Tạo Chi tiết đơn hàng tạm thời
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(product.getId());
+            orderItem.setQuantity(itemDto.getQuantity());
+            orderItem.setPrice(itemPrice);
 
-	@Override
-	public List<Order> getOrders(Long userId, String status) {
-		if (userId == null) {
-			if (status != null && !status.trim().isEmpty()) {
-				return orderDAO.findAllByStatusOrderByOrderDateDesc(status);
-			}
-			return orderDAO.findAllByOrderByOrderDateDesc();
-		}
+            orderItemsToSave.add(orderItem);
+        }
 
-		if (status != null && !status.trim().isEmpty()) {
-			return orderDAO.findByUserIdAndStatusOrderByOrderDateDesc(userId, status);
-		}
-		return orderDAO.findByUserIdOrderByOrderDateDesc(userId);
-	}
+        // 5. Gán tổng tiền và Lưu đơn hàng vào CSDL
+        order.setTotalAmount(calculatedTotalAmount);
+        Order savedOrder = orderDAO.save(order);
 
-	@Override
-	@Transactional
-	public Order confirmOrder(Long orderId) {
-		return transitionOrderStatus(orderId, "PENDING", "PROCESSING");
-	}
+        // 6. Gán orderId vừa tạo cho từng OrderItem và Lưu
+        for (OrderItem item : orderItemsToSave) {
+            item.setOrderId(savedOrder.getId());
+            orderItemDAO.save(item);
+        }
 
-	@Override
-	@Transactional
-	public Order shipOrder(Long orderId) {
-		return transitionOrderStatus(orderId, "PROCESSING", "SHIPPING");
-	}
+        // 5. Xóa giỏ hàng của User
 
-	@Override
-	@Transactional
-	public Order deliverOrder(Long orderId) {
-		return transitionOrderStatus(orderId, "SHIPPING", "DELIVERED");
-	}
+        cartItemDAO.deleteByUserId(dto.getUserId());
 
-	@Override
-	@Transactional
-	public Order cancelOrder(Long orderId) {
-		Optional<Order> optionalOrder = orderDAO.findById(orderId);
-		if (optionalOrder.isEmpty()) {
-			throw new RuntimeException("Không tìm thấy đơn hàng.");
-		}
+        // 8. 🔴 Gửi Email hóa đơn tự động về Email người dùng
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            emailService.sendOrderInvoice(user.getEmail(), savedOrder);
+        }
 
-		Order order = optionalOrder.get();
-		String currentStatus = order.getStatus() == null ? "" : order.getStatus().trim().toUpperCase();
-		if (!"PENDING".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
-			throw new RuntimeException("Chỉ có thể hủy đơn đang chờ xác nhận hoặc chờ lấy hàng.");
-		}
+        return savedOrder;
+    }
 
-		// 🔴 TỰ ĐỘNG CỘNG HOÀN TRẢ SỐ LƯỢNG VÀO KHO KHU HỦY ĐƠN
-		if (order.getItems() != null && !order.getItems().isEmpty()) {
-			for (OrderItem item : order.getItems()) {
-				Product product = productDAO.findById(item.getProductId()).orElse(null);
-				if (product != null) {
-					int restoredStock = product.getQuantity() + item.getQuantity();
-					product.setQuantity(restoredStock);
-					productDAO.save(product);
-				}
-			}
-		}
+    @Override
+    public List<Order> getOrders(Long userId, String status) {
+        if (userId == null) {
+            if (status != null && !status.trim().isEmpty()) {
+                return orderDAO.findAllByStatusOrderByOrderDateDesc(status);
+            }
+            return orderDAO.findAllByOrderByOrderDateDesc();
+        }
 
-		order.setStatus("CANCELLED");
-		return orderDAO.save(order);
-	}
+        if (status != null && !status.trim().isEmpty()) {
+            return orderDAO.findByUserIdAndStatusOrderByOrderDateDesc(userId, status);
+        }
+        return orderDAO.findByUserIdOrderByOrderDateDesc(userId);
+    }
 
-	@Override
-	@Transactional
-	public void rebuyOrder(Long orderId, Long userId) {
-		Order order = orderDAO.findById(orderId).orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng!"));
+    @Override
+    @Transactional
+    public Order confirmOrder(Long orderId) {
+        return transitionOrderStatus(orderId, "PENDING", "PROCESSING");
+    }
 
-		User user = userDAO.findById(userId).orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+    @Override
+    @Transactional
+    public Order shipOrder(Long orderId) {
+        return transitionOrderStatus(orderId, "PROCESSING", "SHIPPING");
+    }
 
-		if (order.getItems() != null && !order.getItems().isEmpty()) {
-			for (OrderItem item : order.getItems()) {
-				Product product = productDAO.findById(item.getProductId())
-						.orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại!"));
+    @Override
+    @Transactional
+    public Order deliverOrder(Long orderId) {
+        return transitionOrderStatus(orderId, "SHIPPING", "DELIVERED");
+    }
 
-				Optional<CartItem> existingCartItem = cartItemDAO.findByUserIdAndProductId(userId, item.getProductId());
-				if (existingCartItem.isPresent()) {
-					CartItem cartItem = existingCartItem.get();
-					cartItem.setQuantity(cartItem.getQuantity() + item.getQuantity());
-					cartItemDAO.save(cartItem);
-				} else {
-					CartItem cartItem = new CartItem();
-					cartItem.setUser(user);
-					cartItem.setProduct(product);
-					cartItem.setQuantity(item.getQuantity());
-					cartItemDAO.save(cartItem);
-				}
-			}
-		}
-	}
+    @Override
+    @Transactional
+    public Order cancelOrder(Long orderId) {
+        Optional<Order> optionalOrder = orderDAO.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy đơn hàng.");
+        }
 
-	private Order transitionOrderStatus(Long orderId, String expectedCurrent, String nextStatus) {
-		Optional<Order> optionalOrder = orderDAO.findById(orderId);
-		if (optionalOrder.isEmpty()) {
-			throw new RuntimeException("Không tìm thấy đơn hàng.");
-		}
+        Order order = optionalOrder.get();
+        String currentStatus = order.getStatus() == null ? "" : order.getStatus().trim().toUpperCase();
+        if (!"PENDING".equals(currentStatus) && !"PROCESSING".equals(currentStatus)) {
+            throw new RuntimeException("Chỉ có thể hủy đơn đang chờ xác nhận hoặc chờ lấy hàng.");
+        }
 
-		Order order = optionalOrder.get();
-		String currentStatus = order.getStatus() == null ? "" : order.getStatus().trim().toUpperCase();
+        order.setStatus("CANCELLED");
+        return orderDAO.save(order);
+    }
 
-		if (!expectedCurrent.equals(currentStatus)) {
-			throw new RuntimeException("Đơn hàng không ở trạng thái hợp lệ để cập nhật.");
-		}
+    @Override
+    @Transactional
+    public void rebuyOrder(Long orderId, Long userId) {
+        Order order = orderDAO.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng!"));
 
-		order.setStatus(nextStatus);
-		return orderDAO.save(order);
-	}
+        User user = userDAO.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng!"));
+
+        if (order.getItems() != null && !order.getItems().isEmpty()) {
+            for (OrderItem item : order.getItems()) {
+                Product product = productDAO.findById(item.getProductId())
+                        .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại!"));
+
+                Optional<CartItem> existingCartItem = cartItemDAO.findByUserIdAndProductId(userId, item.getProductId());
+                if (existingCartItem.isPresent()) {
+                    CartItem cartItem = existingCartItem.get();
+                    cartItem.setQuantity(cartItem.getQuantity() + item.getQuantity());
+                    cartItemDAO.save(cartItem);
+                } else {
+                    CartItem cartItem = new CartItem();
+                    cartItem.setUser(user);
+                    cartItem.setProduct(product);
+                    cartItem.setQuantity(item.getQuantity());
+                    cartItemDAO.save(cartItem);
+                }
+            }
+        }
+    }
+
+    private Order transitionOrderStatus(Long orderId, String expectedCurrent, String nextStatus) {
+        Optional<Order> optionalOrder = orderDAO.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            throw new RuntimeException("Không tìm thấy đơn hàng.");
+        }
+
+        Order order = optionalOrder.get();
+        String currentStatus = order.getStatus() == null ? "" : order.getStatus().trim().toUpperCase();
+
+        if (!expectedCurrent.equals(currentStatus)) {
+            throw new RuntimeException("Đơn hàng không ở trạng thái hợp lệ để cập nhật.");
+        }
+
+        order.setStatus(nextStatus);
+        return orderDAO.save(order);
+    }
 }

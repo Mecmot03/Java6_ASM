@@ -1,5 +1,7 @@
 package nhomhoinuong.java6_asm.controller;
 
+import java.util.Map;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import lombok.RequiredArgsConstructor;
@@ -20,18 +22,33 @@ public class AuthController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        return authenticationService.login(request);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        try {
+            LoginResponse response = authenticationService.login(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/register")
-    public User register(@RequestBody RegisterRequest request) {
-        return authenticationService.register(request);
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        try {
+            User response = authenticationService.register(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PostMapping("/social-login")
-    public LoginResponse socialLogin(@RequestBody SocialLoginRequest request) {
-        return authenticationService.socialLogin(request);
+    public ResponseEntity<?> socialLogin(@RequestBody SocialLoginRequest request) {
+        try {
+            LoginResponse response = authenticationService.socialLogin(request);
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 
     @PutMapping("/me")
@@ -42,5 +59,4 @@ public class AuthController {
         User currentUser = (User) authentication.getPrincipal();
         return authenticationService.updateCurrentUser(currentUser.getId(), request);
     }
-
 }

@@ -11,7 +11,7 @@
         </div>
 
         <form @submit.prevent="save" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
               <!-- Họ tên (🔴 Validate) -->
               <div class="col-md-6">
@@ -59,8 +59,8 @@
 
               <!-- SĐT -->
               <div class="col-md-6">
-                <label class="form-label fw-semibold">Số điện thoại</label>
-                <input v-model="form.phone" class="form-control" placeholder="0321234567">
+                <label class="form-label fw-semibold">Số điện thoại <span class="text-danger">*</span></label>
+                <input ref="inputPhone" v-model="form.phone" class="form-control" placeholder="0901234567" maxlength="10">
               </div>
 
               <!-- Địa chỉ -->
@@ -70,7 +70,7 @@
               </div>
 
               <!-- Phân quyền hệ thống (🔴 Validate) -->
-              <div class="col-12">
+              <div class="col-12" ref="roleSection">
                 <label class="form-label fw-semibold d-block">Phân quyền hệ thống <span class="text-danger">*</span></label>
                 <div 
                   class="p-3 border rounded bg-light d-flex flex-wrap gap-4"
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { reactive, ref, watch, nextTick } from 'vue'
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -147,6 +147,13 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['save', 'close'])
+
+// Khai báo Element Refs hỗ trợ tự cuộn & focus
+const inputFullName = ref(null)
+const inputEmail = ref(null)
+const inputPassword = ref(null)
+const inputPhone = ref(null)
+const roleSection = ref(null)
 
 const emptyForm = {
   id: null,
@@ -175,6 +182,16 @@ const clearErrors = () => {
   errors.roles = ''
 }
 
+// Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
+}
+
+// Trích xuất tất cả vai trò mà User đang có
 const extractUserRoles = (userData) => {
   if (!userData) return ['ROLE_USER']
   const rolesFound = new Set()
@@ -216,35 +233,61 @@ const save = () => {
   const fullName = String(form.fullName || '').trim()
   const email = String(form.email || '').trim()
   const password = String(form.password || '').trim()
+  const phone = String(form.phone || '').trim()
 
   // 1. Kiểm tra Họ và tên
   if (!fullName) {
     errors.fullName = "Vui lòng nhập họ và tên!"
+        focusElement(inputFullName.value)
     hasError = true
+    return
   }
 
   // 2. Kiểm tra Email
   if (!email) {
     errors.email = "Vui lòng nhập địa chỉ email!"
     hasError = true
+        focusElement(inputEmail.value)
+    return
   } else if (!/^\S+@\S+\.\S+$/.test(email)) {
     errors.email = "Email không đúng định dạng (Ví dụ: name@gmail.com)!"
     hasError = true
+    focusElement(inputEmail.value)
+    return
   }
 
   // 3. Kiểm tra Mật khẩu (bắt buộc khi tạo mới, tùy chọn khi sửa)
   if (!form.id && !password) {
     errors.password = "Vui lòng nhập mật khẩu cho tài khoản mới!"
     hasError = true
+        focusElement(inputPassword.value)
+    return
   } else if (password && password.length < 6) {
     errors.password = "Mật khẩu phải chứa ít nhất 6 ký tự!"
     hasError = true
+        focusElement(inputPassword.value)
+    return
   }
 
-  // 4. Kiểm tra Phân quyền
+    // 4. Validate Số điện thoại
+  if (!phone) {
+    notify('Vui lòng nhập số điện thoại.', 'warning')
+    focusElement(inputPhone.value)
+    return
+  }
+  const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/
+  if (!phoneRegex.test(phone)) {
+    notify('Số điện thoại không đúng định dạng (bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số).', 'warning')
+    focusElement(inputPhone.value)
+    return
+  }
+  
+  // 5. Kiểm tra Phân quyền
   if (!selectedRoles.value || selectedRoles.value.length === 0) {
     errors.roles = "Vui lòng chọn ít nhất 1 quyền hạn cho tài khoản!"
     hasError = true
+       focusElement(roleSection.value)
+    return
   }
 
   if (hasError) {
@@ -252,11 +295,20 @@ const save = () => {
     return
   }
 
+
+  // Tạo payload gửi đi
   const payload = {
     ...form,
+    fullName,
+    email,
+    password,
+    phone,
     role: selectedRoles.value[0],
     roles: selectedRoles.value,
-    authorities: selectedRoles.value.map(r => ({ authority: r, role: { id: r } }))
+    authorities: selectedRoles.value.map(r => ({
+      authority: r,
+      role: { id: r }
+    }))
   }
 
   emit('save', payload)

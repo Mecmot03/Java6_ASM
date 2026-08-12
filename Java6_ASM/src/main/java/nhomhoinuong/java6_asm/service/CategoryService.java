@@ -5,12 +5,11 @@ import nhomhoinuong.java6_asm.bean.Category;
 
 public interface CategoryService {
     List<Category> findAll();
-    
     Category findById(Long id);
-    
     Category create(Category category);
-    
     Category update(Category category);
-    
     void delete(Long id);
+
+    // 🆕 NEW: Khai báo hàm lọc theo status
+    List<Category> findByStatus(Boolean status);
 }

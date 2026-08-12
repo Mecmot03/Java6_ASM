@@ -46,11 +46,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getProductById(Long id) {
+        // Trả về trực tiếp sản phẩm theo ID để phục vụ quản lý và cập nhật
         return productDAO.findById(id).orElse(null);
     }
 
     @Override
-    public List<Product> filterProducts(String keyword, Long categoryId, String brand, BigDecimal minPrice, BigDecimal maxPrice, String sortBy) {
+    public List<Product> filterProducts(String keyword, Long categoryId, String brand, BigDecimal minPrice, BigDecimal maxPrice, String sortBy, Boolean status) {
         String cleanKeyword = null;
         if (keyword != null && !keyword.trim().isEmpty()) {
             cleanKeyword = keyword.replace("+", " ").trim();
@@ -62,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         String cleanBrand = (brand != null && !brand.trim().isEmpty()) ? brand.trim() : null;
         String cleanSort = (sortBy != null && !sortBy.trim().isEmpty()) ? sortBy.trim() : null;
 
-        return productDAO.filterProducts(cleanKeyword, categoryId, cleanBrand, minPrice, maxPrice, cleanSort);
+        return productDAO.filterProducts(cleanKeyword, categoryId, cleanBrand, minPrice, maxPrice, cleanSort, status);
     }
 
     @Override

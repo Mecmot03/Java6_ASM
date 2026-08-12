@@ -28,8 +28,9 @@ public class ProductController {
             @RequestParam(required = false) String brand,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) String sortBy) {
-        return productService.filterProducts(keyword, categoryId, brand, minPrice, maxPrice, sortBy);
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) Boolean status) { // THÊM LỌC STATUS
+        return productService.filterProducts(keyword, categoryId, brand, minPrice, maxPrice, sortBy, status);
     }
 
     @GetMapping("/{id}")
