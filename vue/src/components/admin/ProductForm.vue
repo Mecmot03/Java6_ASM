@@ -23,7 +23,7 @@
               <div :class="isEdit ? 'col-md-10' : 'col-md-12'">
                 <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
                 <input 
-                ref="inputName"
+                  ref="inputName"
                   v-model="form.name" 
                   class="form-control" 
                   :class="{ 'is-invalid': errors.name }"
@@ -38,7 +38,7 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
                 <select 
-                ref="inputCategory"
+                  ref="inputCategory"
                   class="form-select" 
                   :class="{ 'is-invalid': errors.category }"
                   v-model="form.category"
@@ -57,7 +57,7 @@
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Thương hiệu <span class="text-danger">*</span></label>
                 <select 
-                ref="inputBrand"
+                  ref="inputBrand"
                   class="form-select" 
                   :class="{ 'is-invalid': errors.brand }"
                   v-model="form.brand"
@@ -148,7 +148,7 @@
 </template>
 
 <script setup>
-import { reactive, watch, computed, ref, onMounted, nextTick } from "vue" // NEW: Thêm nextTick
+import { reactive, watch, computed, ref, onMounted, nextTick } from "vue"
 import CategoryService from "../../services/CategoryService"
 import { notify } from '../../utils/notify'
 
@@ -173,7 +173,8 @@ const errors = reactive({
   price: "",
   quantity: ""
 })
-// NEW: Khai báo Element Refs hỗ trợ tự cuộn & focus
+
+// Khai báo Element Refs hỗ trợ tự cuộn & focus
 const inputName = ref(null)
 const inputCategory = ref(null)
 const inputBrand = ref(null)
@@ -209,7 +210,9 @@ const clearErrors = () => {
   errors.brand = ""
   errors.price = ""
   errors.quantity = ""
-// NEW: Hàm cuộn mượt và focus vào element lỗi
+}
+
+// Hàm cuộn mượt và focus vào element lỗi
 const focusElement = async (el) => {
   await nextTick()
   if (el) {
@@ -257,7 +260,7 @@ const saveProduct = () => {
   if (!String(form.name || '').trim()) {
     errors.name = "Vui lòng nhập tên sản phẩm!"
     hasError = true
-    focusElement(inputName.value) // NEW: Cuộn và focus
+    focusElement(inputName.value)
     return
   }
 
@@ -265,7 +268,7 @@ const saveProduct = () => {
   if (!form.category) {
     errors.category = "Vui lòng chọn danh mục sản phẩm!"
     hasError = true
-        focusElement(inputCategory.value) // NEW: Cuộn và focus
+    focusElement(inputCategory.value)
     return
   }
 
