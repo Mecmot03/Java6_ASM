@@ -44,25 +44,19 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
+                // 2. TẠO ĐƠN HÀNG: Chỉ ROLE_USER mới được phép gọi (Đặt lên trên để ưu tiên check trước)
+                .requestMatchers(HttpMethod.POST, "/api/orders/create").hasRole("USER")
 
-                
-             // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
-                .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
-               // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
-                .requestMatchers("/api/orders/create").hasRole("USER")
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
-
-
-                // 3. XEM DANH SÁCH ĐƠN: Cho phép cả USER, STAFF và ADMIN để xem/xử lý đơn
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "STAFF", "ADMIN")
-
-                // 4. HỦY ĐƠN HÀNG: Cả USER, STAFF, ADMIN đều có thể gửi yêu cầu hủy đơn
+                // 3. HỦY ĐƠN HÀNG: USER, STAFF, ADMIN đều được phép
                 .requestMatchers(HttpMethod.PUT, "/api/orders/{orderId}/cancel").hasAnyRole("USER", "STAFF", "ADMIN")
 
-                // 5. DUYỆT & CẬP NHẬT ĐƠN HÀNG: Cho phép cả STAFF và ADMIN duyệt đơn
+                // 4. XEM DANH SÁCH / CHI TIẾT ĐƠN HÀNG: USER, STAFF, ADMIN đều xem được
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "STAFF", "ADMIN")
+
+                // 5. DUYỆT & CẬP NHẬT TRẠNG THÁI ĐƠN (Xác nhận, giao hàng... dành cho Staff/Admin):
                 .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasAnyRole("STAFF", "ADMIN")
 
-                // 6. CHỈ ROLE_ADMIN: Mới được vào trang Quản trị Hệ thống
+                // 6. CHỈ ROLE_ADMIN: Vào trang quản trị hệ thống
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Các API còn lại yêu cầu đăng nhập
