@@ -26,14 +26,8 @@
             <td>{{ user.email }}</td>
             <td>{{ user.phone || '---' }}</td>
             <td>
-              <!-- Hiển thị nhiều Badge Quyền cùng lúc -->
               <div class="d-flex flex-wrap gap-1">
-                <span 
-                  v-for="role in getUserRoles(user)" 
-                  :key="role" 
-                  class="badge" 
-                  :class="getRoleBadgeClass(role)"
-                >
+                <span v-for="role in getUserRoles(user)" :key="role" class="badge" :class="getRoleBadgeClass(role)">
                   {{ role }}
                 </span>
               </div>
@@ -43,38 +37,20 @@
                 {{ user.enabled !== false ? 'Hoạt động' : 'Đã khóa' }}
               </span>
             </td>
-            <td class="text-center">
-              <!-- Nút Sửa -->
-              <button
-                type="button"
-                class="btn btn-warning btn-sm me-2"
-                @click="$emit('edit', user)"
-                title="Sửa thông tin"
-              >
+            <td class="text-center align-middle">
+              <!-- Nút Chỉnh sửa -->
+              <button class="btn btn-sm btn-warning text-white me-1" title="Chỉnh sửa" @click="$emit('edit', user)">
                 <i class="bi bi-pencil-square"></i>
               </button>
 
-              <!-- Nút Xóa -->
-              <button
-                type="button"
-                class="btn btn-danger btn-sm me-2"
-                @click="$emit('delete', user)"
-                title="Xóa vĩnh viễn"
-              >
-                <i class="bi bi-trash"></i>
+              <!-- 🔴 NÚT XÓA: Gọi chính xác $emit('delete', user) -->
+              <button class="btn btn-sm btn-danger me-1" title="Xóa tài khoản" @click="$emit('delete', user)">
+                <i class="bi bi-trash-fill"></i>
               </button>
 
-              <!-- Nút Khóa / Mở khóa -->
-              <button
-                type="button"
-                class="btn btn-secondary btn-sm"
-                @click="$emit('changeStatus', user)"
-                :title="user.enabled !== false ? 'Khóa tài khoản này' : 'Mở khóa tài khoản'"
-              >
-                <i
-                  class="bi"
-                  :class="user.enabled !== false ? 'bi-lock-fill' : 'bi-unlock-fill'"
-                ></i>
+              <!-- 🟢 NÚT ĐỔI TRẠNG THÁI: Gọi $emit('changeStatus', user) -->
+              <button class="btn btn-sm btn-secondary" title="Đổi trạng thái" @click="$emit('changeStatus', user)">
+                <i class="bi" :class="user.enabled ? 'bi-lock-fill' : 'bi-unlock-fill'"></i>
               </button>
             </td>
           </tr>
@@ -109,7 +85,7 @@ defineEmits([
 // Lấy mảng danh sách quyền để render
 const getUserRoles = (user) => {
   if (!user) return ['ROLE_USER']
-  
+
   let roles = []
   if (Array.isArray(user.roles)) {
     roles = user.roles.map(r => typeof r === 'string' ? r : (r.name || r.authority || r.id))
@@ -139,12 +115,36 @@ const getRoleBadgeClass = (roleName) => {
 </script>
 
 <style scoped>
-.card { border-radius: 15px; }
-.card-header { font-weight: bold; }
-table { font-size: 14px; }
-th { white-space: nowrap; }
-td { vertical-align: middle; }
-.badge { font-size: 12px; padding: 6px 10px; }
-button { border-radius: 8px; }
-.table tbody tr:hover { background: #f8f9fa; }
+.card {
+  border-radius: 15px;
+}
+
+.card-header {
+  font-weight: bold;
+}
+
+table {
+  font-size: 14px;
+}
+
+th {
+  white-space: nowrap;
+}
+
+td {
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+button {
+  border-radius: 8px;
+}
+
+.table tbody tr:hover {
+  background: #f8f9fa;
+}
 </style>

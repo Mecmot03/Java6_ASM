@@ -7,15 +7,26 @@
             <i class="bi me-2" :class="isEditing ? 'bi-pencil-square' : 'bi-folder-plus'"></i>
             {{ isEditing ? 'Chỉnh sửa Danh mục' : 'Thêm Danh mục Mới' }}
           </h5>
-          <button type="button" class="btn-close btn-close-white" @click="$emit('close')"></button>
+          <button type="button" class="btn-close btn-close-white" @click="close"></button>
         </div>
         <form @submit.prevent="submitForm" novalidate>
           <div class="modal-body p-4">
+            <!-- Tên danh mục (🔴 Validate hiển thị lỗi đỏ) -->
             <div class="mb-3">
               <label class="form-label fw-semibold">Tên danh mục <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" v-model="formData.name" required placeholder="Ví dụ: Bàn phím" />
+              <input 
+                type="text" 
+                class="form-control" 
+                :class="{ 'is-invalid': errors.name }"
+                v-model="formData.name" 
+                placeholder="Ví dụ: Bàn phím" 
+              />
+              <div v-if="errors.name" class="invalid-feedback d-block fw-bold mt-1">
+                {{ errors.name }}
+              </div>
             </div>
             
+            <!-- Mô tả -->
             <div class="mb-3">
               <label class="form-label fw-semibold">Mô tả</label>
               <textarea class="form-control" rows="2" v-model="formData.description" placeholder="Nhập mô tả ngắn"></textarea>
@@ -53,7 +64,7 @@
             </div>
           </div>
           <div class="modal-footer bg-light">
-            <button type="button" class="btn btn-secondary px-4" @click="$emit('close')">Hủy</button>
+            <button type="button" class="btn btn-secondary px-4" @click="close">Hủy</button>
             <button type="submit" class="btn btn-primary fw-bold px-4" :disabled="loading">
               <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
               {{ isEditing ? 'Cập nhật' : 'Thêm mới' }}
@@ -66,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -89,7 +100,15 @@ const formData = ref({
   status: true
 })
 
+const errors = reactive({
+  name: ''
+})
+
 const imagePreview = ref('')
+
+const clearErrors = () => {
+  errors.name = ''
+}
 
 const getImageUrl = (imageName) => {
   if (!imageName) return 'https://placehold.co/48x48?text=No+Img'
@@ -100,11 +119,15 @@ const getImageUrl = (imageName) => {
 }
 
 watch(() => props.categoryData, (newVal) => {
-  if (newVal) {
+  clearErrors()
+  if (newVal && Object.keys(newVal).length > 0) {
     formData.value = { ...newVal }
     imagePreview.value = newVal.image ? getImageUrl(newVal.image) : ''
+  } else {
+    formData.value = { id: null, name: '', description: '', image: '', status: true }
+    imagePreview.value = ''
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 const handleFileChange = (event) => {
   const file = event.target.files[0]
@@ -118,16 +141,27 @@ const handleImageError = (e) => {
   e.target.src = 'https://placehold.co/48x48?text=No+Img'
 }
 
+// 🔴 THỰC HIỆN KIỂM TRA VALIDATE FORM DANH MỤC
 const submitForm = () => {
-  if (!formData.value.name.trim()) {
-    notify('Vui lòng nhập tên danh mục.', 'warning')
+  clearErrors()
+
+  if (!String(formData.value.name || '').trim()) {
+    errors.name = 'Vui lòng nhập tên danh mục!'
+    notify('Vui lòng nhập đầy đủ thông tin bắt buộc.', 'warning')
     return
   }
+
   emit('save', formData.value)
+}
+
+const close = () => {
+  clearErrors()
+  emit('close')
 }
 </script>
 
 <style scoped>
 .form-control { border-radius: 8px; }
 .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+.invalid-feedback { font-size: 12px; color: #dc3545; }
 </style>

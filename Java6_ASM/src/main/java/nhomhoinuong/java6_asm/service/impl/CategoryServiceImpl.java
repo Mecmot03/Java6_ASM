@@ -1,12 +1,14 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Category;
-import nhomhoinuong.java6_asm.dao.CategoryDAO;
+import nhomhoinuong.java6_asm.bean.Product;
+import nhomhoinuong.java6_asm.dao.*;
 import nhomhoinuong.java6_asm.service.CategoryService;
 
 @Service
@@ -14,6 +16,21 @@ import nhomhoinuong.java6_asm.service.CategoryService;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryDAO categoryDAO;
+
+    @Autowired
+    private ProductDAO productDAO;
+
+    @Autowired
+    private CartItemDAO cartItemDAO;
+
+    @Autowired
+    private FavoriteDAO favoriteDAO;
+
+    @Autowired
+    private CommentDAO commentDAO;
+
+    @Autowired
+    private OrderItemDAO orderItemDAO;
 
     @Override
     public List<Category> findAll() {
@@ -35,9 +52,44 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryDAO.save(category);
     }
 
+    // 🔴 XÓA CỨNG HOÀN TOÀN DANH MỤC VÀ TẤT CẢ SẢN PHẨM CON
     @Override
+    @Transactional
     public void delete(Long id) {
-        categoryDAO.deleteById(id);
-    }
+        Category category = categoryDAO.findById(id).orElse(null);
+        if (category == null) {
+            return;
+        }
 
+        // 1. Tìm tất cả sản phẩm thuộc danh mục này
+        List<Product> products = productDAO.findAll().stream()
+                .filter(p -> p.getCategory() != null && id.equals(p.getCategory().getId()))
+                .toList();
+
+        // 2. Dọn sạch toàn bộ ràng buộc của từng sản phẩm trong các bảng phụ
+        for (Product product : products) {
+            Long productId = product.getId();
+
+            cartItemDAO.findAll().stream()
+                    .filter(ci -> ci.getProduct() != null && productId.equals(ci.getProduct().getId()))
+                    .forEach(cartItemDAO::delete);
+
+            favoriteDAO.findAll().stream()
+                    .filter(f -> f.getProduct() != null && productId.equals(f.getProduct().getId()))
+                    .forEach(favoriteDAO::delete);
+
+            commentDAO.findAll().stream()
+                    .filter(c -> c.getProduct() != null && productId.equals(c.getProduct().getId()))
+                    .forEach(commentDAO::delete);
+
+            orderItemDAO.findAll().stream()
+                    .filter(oi -> productId.equals(oi.getProductId()))
+                    .forEach(orderItemDAO::delete);
+
+            productDAO.delete(product);
+        }
+
+        // 3. Xóa vĩnh viễn danh mục khỏi CSDL
+        categoryDAO.delete(category);
+    }
 }

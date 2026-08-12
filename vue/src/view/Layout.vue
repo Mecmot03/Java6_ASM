@@ -60,7 +60,7 @@
             </router-link>
 
             <!-- 4. DROPDOWN QUẢN LÝ ĐƠN HÀNG (YÊU CẦU CÓ ROLE_STAFF HOẶC ROLE_ADMIN) -->
-            <div v-if="currentUser && (isStaff || isAdmin)" class="dropdown">
+            <div v-if="currentUser && (isStaff)" class="dropdown">
               <button 
                 class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
                 type="button" 

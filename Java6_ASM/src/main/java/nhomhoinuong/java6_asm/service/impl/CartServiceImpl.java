@@ -41,15 +41,28 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public CartItemResponse addToCart(Long userId, CartRequest request) {
         User user = userDAO.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
         Product product = productDAO.findById(request.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
+
+        int availableStock = product.getQuantity() != null ? product.getQuantity() : 0;
+        if (availableStock <= 0) {
+            throw new RuntimeException("Sản phẩm này tạm thời đã hết hàng!");
+        }
 
         CartItem cartItem = cartItemDAO.findByUserIdAndProductId(userId, request.getProductId())
                 .orElse(null);
 
+        int currentQuantityInCart = (cartItem != null) ? cartItem.getQuantity() : 0;
+        int targetQuantity = currentQuantityInCart + request.getQuantity();
+
+        // 🔴 KIỂM TRA TỒN KHO KHI THÊM VÀO GIỎ
+        if (targetQuantity > availableStock) {
+            throw new RuntimeException("Rất tiếc, kho chỉ còn " + availableStock + " sản phẩm! Bạn đã có " + currentQuantityInCart + " sản phẩm trong giỏ hàng.");
+        }
+
         if (cartItem != null) {
-            cartItem.setQuantity(cartItem.getQuantity() + request.getQuantity());
+            cartItem.setQuantity(targetQuantity);
         } else {
             cartItem = CartItem.builder()
                     .user(user)
@@ -66,15 +79,22 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public CartItemResponse updateQuantity(Long userId, Long cartItemId, Integer quantity) {
         CartItem cartItem = cartItemDAO.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại trong giỏ"));
 
         if (!cartItem.getUser().getId().equals(userId)) {
-            throw new RuntimeException("Unauthorized action");
+            throw new RuntimeException("Hành động không hợp lệ");
         }
 
         if (quantity <= 0) {
             cartItemDAO.delete(cartItem);
             return null;
+        }
+
+        // 🔴 KIỂM TRA TỒN KHO KHI TĂNG SỐ LƯỢNG TRONG TRANG GIỎ HÀNG
+        Product product = cartItem.getProduct();
+        int availableStock = product.getQuantity() != null ? product.getQuantity() : 0;
+        if (quantity > availableStock) {
+            throw new RuntimeException("Không thể tăng! Kho chỉ còn tối đa " + availableStock + " sản phẩm.");
         }
 
         cartItem.setQuantity(quantity);
@@ -86,7 +106,7 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public void removeFromCart(Long userId, Long cartItemId) {
         CartItem cartItem = cartItemDAO.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Cart item not found"));
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại trong giỏ"));
 
         if (cartItem.getUser().getId().equals(userId)) {
             cartItemDAO.delete(cartItem);
@@ -104,7 +124,7 @@ public class CartServiceImpl implements CartService {
         return cartItemDAO.countTotalItemsByUserId(userId);
     }
 
-    private CartItemResponse mapToResponse(CartItem cartItem) {
+   private CartItemResponse mapToResponse(CartItem cartItem) {
         Product product = cartItem.getProduct();
         BigDecimal price = product.getPrice();
         BigDecimal subTotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
@@ -116,6 +136,7 @@ public class CartServiceImpl implements CartService {
                 .productImage(product.getImage())
                 .price(price)
                 .quantity(cartItem.getQuantity())
+                .stock(product.getQuantity() != null ? product.getQuantity() : 0) // 🔴 Lấy số lượng tồn kho từ CSDL
                 .subTotal(subTotal)
                 .build();
     }

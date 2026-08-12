@@ -78,7 +78,7 @@ import UserForm from '../../components/admin/UserForm.vue'
 import DeleteModal from '../../components/admin/DeleteModal.vue'
 
 const users = ref([])
-const rawUsers = ref([]) // Giữ lại bản sao danh sách gốc để tìm kiếm không bị mất dữ liệu
+const rawUsers = ref([])
 const keyword = ref('')
 const selectedUser = ref({})
 const loadError = ref('')
@@ -120,7 +120,6 @@ const openCreateModal = () => {
 }
 
 const openEditModal = (user) => {
-  // Deep clone bằng JSON để tránh mất dữ liệu mảng roles/authorities
   selectedUser.value = JSON.parse(JSON.stringify(user))
   showFormModal.value = true
 }
@@ -155,6 +154,7 @@ const openDeleteModal = (userOrId) => {
   showDeleteModal.value = true
 }
 
+// 🔴 CẬP NHẬT: LUÔN TẢI LẠI DANH SÁCH USER TRONG FINALLY
 const confirmDeleteUser = async () => {
   if (!userToDelete.value) return
   const id = userToDelete.value.id || userToDelete.value
@@ -162,13 +162,13 @@ const confirmDeleteUser = async () => {
   try {
     await UserService.deleteUser(id)
     notify('Đã xóa User thành công!', 'success')
-    await loadUsers()
   } catch (error) {
-    const errorMsg = error.response?.data?.message || error.response?.data || "Không thể xóa User này do vướng dữ liệu khóa ngoại (Đơn hàng/Giỏ hàng)!"
-    notify(errorMsg, 'danger')
+    const errorMsg = error.response?.data?.message || error.response?.data || "Không thể xóa User này do vướng dữ liệu!"
+    notify(typeof errorMsg === 'string' ? errorMsg : "Không thể xóa User!", 'danger')
   } finally {
     showDeleteModal.value = false
     userToDelete.value = null
+    await loadUsers() // 🔴 Luôn làm mới lại dữ liệu hiển thị
   }
 }
 

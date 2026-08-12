@@ -8,7 +8,7 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
-              <th class="ps-4" style="width: 80px;">ID</th>
+              <th class="ps-4" style="width: 80px;">STT</th>
               <th>Tên danh mục</th>
               <th>Mô tả</th>
               <th>Hình ảnh</th>
@@ -41,10 +41,10 @@
                 </span>
               </td>
               <td class="text-end pe-4">
-                <button type="button" class="btn btn-sm btn-outline-primary me-2" @click="$emit('edit', cat)">
+                <button type="button" class="btn btn-sm btn-outline-primary me-2" @click="$emit('edit', cat)" title="Sửa danh mục">
                   <i class="bi bi-pencil-square"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" @click="$emit('delete', cat.id)">
+                <button type="button" class="btn btn-sm btn-outline-danger" @click="openDeleteModal(cat.id)" title="Xóa danh mục">
                   <i class="bi bi-trash"></i>
                 </button>
               </td>
@@ -54,9 +54,15 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal xác nhận xóa -->
+  <DeleteModal :show="showDelete" @confirm="confirmDelete" @close="closeDelete" />
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import DeleteModal from './DeleteModal.vue'
+
 defineProps({
   categories: {
     type: Array,
@@ -64,7 +70,24 @@ defineProps({
   }
 })
 
-defineEmits(['edit', 'delete'])
+const emit = defineEmits(['edit', 'delete'])
+
+const showDelete = ref(false)
+const deleteId = ref(null)
+
+const openDeleteModal = (id) => {
+  deleteId.value = id
+  showDelete.value = true
+}
+
+const confirmDelete = () => {
+  emit('delete', deleteId.value)
+  showDelete.value = false
+}
+
+const closeDelete = () => {
+  showDelete.value = false
+}
 
 const getImageUrl = (imageName) => {
   if (!imageName) return 'https://placehold.co/48x48?text=No+Img'
