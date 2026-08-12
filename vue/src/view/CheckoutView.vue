@@ -224,8 +224,8 @@ onMounted(async () => {
   }
 })
 
-// Tính tổng tiền xem trước trên UI
-const previewTotalAmount = computed(() => {
+// Tính tổng tiền xem trước trên UI (Đã sửa tên thành totalAmount cho khớp template)
+const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, item) => {
     const itemPrice = item.subTotal || ((item.product?.price || item.price || 0) * item.quantity)
     return sum + itemPrice
@@ -259,7 +259,6 @@ const handlePlaceOrder = async () => {
 
   submitting.value = true
 
-  // 🔴 Bổ sung danh sách mảng items đúng định dạng DTO Backend yêu cầu
   const itemsPayload = cartItems.value.map(item => ({
     productId: item.product?.id || item.productId || item.id,
     quantity: item.quantity
@@ -278,7 +277,6 @@ const handlePlaceOrder = async () => {
   try {
     await axios.post('/api/orders/create', orderPayload)
 
-    // Cập nhật Badge giỏ hàng trên Header
     window.dispatchEvent(new CustomEvent('cart-updated'))
     notify("Đặt hàng thành công!", 'success')
     
