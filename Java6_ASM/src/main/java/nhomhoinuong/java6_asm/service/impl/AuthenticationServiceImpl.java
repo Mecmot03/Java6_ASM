@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+<<<<<<< HEAD
+=======
+import org.springframework.web.client.RestTemplate;
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Authority;
@@ -109,7 +113,49 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public LoginResponse socialLogin(SocialLoginRequest request) {
+<<<<<<< HEAD
         User user = userDAO.findByEmail(request.getEmail()).orElseGet(() -> {
+=======
+        String email = request.getEmail();
+        String fullName = request.getFullName();
+        String avatar = request.getAvatar();
+
+        // Nếu client gửi Token, Backend chủ động xác thực trực tiếp với Provider
+        if (request.getToken() != null && !request.getToken().isBlank()) {
+            RestTemplate restTemplate = new RestTemplate();
+            try {
+                if ("GOOGLE".equalsIgnoreCase(request.getProvider())) {
+                    String url = "https://www.googleapis.com/oauth2/v3/userinfo?access_token=" + request.getToken();
+                    Map<String, Object> googleUserInfo = restTemplate.getForObject(url, Map.class);
+                    if (googleUserInfo != null && googleUserInfo.containsKey("email")) {
+                        email = (String) googleUserInfo.get("email");
+                        fullName = (String) googleUserInfo.get("name");
+                        avatar = (String) googleUserInfo.get("picture");
+                    }
+                } else if ("FACEBOOK".equalsIgnoreCase(request.getProvider())) {
+                    String url = "https://graph.facebook.com/v18.0/me?fields=id,name,email,picture&access_token=" + request.getToken();
+                    Map<String, Object> fbUserInfo = restTemplate.getForObject(url, Map.class);
+                    if (fbUserInfo != null) {
+                        String fbEmail = (String) fbUserInfo.get("email");
+                        email = (fbEmail != null && !fbEmail.isBlank()) ? fbEmail : fbUserInfo.get("id") + "@facebook.com";
+                        fullName = (String) fbUserInfo.get("name");
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi xác thực Token Social Login: " + e.getMessage());
+            }
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Không thể xác thực thông tin tài khoản Social!");
+        }
+
+        final String finalEmail = email;
+        final String finalFullName = (fullName != null && !fullName.isBlank()) ? fullName : "Social User";
+        final String finalAvatar = avatar;
+
+        User user = userDAO.findByEmail(finalEmail).orElseGet(() -> {
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
             User newUser = new User();
             newUser.setFullName(request.getFullName());
             newUser.setEmail(request.getEmail());

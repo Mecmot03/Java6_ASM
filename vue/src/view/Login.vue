@@ -66,8 +66,9 @@
           </div>
 
           <!-- Nút submit -->
-          <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm mb-3 text-dark">
-            ĐĂNG NHẬP
+          <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm mb-3 text-dark" :disabled="loading">
+            <span v-if="loading" class="spinner-border spinner-border-sm me-1"></span>
+            <span v-else>ĐĂNG NHẬP</span>
           </button>
 
           <!-- Hoặc đăng nhập bằng -->
@@ -105,6 +106,7 @@ import { mergeGuestCartIntoBackend } from '../utils/cart'
 const router = useRouter()
 const route = useRoute()
 const showPassword = ref(false)
+const loading = ref(false)
 
 const loginForm = ref({
   email: '',
@@ -130,12 +132,17 @@ onMounted(() => {
    }(document, 'script', 'facebook-jssdk'));
 })
 
+<<<<<<< HEAD
+=======
+// Đăng nhập thường
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 const handleLogin = async () => {
   if (!loginForm.value.email.trim() || !loginForm.value.password.trim()) {
     notify('Vui lòng nhập đầy đủ email và mật khẩu.', 'warning')
     return
   }
 
+  loading.value = true
   try {
     const response = await axios.post('/api/auth/login', {
       email: loginForm.value.email,
@@ -150,12 +157,22 @@ const handleLogin = async () => {
     }
 
   } catch (error) {
+<<<<<<< HEAD
     // Nếu sai mật khẩu hoặc lỗi server, KHÔNG ĐƯỢC lưu gì vào localStorage
     const msg = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!'
+=======
+    const msg = error.response?.data?.message || error.response?.data || 'Email hoặc mật khẩu không chính xác!'
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
     notify(msg, 'danger')
+  } finally {
+    loading.value = false
   }
 }
 
+<<<<<<< HEAD
+=======
+// Đăng nhập Google: Chỉ gửi Token về Backend
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 const loginWithGoogle = () => {
   googleTokenLogin({
     clientId: '670589969360-4pmagls4aa3rula94gkp4g3g096vao50.apps.googleusercontent.com'
@@ -172,15 +189,25 @@ const loginWithGoogle = () => {
       })
       await saveSessionAndRedirect(backendRes.data)
     } catch (err) {
+<<<<<<< HEAD
       notify("Đăng nhập Google thất bại!", 'danger')
+=======
+      console.error("Lỗi Google Login:", err)
+      notify(err.response?.data?.message || "Đăng nhập Google thất bại!", 'danger')
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
     }
   })
 }
 
+<<<<<<< HEAD
+=======
+// Đăng nhập Facebook: Chỉ gửi Token về Backend
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 const loginWithFacebook = () => {
   window.FB.login((response) => {
     if (response.authResponse) {
       const accessToken = response.authResponse.accessToken;
+<<<<<<< HEAD
       axios.get(`https://graph.facebook.com/v18.0/me?fields=name,picture&access_token=${accessToken}`)
         .then(async (res) => {
           const fbUser = res.data;
@@ -199,6 +226,23 @@ const loginWithFacebook = () => {
   }, { scope: 'public_profile' });
 }
 
+=======
+      axios.post('/api/auth/social-login', {
+        token: accessToken,
+        provider: 'FACEBOOK'
+      })
+      .then(async (backendRes) => {
+        await saveSessionAndRedirect(backendRes.data);
+      })
+      .catch((err) => notify(err.response?.data?.message || "Không thể xác thực tài khoản Facebook!", 'danger'));
+    } else {
+      notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
+    }
+  }, { scope: 'public_profile,email' });
+}
+
+// Lưu Session và Điều hướng người dùng
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 const saveSessionAndRedirect = async (data) => {
   const token = data.token || data.accessToken || ''
   const userObj = data.user || data
@@ -217,11 +261,17 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
+<<<<<<< HEAD
   // ƯU TIÊN KIỂM TRA ROLE ADMIN TRƯỚC VÀ ĐƯA VÀO /admin/users
+=======
+  // Điều hướng dựa trên quyền
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
   const userString = JSON.stringify(userObj).toUpperCase()
   
   if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
     router.push('/admin/users')
+  } else if (userString.includes('ROLE_STAFF') || userString.includes('"STAFF"')) {
+    router.push('/orders?status=PENDING')
   } else {
     const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirectPath)

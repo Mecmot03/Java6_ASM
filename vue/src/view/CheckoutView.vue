@@ -106,7 +106,11 @@
               <i class="bi bi-cash-stack fs-4 text-success"></i>
             </label>
 
-            <!-- VNPAY / CHUYỂN KHOẢN -->
+<<<<<<< HEAD
+            <!-- BANK / QR CODE -->
+=======
+            <!-- CHUYỂN KHOẢN -->
+>>>>>>> main
             <label class="payment-option d-flex align-items-center justify-content-between p-3 border rounded-3 cursor-pointer" :class="{ 'active-border': orderForm.paymentMethod === 'BANK' }">
               <div class="d-flex align-items-center gap-3">
                 <input type="radio" name="payment" value="BANK" v-model="orderForm.paymentMethod" />
@@ -121,7 +125,11 @@
         </div>
       </div>
 
-      <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN -->
+<<<<<<< HEAD
+      <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN (XEM TRƯỚC) -->
+=======
+      <!-- CỘT PHẢI: TÓM TẮT SẢN PHẨM & TỔNG TIỀN DỰ TÍNH -->
+>>>>>>> main
       <div class="col-lg-5">
         <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top z-1" style="top: 100px;">
           <h5 class="fw-bold text-dark mb-3">Sản phẩm thanh toán ({{ totalQuantity }})</h5>
@@ -130,22 +138,37 @@
           <div class="checkout-items-list mb-3 pe-1 overflow-auto" style="max-height: 280px;">
             <div v-for="item in cartItems" :key="item.id" class="d-flex align-items-center justify-content-between py-2 border-bottom">
               <div class="d-flex align-items-center gap-3">
-                <img :src="'/images/' + item.productImage" :alt="item.productName" class="checkout-img rounded-3 border p-1" />
+<<<<<<< HEAD
+                <img :src="'/images/' + (item.product?.image || item.productImage || 'default.jpg')" :alt="item.product?.name || item.productName" class="checkout-img rounded-3 border p-1" />
                 <div>
-                  <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 180px;" :title="item.productName">
-                    {{ item.productName }}
+                  <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 180px;" :title="item.product?.name || item.productName">
+                    {{ item.product?.name || item.productName }}
+=======
+                <img :src="'/images/' + (item.productImage || item.product?.image)" :alt="item.productName || item.product?.name" class="checkout-img rounded-3 border p-1" />
+                <div>
+                  <h6 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 180px;" :title="item.productName || item.product?.name">
+                    {{ item.productName || item.product?.name }}
+>>>>>>> main
                   </h6>
                   <small class="text-muted">x{{ item.quantity }}</small>
                 </div>
               </div>
-              <span class="fw-bold text-dark small">{{ formatPrice(item.subTotal) }}</span>
+<<<<<<< HEAD
+              <span class="fw-bold text-dark small">{{ formatPrice((item.product?.price || item.price || 0) * item.quantity) }}</span>
             </div>
           </div>
 
-          <!-- TỔNG CỘNG -->
+          <!-- TỔNG CỘNG HÌNH THỨC -->
+=======
+              <span class="fw-bold text-dark small">{{ formatPrice(item.subTotal || (item.product?.price * item.quantity)) }}</span>
+            </div>
+          </div>
+
+          <!-- TỔNG CỘNG XEM TRƯỚC -->
+>>>>>>> main
           <div class="d-flex justify-content-between mb-2 text-secondary">
             <span>Tạm tính:</span>
-            <span class="fw-medium text-dark">{{ formatPrice(totalAmount) }}</span>
+            <span class="fw-medium text-dark">{{ formatPrice(previewTotalAmount) }}</span>
           </div>
 
           <div class="d-flex justify-content-between mb-3 text-secondary">
@@ -157,7 +180,7 @@
 
           <div class="d-flex justify-content-between mb-4 align-items-center">
             <span class="fw-bold text-dark fs-5">Tổng thanh toán:</span>
-            <span class="fw-bold text-danger fs-3">{{ formatPrice(totalAmount) }}</span>
+            <span class="fw-bold text-danger fs-3">{{ formatPrice(previewTotalAmount) }}</span>
           </div>
 
           <!-- NÚT XÁC NHẬN ĐẶT HÀNG -->
@@ -191,16 +214,24 @@ const cartItems = ref([])
 const loading = ref(true)
 const submitting = ref(false)
 
+// Lấy thông tin user hiện tại từ Storage
+const user = JSON.parse(localStorage.getItem('user') || '{}')
+
 const orderForm = ref({
-  fullName: '',
-  phone: '',
-  email: '',
-  address: '',
+  fullName: user.fullName || user.username || '',
+  phone: user.phone || '',
+  email: user.email || '',
+  address: user.address || '',
   note: '',
   paymentMethod: 'COD'
 })
 
-// Lấy thông tin user hiện tại
+<<<<<<< HEAD
+// Tải thông tin hiển thị giỏ hàng
+onMounted(async () => {
+  if (!user.id) {
+=======
+// Lấy thông tin người dùng từ LocalStorage
 const getUserFromStorage = () => {
   const userStorage = localStorage.getItem('user')
   if (userStorage) {
@@ -213,97 +244,125 @@ const getUserFromStorage = () => {
   return null
 }
 
-// Tải dữ liệu giỏ hàng & điền thông tin mặc định
+// Tải danh sách giỏ hàng
 const fetchCheckoutData = async () => {
   loading.value = true
   const user = getUserFromStorage()
   
   if (!user) {
+>>>>>>> main
     notify("Vui lòng đăng nhập để tiến hành đặt hàng!", 'warning')
-    loading.value = false
-    router.push('/login')
-    return
+    return router.push('/login')
   }
 
-  // Tự điền thông tin sẵn có từ tài khoản người dùng
+<<<<<<< HEAD
+=======
+  // Điền sẵn thông tin từ thông tin tài khoản
   orderForm.value.fullName = user.fullName || user.username || ''
   orderForm.value.email = user.email || ''
   orderForm.value.phone = user.phone || ''
   orderForm.value.address = user.address || ''
 
+>>>>>>> main
   try {
     const res = await axios.get(`/api/cart?userId=${user.id}`)
     cartItems.value = res.data
   } catch (err) {
-    console.error("Lỗi khi tải thông tin thanh toán:", err)
+    console.error("Lỗi khi tải giỏ hàng:", err)
   } finally {
     loading.value = false
   }
-}
+})
 
-// Tính toán tổng tiền
+<<<<<<< HEAD
+// Các hàm bổ trợ thuần hiển thị (UI Helpers)
 const totalAmount = computed(() => {
-  return cartItems.value.reduce((sum, item) => sum + (item.subTotal || 0), 0)
+  return cartItems.value.reduce((sum, item) => sum + ((item.product?.price || item.price || 0) * item.quantity), 0)
+=======
+// Tính tổng tiền xem trước trên UI
+const previewTotalAmount = computed(() => {
+  return cartItems.value.reduce((sum, item) => {
+    const itemPrice = item.subTotal || (item.product?.price * item.quantity) || 0
+    return sum + itemPrice
+  }, 0)
+>>>>>>> main
 })
 
+// Tính tổng số lượng món hàng
 const totalQuantity = computed(() => {
-  return cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
+  return cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
 })
-
-const isAdminUser = () => {
-  const user = getUserFromStorage()
-  const role = user?.role
-  return role === 'ROLE_ADMIN' || role === 'ADMIN'
-}
 
 const formatPrice = (price) => {
-  if (!price && price !== 0) return '0 đ'
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0)
 }
 
-// Xử lý nút ĐẶT HÀNG
+<<<<<<< HEAD
+// Xử lý gửi Form ĐẶT HÀNG
+// Xử lý gửi Form ĐẶT HÀNG
+=======
+// Xử lý gửi đơn hàng
+>>>>>>> main
 const handlePlaceOrder = async () => {
-  const user = getUserFromStorage()
-  if (!user) return
-
   if (
     !orderForm.value.fullName.trim() ||
     !orderForm.value.phone.trim() ||
     !orderForm.value.email.trim() ||
-    !orderForm.value.address.trim() ||
-    !orderForm.value.paymentMethod
+    !orderForm.value.address.trim()
   ) {
-    notify('Vui lòng nhập đầy đủ thông tin giao hàng và chọn phương thức thanh toán.', 'warning')
+    notify('Vui lòng nhập đầy đủ thông tin giao hàng.', 'warning')
     return
   }
 
   submitting.value = true
 
+<<<<<<< HEAD
+  // Gửi DTO tối giản thông tin giao hàng
+=======
+  // Chuẩn hóa payload theo đúng OrderRequest ở Backend
+>>>>>>> main
   const orderPayload = {
     userId: user.id,
     receiverName: orderForm.value.fullName,
     receiverPhone: orderForm.value.phone,
-    receiverEmail: orderForm.value.email,
     shippingAddress: orderForm.value.address,
-    note: orderForm.value.note,
-    paymentMethod: orderForm.value.paymentMethod,
-    totalAmount: totalAmount.value,
-    items: cartItems.value
+<<<<<<< HEAD
+    paymentMethod: orderForm.value.paymentMethod
   }
 
   try {
-    // Gọi API lưu Đơn hàng vào Database
+    // Không cần lấy Token, không cần config Headers thủ công
     await axios.post('/api/orders/create', orderPayload)
 
-    // Làm sạch giỏ hàng sau khi đặt thành công
-    await axios.delete(`/api/cart/clear?userId=${user.id}`)
-    
-    // Cập nhật lại Badge giỏ hàng trên Header
+    // Cập nhật Badge giỏ hàng trên Header
+=======
+    note: orderForm.value.note,
+    paymentMethod: orderForm.value.paymentMethod,
+    items: cartItems.value.map(item => ({
+      productId: item.productId || item.product?.id,
+      quantity: item.quantity
+    }))
+  }
+
+  try {
+    // Gửi request lên Backend
+    await axios.post('/api/orders/create', orderPayload)
+
+    // Phát sự kiện cập nhật lại giỏ hàng trên Header
+>>>>>>> main
     window.dispatchEvent(new CustomEvent('cart-updated'))
 
-    notify("Đặt hàng thành công! Đơn hàng của bạn đang chờ xác nhận.", 'success')
+    notify("Đặt hàng thành công!", 'success')
     
-    // Chuyển hướng theo vai trò
+<<<<<<< HEAD
+    const isAdmin = user.role === 'ROLE_ADMIN' || user.role === 'ADMIN'
+    router.push(isAdmin ? '/orders?status=PENDING' : '/order-history?status=PENDING')
+  } catch (err) {
+    console.error("Lỗi đặt hàng:", err)
+    // Các lỗi 401/403 đã được main.js xử lý chuyển trang tự động.
+    // Tại đây chỉ hiển thị thông báo lỗi nghiệp vụ từ Back-end (ví dụ: giỏ hàng trống, hết hàng, v.v.)
+    notify(err.response?.data?.message || err.response?.data || "Đặt hàng thất bại. Vui lòng thử lại!", 'danger')
+=======
     if (isAdminUser()) {
       router.push('/orders?status=PENDING')
     } else {
@@ -311,15 +370,12 @@ const handlePlaceOrder = async () => {
     }
   } catch (err) {
     console.error("Lỗi khi tạo đơn hàng:", err)
-    notify(err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!", 'danger')
+    notify(err.response?.data || err.response?.data?.message || "Đặt hàng thất bại. Vui lòng thử lại sau!", 'danger')
+>>>>>>> main
   } finally {
     submitting.value = false
   }
 }
-
-onMounted(() => {
-  fetchCheckoutData()
-})
 </script>
 
 <style scoped>

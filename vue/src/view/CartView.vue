@@ -6,7 +6,7 @@
         <i class="bi bi-cart3 text-warning"></i> Giỏ hàng của bạn
       </h3>
       <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fs-7 fw-bold">
-        {{ cartItems.length }} sản phẩm
+        {{ totalQuantity }} sản phẩm
       </span>
     </div>
 
@@ -46,7 +46,12 @@
                     <!-- Ảnh & Tên sản phẩm -->
                     <td class="ps-4 py-3">
                       <div class="d-flex align-items-center gap-3">
-                        <img :src="'/images/' + item.productImage" :alt="item.productName" class="cart-product-img rounded-3 border p-1" />
+                        <img 
+                          :src="getProductImage(item)" 
+                          :alt="item.productName" 
+                          class="cart-product-img rounded-3 border p-1"
+                          @error="(e) => e.target.src = 'https://via.placeholder.com/80?text=No+Image'" 
+                        />
                         <div>
                           <h6 class="fw-bold text-dark mb-1 text-truncate" style="max-width: 220px;" :title="item.productName">
                             {{ item.productName }}
@@ -146,7 +151,10 @@ import {
   clearGuestCart,
 } from '../utils/cart'
 import { confirmDialog } from '../utils/dialog'
+<<<<<<< HEAD
 import { notify } from '../utils/notify'
+=======
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 
 const router = useRouter()
 const cartItems = ref([])
@@ -168,6 +176,12 @@ const notifyCartUpdate = () => {
   window.dispatchEvent(new CustomEvent('cart-updated'))
 }
 
+const getProductImage = (item) => {
+  const img = item.productImage
+  return img ? `/images/${img}` : 'https://via.placeholder.com/80?text=No+Image'
+}
+
+// Tải danh sách giỏ hàng
 const fetchCart = async () => {
   try {
     const userId = getUserId()
@@ -178,13 +192,14 @@ const fetchCart = async () => {
     }
 
     const res = await axios.get(`/api/cart?userId=${userId}`)
-    cartItems.value = res.data
+    cartItems.value = res.data || []
     notifyCartUpdate()
   } catch (err) {
     console.error("Lỗi khi tải giỏ hàng:", err)
   }
 }
 
+// Cập nhật số lượng
 const updateQuantity = async (item, newQty) => {
   if (newQty < 1) {
     await removeItem(item.id)
@@ -205,6 +220,7 @@ const updateQuantity = async (item, newQty) => {
   }
 }
 
+// Xóa 1 sản phẩm
 const removeItem = async (cartItemId) => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?"))) {
     return
@@ -225,6 +241,7 @@ const removeItem = async (cartItemId) => {
   }
 }
 
+// Làm sạch giỏ hàng
 const clearCart = async () => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa toàn bộ giỏ hàng?"))) {
     return
@@ -247,10 +264,12 @@ const clearCart = async () => {
   }
 }
 
+// Tổng tiền
 const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.subTotal || 0), 0)
 })
 
+// Tổng số lượng
 const totalQuantity = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
 })
@@ -260,12 +279,17 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
-// 🟢 TIẾN HÀNH ĐẶT HÀNG (KIỂM TRA CHẶN CHÍNH XÁC ROLE_STAFF THUẦN TÚY)
+// Tiến hành chuyển sang trang Checkout
 const checkout = () => {
+<<<<<<< HEAD
   const token = localStorage.getItem('token')
   const userStorage = localStorage.getItem('user')
 
   if (!token || !userStorage) {
+=======
+  const userStorage = localStorage.getItem('user')
+  if (!userStorage) {
+>>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
     confirmDialog("Bạn cần đăng nhập để tiến hành đặt hàng. Đăng nhập ngay?").then((confirmed) => {
       if (confirmed) {
         router.push('/login')
@@ -273,22 +297,6 @@ const checkout = () => {
     })
     return
   }
-
-  // Chuyển đối tượng user thành chuỗi in hoa để kiểm tra role
-  const userStr = JSON.stringify(userStorage).toUpperCase()
-  const isUser = userStr.includes('ROLE_USER') || userStr.includes('"USER"')
-  const isStaff = userStr.includes('ROLE_STAFF') || userStr.includes('"STAFF"')
-
-  // 🛑 Nếu là Nhân viên thuần túy (Không có ROLE_USER) -> Báo lỗi & Chuyển sang trang Duyệt đơn
-  if (isStaff && !isUser) {
-    confirmDialog("Tài khoản Nhân viên không thể thực hiện đặt hàng. Chuyển sang trang Quản lý Đơn hàng?").then((confirmed) => {
-      if (confirmed) {
-        router.push('/orders')
-      }
-    })
-    return
-  }
-
   router.push('/checkout')
 }
 
