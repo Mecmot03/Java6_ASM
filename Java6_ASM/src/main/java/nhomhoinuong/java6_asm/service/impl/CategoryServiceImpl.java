@@ -1,7 +1,6 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,21 +15,11 @@ import nhomhoinuong.java6_asm.service.CategoryService;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryDAO categoryDAO;
-
-    @Autowired
-    private ProductDAO productDAO;
-
-    @Autowired
-    private CartItemDAO cartItemDAO;
-
-    @Autowired
-    private FavoriteDAO favoriteDAO;
-
-    @Autowired
-    private CommentDAO commentDAO;
-
-    @Autowired
-    private OrderItemDAO orderItemDAO;
+    private final ProductDAO productDAO;
+    private final CartItemDAO cartItemDAO;
+    private final FavoriteDAO favoriteDAO;
+    private final CommentDAO commentDAO;
+    private final OrderItemDAO orderItemDAO;
 
     @Override
     public List<Category> findAll() {
@@ -87,9 +76,11 @@ public class CategoryServiceImpl implements CategoryService {
                     .forEach(orderItemDAO::delete);
 
             productDAO.delete(product);
-          // 3. Xóa vĩnh viễn danh mục khỏi CSDL
-        categoryDAO.delete(category);
         }
+
+        // 3. Xóa vĩnh viễn danh mục khỏi CSDL (đã đưa ra ngoài vòng lặp for)
+        categoryDAO.delete(category);
+    }
       
     @Override
     public List<Category> findByStatus(Boolean status) {
