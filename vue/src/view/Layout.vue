@@ -28,13 +28,13 @@
           <!-- Utilities -->
           <div class="nav-utilities d-flex align-items-center gap-3">
 
-            <!-- 1. CHƯA ĐĂNG NHẬP -->
+            <!-- CHƯA ĐĂNG NHẬP -->
             <router-link v-if="!currentUser" to="/login" class="nav-item-link">
               <i class="bi bi-person-circle"></i>
               <span>Đăng nhập</span>
             </router-link>
 
-            <!-- 2. ĐÃ ĐĂNG NHẬP: HIỂN THỊ TÊN USER HOẶC ADMIN / STAFF -->
+            <!-- ĐÃ ĐĂNG NHẬP -->
             <button
               v-else
               type="button"
@@ -48,7 +48,7 @@
               </span>
             </button>
 
-            <!-- 3. LỊCH SỬ ĐẶT HÀNG (YÊU CẦU CÓ ROLE_USER) -->
+            <!-- LỊCH SỬ ĐẶT HÀNG -->
             <router-link
               v-if="currentUser && isUser"
               to="/order-history?status=PENDING"
@@ -59,8 +59,8 @@
               <span>Lịch sử</span>
             </router-link>
 
-            <!-- 4. DROPDOWN QUẢN LÝ ĐƠN HÀNG (YÊU CẦU CÓ ROLE_STAFF HOẶC ROLE_ADMIN) -->
-            <div v-if="currentUser && (isStaff || isAdmin)" class="dropdown">
+            <!-- DROPDOWN QUẢN LÝ ĐƠN HÀNG -->
+            <div v-if="currentUser && isStaff" class="dropdown">
               <button 
                 class="btn btn-link nav-item-link text-dark text-decoration-none p-0 border-0 dropdown-toggle"
                 type="button" 
@@ -100,7 +100,7 @@
               </ul>
             </div>
 
-            <!-- 5. NÚT SẢN PHẨM YÊU THÍCH -->
+            <!-- YÊU THÍCH -->
             <router-link
               v-if="currentUser"
               to="/favorites"
@@ -111,7 +111,7 @@
               <span>Yêu thích</span>
             </router-link>
 
-            <!-- 6. ICON GIỎ HÀNG -->
+            <!-- GIỎ HÀNG -->
             <router-link to="/cart" class="nav-item-link position-relative">
               <i class="bi bi-cart3"></i>
               <span>Giỏ hàng</span>
@@ -123,7 +123,7 @@
               </span>
             </router-link>
 
-            <!-- 7. NÚT ĐĂNG XUẤT -->
+            <!-- ĐĂNG XUẤT -->
             <button 
               v-if="currentUser" 
               class="btn btn-link nav-item-link text-danger fw-bold text-decoration-none p-0 border-0"
@@ -160,8 +160,8 @@
       </nav>
     </header>
 
-    <!-- BANNER 2 BÊN (CHỈ HIỂN THỊ TẠI TRANG CHỦ) -->
-    <!-- <div v-if="isHomePage" class="side-banner side-banner-left d-none d-xl-block">
+<!-- BANNER 2 BÊN (CHỈ HIỂN THỊ TẠI TRANG CHỦ) -->
+    <div v-if="isHomePage" class="side-banner side-banner-left d-none d-xl-block">
       <router-link to="/flashsale">
         <img src="/images/mi.png" alt="Banner Trái" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
@@ -171,14 +171,13 @@
       <router-link to="/flashsale">
         <img src="/images/ni.png" alt="Banner Phải" class="img-fluid rounded-3 shadow-sm" />
       </router-link>
-    </div> -->
-
+    </div>
     <!-- MAIN CONTENT -->
     <main class="flex-grow-1 my-4">
       <router-view />
     </main>
 
-    <!-- TOAST THÔNG BÁO -->
+    <!-- TOAST NOTIFICATION -->
     <div
       v-if="toastVisible"
       class="app-toast position-fixed end-0 top-0 m-4 shadow-lg rounded-4 px-4 py-3"
@@ -337,7 +336,6 @@ const policyLinks = ref([
 
 const isHomePage = computed(() => route.path === '/')
 
-// 🟢 CHUẨN HÓA MẢNG ROLES ĐƯỢC TRẢ VỀ TỪ BACKEND
 const userRoles = computed(() => {
   if (!currentUser.value) return []
 
@@ -429,7 +427,6 @@ const cancelConfirm = () => closeConfirm(false)
 const goHome = async () => {
   searchQuery.value = ''
   if (route.path === '/' && Object.keys(route.query).length === 0) {
-    // Nếu đang ở sẵn trang chủ nguyên bản, phát sự kiện tự tạo để Home.vue reset
     window.dispatchEvent(new CustomEvent('reset-home-filters'))
   } else {
     await router.push({ path: '/', query: {} })
@@ -501,12 +498,20 @@ const handleScroll = () => {
   }
 }
 
-// Tải danh mục sản phẩm từ Backend
+// ==========================================
+// 🆕 NEW: TẢI DANH MỤC SẢN PHẨM TỪ BACKEND
+// Lọc chỉ giữ danh mục active (status !== false) để hiển thị menu cho người dùng.
+// Giúp trang Admin xem đủ dữ liệu mà menu khách vẫn loại bỏ được danh mục bị ẩn.
+// ==========================================
 const fetchCategories = async () => {
   try {
     const response = await axios.get('/api/categories')
     const list = response.data || []
-    menuItems.value = list.map(cat => ({
+    
+    // 🆕 NEW: Lọc chỉ lấy các danh mục đang hoạt động
+    const activeCategories = list.filter(cat => cat.status !== false)
+
+    menuItems.value = activeCategories.map(cat => ({
       id: cat.id,
       name: cat.name,
       icon: iconMap[cat.name] || 'bi bi-grid'
@@ -516,7 +521,6 @@ const fetchCategories = async () => {
   }
 }
 
-// Tải số lượng giỏ hàng từ Backend
 const fetchCartCount = async () => {
   try {
     const userStorage = localStorage.getItem('user')

@@ -15,24 +15,25 @@
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
         <div class="row g-2 align-items-center">
+          <!-- 🆕 Ô tìm kiếm (Tự động lọc trực tiếp ngay khi gõ) -->
           <div class="col-md-6">
             <input
               v-model="keyword"
               type="text"
               class="form-control"
               placeholder="Nhập tên sản phẩm cần tìm..."
-              @keyup.enter="searchProduct"
+              @input="handleFilter"
             >
           </div>
 
-          <!-- Dropdown Lọc trạng thái -->
-          <div class="col-md-3">
+          <!-- Dropdown Lọc trạng thái kèm nhãn -->
+          <div class="col-md-4">
             <div class="d-flex align-items-center gap-2">
               <label class="text-secondary small text-nowrap mb-0 fw-bold">Trạng thái:</label>
               <select 
                 v-model="statusFilter" 
                 class="form-select fw-semibold border-secondary-subtle"
-                @change="searchProduct"
+                @change="handleFilter"
               >
                 <option :value="null">Tất cả sản phẩm</option>
                 <option :value="true">Đang bán</option>
@@ -41,11 +42,9 @@
             </div>
           </div>
 
-          <div class="col-md-3 d-flex gap-2">
-            <button class="btn btn-primary w-100" @click="searchProduct">
-              <i class="bi bi-search me-1"></i> Tìm
-            </button>
-            <button class="btn btn-secondary w-100" @click="resetSearch">
+          <!-- Nút làm mới -->
+          <div class="col-md-2">
+            <button class="btn btn-secondary w-100" @click="resetFilter">
               Làm mới
             </button>
           </div>
@@ -80,64 +79,58 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { notify } from '../../utils/notify'
 import ProductService from '../../services/ProductService'
 import ProductTable from '../../components/admin/ProductTable.vue'
 import ProductForm from '../../components/admin/ProductForm.vue'
 import DeleteModal from '../../components/admin/DeleteModal.vue'
 
-const rawProducts = ref([])
+const allProducts = ref([])     // 🆕 Kho chứa toàn bộ danh sách gốc từ server
+const filteredProducts = ref([]) // 🆕 Danh sách hiển thị sau khi lọc
 const keyword = ref('')
-const searchSubmitted = ref('')
-const statusFilter = ref(null) // null | true | false
+const statusFilter = ref(null)  // null | true | false
 const selectedProduct = ref({})
 
 const showFormModal = ref(false)
 const showDeleteModal = ref(false)
 const productToDelete = ref(null)
 
-// Tải danh sách tất cả sản phẩm
+// Tải tất cả sản phẩm ban đầu và lưu vào kho gốc
 const loadProducts = async () => {
   try {
-    const params = {
-      keyword: keyword.value.trim() || null,
-      status: statusFilter.value
-    }
-    const res = await ProductService.filterProducts(params)
-    rawProducts.value = Array.isArray(res) ? res : (res?.data || [])
+    const res = await ProductService.getAllProducts ? await ProductService.getAllProducts() : await ProductService.filterProducts({})
+    allProducts.value = Array.isArray(res) ? res : (res?.data || [])
+    handleFilter() // Hiển thị toàn bộ ban đầu
   } catch (error) {
     console.error("Lỗi tải danh sách sản phẩm:", error)
+    notify("Không thể tải danh sách sản phẩm", "danger")
   }
 }
 
-// Lọc kết hợp Client-side để đảm bảo hoạt động kể cả khi Backend không lọc đúng
-const filteredProducts = computed(() => {
-  return rawProducts.value.filter(product => {
-    // 1. Lọc theo tên sản phẩm
-    const key = searchSubmitted.value.trim().toLowerCase()
-    const matchesKeyword = !key || (product.name && product.name.toLowerCase().includes(key))
+// 🆕 Hàm lọc trực tiếp trên mảng gốc (mượt mà, không lag, không gọi lại API liên tục)
+const handleFilter = () => {
+  let result = [...allProducts.value]
 
-    // 2. Lọc theo trạng thái
-    let matchesStatus = true
-    if (statusFilter.value !== null) {
-      matchesStatus = product.status === statusFilter.value
-    }
+  // 1. Lọc theo trạng thái
+  if (statusFilter.value !== null) {
+    result = result.filter(product => product.status === statusFilter.value)
+  }
 
-    return matchesKeyword && matchesStatus
-  })
-})
+  // 2. Lọc theo từ khóa tên sản phẩm
+  if (keyword.value.trim() !== '') {
+    const key = keyword.value.trim().toLowerCase()
+    result = result.filter(product => product.name && product.name.toLowerCase().includes(key))
+  }
 
-const searchProduct = () => {
-  searchSubmitted.value = keyword.value
-  loadProducts()
+  filteredProducts.value = result
 }
 
-const resetSearch = () => {
+// 🆕 Làm mới bộ lọc
+const resetFilter = () => {
   keyword.value = ''
-  searchSubmitted.value = ''
   statusFilter.value = null
-  loadProducts()
+  filteredProducts.value = [...allProducts.value]
 }
 
 const openCreateModal = () => {
@@ -165,7 +158,7 @@ const saveProduct = async (product) => {
       notify('Thêm sản phẩm mới thành công!', 'success')
     }
     closeFormModal()
-    loadProducts()
+    await loadProducts() // Tải lại dữ liệu mới từ server và áp dụng lại bộ lọc
   } catch (error) {
     notify(error.response?.data?.message || "Lưu sản phẩm thất bại!", 'danger')
   }
@@ -175,7 +168,7 @@ const openDeleteModal = (productOrId) => {
   if (typeof productOrId === 'object' && productOrId !== null) {
     productToDelete.value = productOrId
   } else {
-    productToDelete.value = rawProducts.value.find(p => p.id === productOrId) || { id: productOrId }
+    productToDelete.value = allProducts.value.find(p => p.id === productOrId) || { id: productOrId }
   }
   showDeleteModal.value = true
 }
@@ -186,7 +179,7 @@ const confirmDeleteProduct = async () => {
     const id = productToDelete.value.id || productToDelete.value
     await ProductService.deleteProduct(id)
     notify('Đã xóa sản phẩm thành công!', 'success')
-    loadProducts()
+    await loadProducts()
   } catch (error) {
     notify(error.response?.data?.message || "Xóa sản phẩm thất bại do vướng dữ liệu khóa ngoại!", 'danger')
   } finally {

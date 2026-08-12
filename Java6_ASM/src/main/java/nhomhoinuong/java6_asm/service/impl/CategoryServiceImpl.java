@@ -1,9 +1,7 @@
 package nhomhoinuong.java6_asm.service.impl;
 
 import java.util.List;
-
 import org.springframework.stereotype.Service;
-
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Category;
 import nhomhoinuong.java6_asm.dao.CategoryDAO;
@@ -40,4 +38,12 @@ public class CategoryServiceImpl implements CategoryService {
         categoryDAO.deleteById(id);
     }
 
+    @Override
+    public List<Category> findByStatus(Boolean status) {
+        // 🛠️ FIX: Tránh lỗi truyền tham số null vào câu lệnh truy vấn của JPA
+        if (status == null) {
+            return categoryDAO.findAll();
+        }
+        return categoryDAO.findByStatus(status);
+    }
 }
