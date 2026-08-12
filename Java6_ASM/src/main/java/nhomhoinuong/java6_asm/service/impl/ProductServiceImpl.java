@@ -3,18 +3,41 @@ package nhomhoinuong.java6_asm.service.impl;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import org.springframework.stereotype.Service;
-import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import nhomhoinuong.java6_asm.bean.Category;
 import nhomhoinuong.java6_asm.bean.Product;
+import nhomhoinuong.java6_asm.dao.CartItemDAO;
+import nhomhoinuong.java6_asm.dao.CategoryDAO;
+import nhomhoinuong.java6_asm.dao.CommentDAO;
+import nhomhoinuong.java6_asm.dao.FavoriteDAO;
+import nhomhoinuong.java6_asm.dao.OrderItemDAO;
 import nhomhoinuong.java6_asm.dao.ProductDAO;
 import nhomhoinuong.java6_asm.service.ProductService;
 
 @Service
-@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
-    private final ProductDAO productDAO;
+    @Autowired
+    private ProductDAO productDAO;
+
+    @Autowired
+    private CategoryDAO categoryDAO;
+
+    @Autowired
+    private CartItemDAO cartItemDAO;
+
+    @Autowired
+    private FavoriteDAO favoriteDAO;
+
+    @Autowired
+    private CommentDAO commentDAO;
+
+    @Autowired
+    private OrderItemDAO orderItemDAO;
 
     @Override
     public List<Product> getAllProducts() {
@@ -45,6 +68,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product createProduct(Product product) {
+        if (product.getCategory() != null && product.getCategory().getId() != null) {
+            Category category = categoryDAO.findById(product.getCategory().getId()).orElse(null);
+            product.setCategory(category);
+        }
+
         product.setCreatedAt(LocalDateTime.now());
         product.setUpdatedAt(LocalDateTime.now());
         return productDAO.save(product);
@@ -57,7 +85,13 @@ public class ProductServiceImpl implements ProductService {
             return null;
         }
 
-        oldProduct.setCategory(product.getCategory());
+        if (product.getCategory() != null && product.getCategory().getId() != null) {
+            Category category = categoryDAO.findById(product.getCategory().getId()).orElse(null);
+            oldProduct.setCategory(category);
+        } else {
+            oldProduct.setCategory(product.getCategory());
+        }
+
         oldProduct.setDiscountId(product.getDiscountId());
         oldProduct.setName(product.getName());
         oldProduct.setDescription(product.getDescription());
@@ -72,9 +106,31 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProduct(Long id) {
-        if (productDAO.existsById(id)) {
-            productDAO.deleteById(id);
+        if (!productDAO.existsById(id)) {
+            return;
         }
+
+        // 1. Dọn sạch chi tiết đơn hàng liên quan đến sản phẩm này
+        orderItemDAO.findAll().stream()
+                .filter(oi -> id.equals(oi.getProductId()))
+                .forEach(orderItemDAO::delete);
+
+        // 2. Dọn sạch giỏ hàng, danh sách yêu thích và bình luận
+        cartItemDAO.findAll().stream()
+                .filter(ci -> ci.getProduct() != null && id.equals(ci.getProduct().getId()))
+                .forEach(cartItemDAO::delete);
+
+        favoriteDAO.findAll().stream()
+                .filter(f -> f.getProduct() != null && id.equals(f.getProduct().getId()))
+                .forEach(favoriteDAO::delete);
+
+        commentDAO.findAll().stream()
+                .filter(c -> c.getProduct() != null && id.equals(c.getProduct().getId()))
+                .forEach(commentDAO::delete);
+
+        // 3. Xóa vĩnh viễn sản phẩm ra khỏi CSDL SQL Server
+        productDAO.deleteById(id);
     }
 }

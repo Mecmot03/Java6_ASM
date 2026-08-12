@@ -43,7 +43,6 @@
                 </thead>
                 <tbody>
                   <tr v-for="item in cartItems" :key="item.id">
-                    <!-- Ảnh & Tên sản phẩm -->
                     <td class="ps-4 py-3">
                       <div class="d-flex align-items-center gap-3">
                         <img 
@@ -61,12 +60,10 @@
                       </div>
                     </td>
 
-                    <!-- Đơn giá -->
                     <td class="text-center fw-medium text-secondary">
                       {{ formatPrice(item.price) }}
                     </td>
 
-                    <!-- Bộ tăng giảm số lượng -->
                     <td class="text-center">
                       <div class="quantity-control d-inline-flex align-items-center border rounded-pill bg-light p-1">
                         <button class="btn btn-sm btn-light rounded-circle shadow-none p-0 qty-btn" @click="updateQuantity(item, item.quantity - 1)">
@@ -79,12 +76,10 @@
                       </div>
                     </td>
 
-                    <!-- Thành tiền -->
                     <td class="text-center fw-bold text-danger">
                       {{ formatPrice(item.subTotal) }}
                     </td>
 
-                    <!-- Nút xóa -->
                     <td class="pe-4 text-end">
                       <button class="btn btn-light btn-sm rounded-circle text-muted" title="Xóa sản phẩm" @click="removeItem(item.id)">
                         <i class="bi bi-trash"></i>
@@ -151,6 +146,7 @@ import {
   clearGuestCart,
 } from '../utils/cart'
 import { confirmDialog } from '../utils/dialog'
+import { notify } from '../utils/notify'
 
 const router = useRouter()
 const cartItems = ref([])
@@ -177,7 +173,6 @@ const getProductImage = (item) => {
   return img ? `/images/${img}` : 'https://via.placeholder.com/80?text=No+Image'
 }
 
-// Tải danh sách giỏ hàng
 const fetchCart = async () => {
   try {
     const userId = getUserId()
@@ -195,12 +190,23 @@ const fetchCart = async () => {
   }
 }
 
-// Cập nhật số lượng
+// 🔴 BẮT ĐIỀU KIỆN VÀ HIỂN THỊ THÔNG BÁO DANGER MÀU ĐỎ NGAY KHI BẤM NÚT CỘNG
 const updateQuantity = async (item, newQty) => {
+  // Nếu giảm xuống dưới 1 thì hỏi xóa
   if (newQty < 1) {
     await removeItem(item.id)
     return
   }
+
+  // Lấy tồn kho của sản phẩm (nếu không có thì mặc định lấy từ đối tượng)
+  const maxStock = item.stock !== undefined ? item.stock : (item.product?.quantity || 20)
+
+  // 🔴 Nếu số lượng bấm tăng lớn hơn số lượng tồn kho -> Bật thông báo màu đỏ ngay lập tức
+  if (newQty > maxStock) {
+    notify(`Kho chỉ còn tối đa ${maxStock} sản phẩm!`, 'danger')
+    return
+  }
+
   try {
     const userId = getUserId()
     if (!userId) {
@@ -213,10 +219,10 @@ const updateQuantity = async (item, newQty) => {
     await fetchCart()
   } catch (err) {
     console.error("Lỗi cập nhật số lượng:", err)
+    notify(err.response?.data?.message || err.response?.data || `Kho chỉ còn tối đa ${maxStock} sản phẩm!`, 'danger')
   }
 }
 
-// Xóa 1 sản phẩm
 const removeItem = async (cartItemId) => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa sản phẩm này khỏi giỏ hàng?"))) {
     return
@@ -237,7 +243,6 @@ const removeItem = async (cartItemId) => {
   }
 }
 
-// Làm sạch giỏ hàng
 const clearCart = async () => {
   if (!(await confirmDialog("Bạn có chắc muốn xóa toàn bộ giỏ hàng?"))) {
     return
@@ -260,12 +265,10 @@ const clearCart = async () => {
   }
 }
 
-// Tổng tiền
 const totalAmount = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.subTotal || 0), 0)
 })
 
-// Tổng số lượng
 const totalQuantity = computed(() => {
   return cartItems.value.reduce((sum, item) => sum + (item.quantity || 0), 0)
 })
@@ -275,7 +278,6 @@ const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price)
 }
 
-// Tiến hành chuyển sang trang Checkout
 const checkout = () => {
   const userStorage = localStorage.getItem('user')
   
@@ -329,26 +331,9 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.cart-product-img {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  background-color: #fafafa;
-}
-
-.qty-btn {
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-}
-
-.quantity-control {
-  user-select: none;
-}
-
+.cart-product-img { width: 64px; height: 64px; object-fit: contain; background-color: #fafafa; }
+.qty-btn { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.quantity-control { user-select: none; }
 .fs-7 { font-size: 12px; }
 .fs-8 { font-size: 11px; }
 </style>

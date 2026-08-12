@@ -1,6 +1,5 @@
 package nhomhoinuong.java6_asm.service.impl;
 
-//<<<<<<< HEAD
 import nhomhoinuong.java6_asm.bean.CartItem;
 import nhomhoinuong.java6_asm.bean.Order;
 import nhomhoinuong.java6_asm.bean.OrderItem;

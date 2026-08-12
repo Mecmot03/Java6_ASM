@@ -155,10 +155,17 @@
 
       <!-- PRODUCT CARD -->
       <div v-for="product in products" :key="product.id" class="col-12 col-sm-6 col-md-4 col-lg-3">
-        <div class="card h-100 shadow-sm border-0 rounded-4 product-card position-relative overflow-hidden bg-white">
+        <div 
+          class="card h-100 shadow-sm border-0 rounded-4 product-card position-relative overflow-hidden bg-white"
+          :class="{ 'out-of-stock-card': product.quantity <= 0 }"
+        >
           
           <div class="product-img-wrapper p-3 position-relative text-center bg-light rounded-top-4" @click="viewDetail(product.id)">
-            <span v-if="product.discountId" class="badge bg-danger position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8">
+            <!-- Hết hàng Badge -->
+            <span v-if="product.quantity <= 0" class="badge bg-secondary position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8 z-2">
+              <i class="bi bi-x-circle me-1"></i>HẾT HÀNG
+            </span>
+            <span v-else-if="product.discountId" class="badge bg-danger position-absolute top-0 start-0 m-3 px-2 py-1 rounded-pill shadow-sm fs-8 z-2">
               <i class="bi bi-fire me-1"></i>GIẢM GIÁ
             </span>
 
@@ -187,12 +194,22 @@
                 <h5 class="text-danger fw-bold mb-0 fs-5">{{ formatPrice(product.price) }}</h5>
               </div>
 
+              <!-- 🔴 Nút Thêm vào giỏ (Disabled nếu số lượng <= 0) -->
               <button 
+                v-if="product.quantity > 0"
                 class="btn btn-warning w-100 rounded-pill fw-bold text-dark py-2 shadow-sm d-flex align-items-center justify-content-center gap-2 btn-add-cart"
                 @click="addToCart(product)"
               >
                 <i class="bi bi-cart-plus-fill fs-6"></i>
                 <span>Thêm vào giỏ</span>
+              </button>
+              <button 
+                v-else
+                class="btn btn-secondary w-100 rounded-pill fw-bold py-2 shadow-sm d-flex align-items-center justify-content-center gap-2"
+                disabled
+              >
+                <i class="bi bi-slash-circle me-1"></i>
+                <span>Tạm hết hàng</span>
               </button>
             </div>
           </div>
@@ -279,7 +296,6 @@ const formatCurrency = (value) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value)
 }
 
-// 🟢 ĐẶT LẠI TOÀN BỘ BỘ LỌC VỀ MẶC ĐỊNH KHÔNG CÓ LỌC GIÁ / THƯƠNG HIỆU
 const resetFilters = () => {
   keyword.value = ''
   selectedCategoryId.value = null
@@ -293,13 +309,11 @@ const resetFilters = () => {
   appliedMaxPrice.value = MAX_ALLOWED_PRICE
 }
 
-// 🟢 XỬ LÝ SỰ KIỆN KHI BẤM LOGO / TẤT CẢ TỪ HEADER
 const handleResetEvent = () => {
   resetFilters()
   fetchFilteredProducts()
 }
 
-// Gọi API Lọc sản phẩm trực tiếp từ Backend
 const fetchFilteredProducts = async () => {
   try {
     const params = {
@@ -353,11 +367,9 @@ const getProductImage = (p) => {
   return img ? '/images/' + img : 'https://via.placeholder.com/200'
 }
 
-// 🟢 THEO DÕI SỰ THAY ĐỔI CỦA ROUTE QUERY
 watch(
   () => route.query,
   async (newQuery) => {
-    // Nếu chuyển về URL trang chủ thuần túy không tham số
     if (!newQuery.keyword && !newQuery.categoryId) {
       resetFilters()
       fetchFilteredProducts()
@@ -412,6 +424,11 @@ const viewDetail = (id) => {
 }
 
 const addToCart = async (product) => {
+  if (product.quantity <= 0) {
+    notify('Sản phẩm này tạm thời đã hết hàng!', 'warning')
+    return
+  }
+
   try {
     const userStorage = localStorage.getItem('user')
     const productId = product.id
@@ -447,13 +464,13 @@ const addToCart = async (product) => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleHomeScroll, { passive: true })
-  window.addEventListener('reset-home-filters', handleResetEvent) // 🟢 LẮNG NGHE SỰ KIỆN TỪ HEADER
+  window.addEventListener('reset-home-filters', handleResetEvent)
   fetchFilteredProducts()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleHomeScroll)
-  window.removeEventListener('reset-home-filters', handleResetEvent) // 🟢 HỦY LẮNG NGHE
+  window.removeEventListener('reset-home-filters', handleResetEvent)
 })
 </script>
 
@@ -464,7 +481,6 @@ onUnmounted(() => {
 .custom-indicator { width: 12px !important; height: 12px !important; border-radius: 50% !important; background-color: rgba(255, 255, 255, 0.7) !important; border: none !important; margin: 0 4px !important; }
 .custom-indicator.active { background-color: #ffd400 !important; width: 28px !important; border-radius: 10px !important; }
 
-/* BỘ LỌC STICKY */
 .filter-section { 
   background: #ffffff; 
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03) !important; 
@@ -487,48 +503,10 @@ onUnmounted(() => {
 .btn-sort-pill { color: #6c757d; border: none; transition: all 0.2s ease; }
 .btn-sort-pill.active { background-color: #ffffff; color: #000000; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
 
-/* DUAL RANGE SLIDER */
-.range-slider-container {
-  position: relative;
-  width: 140px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-}
-
-.slider-track {
-  position: absolute;
-  width: 100%;
-  height: 6px;
-  border-radius: 4px;
-  z-index: 1;
-}
-
-.dual-range {
-  position: absolute;
-  width: 100%;
-  -webkit-appearance: none;
-  appearance: none;
-  background: none;
-  pointer-events: none;
-  z-index: 2;
-  margin: 0;
-}
-
-.dual-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #0d6efd;
-  cursor: pointer;
-  pointer-events: auto;
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  transition: transform 0.1s;
-}
-
+.range-slider-container { position: relative; width: 140px; height: 24px; display: flex; align-items: center; }
+.slider-track { position: absolute; width: 100%; height: 6px; border-radius: 4px; z-index: 1; }
+.dual-range { position: absolute; width: 100%; -webkit-appearance: none; appearance: none; background: none; pointer-events: none; z-index: 2; margin: 0; }
+.dual-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #0d6efd; cursor: pointer; pointer-events: auto; border: 2px solid #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); transition: transform 0.1s; }
 .dual-range::-webkit-slider-thumb:hover { transform: scale(1.15); }
 
 .price-filter-box { border-color: #dee2e6 !important; }
@@ -538,49 +516,22 @@ onUnmounted(() => {
 .fw-extrabold { font-weight: 800; }
 .tracking-tight { letter-spacing: -0.02em; }
 
-.product-card { 
-  transition: transform 0.28s ease, box-shadow 0.28s ease; 
-  border: 1px solid #f1f3f5 !important; 
-}
-.product-card:hover { 
-  transform: translateY(-8px); 
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08) !important; 
-}
+.product-card { transition: transform 0.28s ease, box-shadow 0.28s ease; border: 1px solid #f1f3f5 !important; }
+.product-card:hover { transform: translateY(-8px); box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08) !important; }
 
-.product-img-wrapper { 
-  height: 200px; 
-  cursor: pointer; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  overflow: hidden;
-}
+/* Style sản phẩm hết hàng */
+.out-of-stock-card { opacity: 0.8; }
+.out-of-stock-card .product-img-wrapper img { filter: grayscale(30%); }
 
-.product-img-zoom { 
-  max-height: 100%; 
-  object-fit: contain; 
-  transition: transform 0.35s ease; 
-}
+.product-img-wrapper { height: 200px; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.product-img-zoom { max-height: 100%; object-fit: contain; transition: transform 0.35s ease; }
+.product-card:hover .product-img-zoom { transform: scale(1.08); }
 
-.product-card:hover .product-img-zoom { 
-  transform: scale(1.08); 
-}
+.hover-overlay { opacity: 0; transition: opacity 0.25s ease; }
+.product-card:hover .hover-overlay { opacity: 1; }
 
-.hover-overlay {
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-.product-card:hover .hover-overlay {
-  opacity: 1;
-}
-
-.btn-add-cart {
-  transition: background-color 0.2s, transform 0.15s ease;
-}
-.btn-add-cart:hover {
-  background-color: #e6be00 !important;
-  transform: translateY(-1px);
-}
+.btn-add-cart { transition: background-color 0.2s, transform 0.15s ease; }
+.btn-add-cart:hover { background-color: #e6be00 !important; transform: translateY(-1px); }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

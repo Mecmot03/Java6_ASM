@@ -13,23 +13,48 @@
         <form @submit.prevent="save" novalidate>
           <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
-              <!-- Họ tên -->
+              <!-- Họ tên (🔴 Validate) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Họ và tên <span class="text-danger">*</span></label>
-                <input ref="inputFullName" v-model="form.fullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+                <input 
+                  v-model="form.fullName" 
+                  class="form-control" 
+                  :class="{ 'is-invalid': errors.fullName }"
+                  placeholder="Ví dụ: Nguyễn Văn A"
+                >
+                <div v-if="errors.fullName" class="invalid-feedback d-block fw-bold">
+                  {{ errors.fullName }}
+                </div>
               </div>
 
-              <!-- Email -->
+              <!-- Email (🔴 Validate) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                <input ref="inputEmail" type="email" v-model="form.email" class="form-control" placeholder="example@gmail.com" required>
+                <input 
+                  type="email" 
+                  v-model="form.email" 
+                  class="form-control" 
+                  :class="{ 'is-invalid': errors.email }"
+                  placeholder="example@gmail.com"
+                >
+                <div v-if="errors.email" class="invalid-feedback d-block fw-bold">
+                  {{ errors.email }}
+                </div>
               </div>
 
-              <!-- Mật khẩu -->
+              <!-- Mật khẩu (🔴 Validate) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Mật khẩu <span v-if="!form.id" class="text-danger">*</span></label>
-                <input ref="inputPassword" type="password" v-model="form.password" class="form-control"
-                  :placeholder="form.id ? 'Để trống nếu không muốn đổi' : 'Nhập mật khẩu'">
+                <input 
+                  type="password" 
+                  v-model="form.password" 
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.password }"
+                  :placeholder="form.id ? 'Để trống nếu không muốn đổi' : 'Nhập mật khẩu từ 6 ký tự'"
+                >
+                <div v-if="errors.password" class="invalid-feedback d-block fw-bold">
+                  {{ errors.password }}
+                </div>
               </div>
 
               <!-- SĐT -->
@@ -44,10 +69,13 @@
                 <input v-model="form.address" class="form-control" placeholder="Nhập địa chỉ chi tiết">
               </div>
 
-              <!-- Phân quyền hệ thống (Checkbox đa chọn) -->
+              <!-- Phân quyền hệ thống (🔴 Validate) -->
               <div class="col-12" ref="roleSection">
                 <label class="form-label fw-semibold d-block">Phân quyền hệ thống <span class="text-danger">*</span></label>
-                <div class="p-3 border rounded bg-light d-flex flex-wrap gap-4">
+                <div 
+                  class="p-3 border rounded bg-light d-flex flex-wrap gap-4"
+                  :class="{ 'border-danger': errors.roles }"
+                >
                   <div class="form-check">
                     <input 
                       class="form-check-input" 
@@ -86,6 +114,9 @@
                       Quản trị viên (ROLE_ADMIN)
                     </label>
                   </div>
+                </div>
+                <div v-if="errors.roles" class="invalid-feedback d-block fw-bold mt-1">
+                  {{ errors.roles }}
                 </div>
               </div>
             </div>
@@ -136,6 +167,21 @@ const emptyForm = {
 const form = reactive({ ...emptyForm })
 const selectedRoles = ref(['ROLE_USER'])
 
+// 🔴 Biến lưu trữ lỗi trực quan dưới ô nhập liệu
+const errors = reactive({
+  fullName: '',
+  email: '',
+  password: '',
+  roles: ''
+})
+
+const clearErrors = () => {
+  errors.fullName = ''
+  errors.email = ''
+  errors.password = ''
+  errors.roles = ''
+}
+
 // Hàm cuộn mượt và focus vào element lỗi
 const focusElement = async (el) => {
   await nextTick()
@@ -168,6 +214,7 @@ const extractUserRoles = (userData) => {
 }
 
 watch(() => props.user, (val) => {
+  clearErrors()
   if (!val || !val.id) {
     Object.assign(form, emptyForm)
     selectedRoles.value = ['ROLE_USER']
@@ -178,60 +225,76 @@ watch(() => props.user, (val) => {
   selectedRoles.value = extractUserRoles(val)
 }, { immediate: true, deep: true })
 
+// 🔴 KIỂM TRA VALIDATE KHI BẤM LƯU TÀI KHOẢN
 const save = () => {
+  clearErrors()
+  let hasError = false
+
   const fullName = String(form.fullName || '').trim()
   const email = String(form.email || '').trim()
   const password = String(form.password || '').trim()
   const phone = String(form.phone || '').trim()
 
-  // 1. Validate Họ Tên
+  // 1. Kiểm tra Họ và tên
   if (!fullName) {
-    notify('Vui lòng nhập họ và tên.', 'warning')
-    focusElement(inputFullName.value)
+    errors.fullName = "Vui lòng nhập họ và tên!"
+        focusElement(inputFullName.value)
+    hasError = true
     return
   }
 
-  // 2. Validate Email
+  // 2. Kiểm tra Email
   if (!email) {
-    notify('Vui lòng nhập email.', 'warning')
+    errors.email = "Vui lòng nhập địa chỉ email!"
+    hasError = true
+        focusElement(inputEmail.value)
+    return
+  } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+    errors.email = "Email không đúng định dạng (Ví dụ: name@gmail.com)!"
+    hasError = true
     focusElement(inputEmail.value)
     return
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) {
-    notify('Email không đúng định dạng.', 'warning')
-    focusElement(inputEmail.value)
-    return
-  }
-
-  // 3. Validate Mật khẩu (Chỉ bắt buộc khi thêm mới)
+  // 3. Kiểm tra Mật khẩu (bắt buộc khi tạo mới, tùy chọn khi sửa)
   if (!form.id && !password) {
-    notify('Vui lòng nhập mật khẩu cho tài khoản mới.', 'warning')
-    focusElement(inputPassword.value)
+    errors.password = "Vui lòng nhập mật khẩu cho tài khoản mới!"
+    hasError = true
+        focusElement(inputPassword.value)
+    return
+  } else if (password && password.length < 6) {
+    errors.password = "Mật khẩu phải chứa ít nhất 6 ký tự!"
+    hasError = true
+        focusElement(inputPassword.value)
     return
   }
 
-  // 4. Validate Số điện thoại
+    // 4. Validate Số điện thoại
   if (!phone) {
     notify('Vui lòng nhập số điện thoại.', 'warning')
     focusElement(inputPhone.value)
     return
   }
-
   const phoneRegex = /^0(3|5|7|8|9)[0-9]{8}$/
   if (!phoneRegex.test(phone)) {
     notify('Số điện thoại không đúng định dạng (bắt đầu bằng 03, 05, 07, 08, 09 và đủ 10 số).', 'warning')
     focusElement(inputPhone.value)
     return
   }
-
-  // 5. Validate Phân quyền
+  
+  // 5. Kiểm tra Phân quyền
   if (!selectedRoles.value || selectedRoles.value.length === 0) {
-    notify('Vui lòng chọn ít nhất 1 quyền hạn!', 'warning')
-    focusElement(roleSection.value)
+    errors.roles = "Vui lòng chọn ít nhất 1 quyền hạn cho tài khoản!"
+    hasError = true
+       focusElement(roleSection.value)
     return
   }
+
+  if (hasError) {
+    notify('Vui lòng kiểm tra lại thông tin nhập trong form!', 'warning')
+    return
+  }
+
 
   // Tạo payload gửi đi
   const payload = {
@@ -252,6 +315,7 @@ const save = () => {
 }
 
 const close = () => {
+  clearErrors()
   emit('close')
 }
 </script>
@@ -260,4 +324,5 @@ const close = () => {
 .form-control { border-radius: 8px; }
 .form-check-input { cursor: pointer; width: 1.2em; height: 1.2em; }
 .form-check-label { cursor: pointer; }
+.invalid-feedback { font-size: 12px; color: #dc3545; }
 </style>

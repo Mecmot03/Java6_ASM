@@ -47,7 +47,7 @@
               <input 
                 type="tel" 
                 class="form-control rounded-3" 
-                placeholder="Ví dụ: 0912345678" 
+                placeholder="Ví dụ: 0321234567" 
                 v-model="orderForm.phone" 
                 required 
               />
