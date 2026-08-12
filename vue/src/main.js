@@ -8,27 +8,26 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
-// 🔴 Cấu hình Axios Interceptor để tự động đính kèm Token
+// 1. Cấu hình Request Interceptor
 axios.interceptors.request.use(
   (config) => {
-    // Lấy token từ localStorage hoặc sessionStorage
     const token = localStorage.getItem('token') || sessionStorage.getItem('token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
 
-// Bổ sung xử lý khi Token hết hạn hoặc bị từ chối quyền (401 / 403)
+// 2. Cấu hình Response Interceptor
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      // Nếu hết hạn hoặc không có quyền -> Xóa token và về lại trang Login
+    const status = error.response?.status
+
+    if (status === 401) {
+      // Het han token -> Xoa session va bat dang nhap lai
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       sessionStorage.removeItem('token')
@@ -37,15 +36,21 @@ axios.interceptors.response.use(
       if (router.currentRoute.value.path !== '/login') {
         router.push('/login')
       }
+    } else if (status === 403) {
+      // Khong co quyen -> KHONG xoa token, chi sang trang chu neu dang vao trang cam
+      console.warn('Tai khoan khong co quyen truy cap tai nguyen nay.')
+      
+      const currentPath = router.currentRoute.value.path
+      if (currentPath.startsWith('/admin') || currentPath.includes('/orders')) {
+        router.push('/')
+      }
     }
+
     return Promise.reject(error)
   }
 )
 
 const app = createApp(App)
-
-// Gán Axios vào globalProperties để có thể dùng this.$http hoặc inject ở các component
 app.config.globalProperties.$http = axios
-
 app.use(router)
 app.mount('#app')

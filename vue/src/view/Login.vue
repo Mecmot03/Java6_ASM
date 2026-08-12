@@ -114,10 +114,19 @@ const loginForm = ref({
   remember: false
 })
 
+// Bóc tách thông báo lỗi chuẩn xác từ Response Backend
+const extractErrorMessage = (error, defaultMsg) => {
+  if (!error.response) return defaultMsg
+  const data = error.response.data
+  if (typeof data === 'string' && data.trim()) return data
+  if (data && typeof data === 'object' && data.message) return data.message
+  return defaultMsg
+}
+
 onMounted(() => {
   window.fbAsyncInit = function() {
     window.FB.init({
-      appId      : '1037782925805986', 
+      appId      : '1472135091617561', 
       cookie     : true,
       xfbml      : true,
       version    : 'v18.0'
@@ -157,12 +166,7 @@ const handleLogin = async () => {
     }
 
   } catch (error) {
-<<<<<<< HEAD
-    // Nếu sai mật khẩu hoặc lỗi server, KHÔNG ĐƯỢC lưu gì vào localStorage
-    const msg = error.response?.data?.message || 'Email hoặc mật khẩu không chính xác!'
-=======
     const msg = error.response?.data?.message || error.response?.data || 'Email hoặc mật khẩu không chính xác!'
->>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
     notify(msg, 'danger')
   } finally {
     loading.value = false
@@ -194,7 +198,6 @@ const loginWithGoogle = () => {
 =======
       console.error("Lỗi Google Login:", err)
       notify(err.response?.data?.message || "Đăng nhập Google thất bại!", 'danger')
->>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
     }
   })
 }
@@ -234,7 +237,10 @@ const loginWithFacebook = () => {
       .then(async (backendRes) => {
         await saveSessionAndRedirect(backendRes.data);
       })
-      .catch((err) => notify(err.response?.data?.message || "Không thể xác thực tài khoản Facebook!", 'danger'));
+      .catch((err) => {
+        const msg = extractErrorMessage(err, "Không thể xác thực tài khoản Facebook!")
+        notify(msg, 'danger')
+      });
     } else {
       notify("Đăng nhập Facebook bị hủy bỏ!", 'warning');
     }
@@ -242,17 +248,24 @@ const loginWithFacebook = () => {
 }
 
 // Lưu Session và Điều hướng người dùng
->>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
 const saveSessionAndRedirect = async (data) => {
-  const token = data.token || data.accessToken || ''
-  const userObj = data.user || data
+  const token = data?.token || data?.accessToken || ''
+  const userObj = data?.user || data
 
-  if (token) localStorage.setItem('token', token)
+  // Kiểm tra nếu không có Token thì dừng ngay lập tức
+  if (!token) {
+    const errorMsg = data?.message || (typeof data === 'string' ? data : 'Tài khoản của bạn đã bị khóa hoặc không hợp lệ!')
+    notify(errorMsg, 'danger')
+    return
+  }
+
+  localStorage.setItem('token', token)
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
   localStorage.setItem('user', JSON.stringify(userObj))
 
   try {
-    if (userObj.id) {
-      await mergeGuestCartIntoBackend(userObj.id, axios)
+    if (data.id || userObj.id) {
+      await mergeGuestCartIntoBackend(data.id || userObj.id, axios)
     }
   } catch (error) {
     console.error('Không thể đồng bộ giỏ khách:', error)
@@ -261,16 +274,12 @@ const saveSessionAndRedirect = async (data) => {
   notify('Đăng nhập thành công!', 'success')
   window.dispatchEvent(new CustomEvent('user-logged-in'))
 
-<<<<<<< HEAD
-  // ƯU TIÊN KIỂM TRA ROLE ADMIN TRƯỚC VÀ ĐƯA VÀO /admin/users
-=======
   // Điều hướng dựa trên quyền
->>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
   const userString = JSON.stringify(userObj).toUpperCase()
   
   if (userString.includes('ROLE_ADMIN') || userString.includes('"ADMIN"')) {
     router.push('/admin/users')
-  } else if (userString.includes('ROLE_STAFF') || userString.includes('"STAFF"')) {
+  } else if (role === 'ROLE_STAFF' || roles.includes('ROLE_STAFF')) {
     router.push('/orders?status=PENDING')
   } else {
     const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'

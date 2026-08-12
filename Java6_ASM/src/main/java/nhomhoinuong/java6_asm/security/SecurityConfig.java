@@ -34,7 +34,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 1. API Công khai (Xem sản phẩm, danh mục, giỏ hàng, auth...)
+                // 1. PUBLIC API (Không cần đăng nhập)
                 .requestMatchers(
                     "/api/auth/**",
                     "/api/products/**",
@@ -44,20 +44,19 @@ public class SecurityConfig {
                     "/api/favorites/**"
                 ).permitAll()
 
-<<<<<<< HEAD
-                
-             // 🟢 API Quản lý Đơn hàng:STAFF được vào xác nhận/duyệt đơn
-                .requestMatchers("/api/orders/**").hasAnyRole( "STAFF")
-=======
-                // 2. CHỈ ROLE_USER mới được Đặt hàng & Xem lịch sử đơn hàng cá nhân
-                .requestMatchers("/api/orders/create").hasRole("USER")
-                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasRole("USER")
->>>>>>> main
+                // 2. TẠO ĐƠN HÀNG: Chỉ ROLE_USER mới được phép gọi (Đặt lên trên để ưu tiên check trước)
+                .requestMatchers(HttpMethod.POST, "/api/orders/create").hasRole("USER")
 
-                // 3. CHỈ ROLE_STAFF mới được Duyệt / Cập nhật trạng thái đơn hàng (Xác nhận, Giao, Hủy)
-                .requestMatchers("/api/orders/**").hasRole("STAFF")
+                // 3. HỦY ĐƠN HÀNG: USER, STAFF, ADMIN đều được phép
+                .requestMatchers(HttpMethod.PUT, "/api/orders/{orderId}/cancel").hasAnyRole("USER", "STAFF", "ADMIN")
 
-                // 4. CHỈ ROLE_ADMIN mới được vào Các API Quản trị hệ thống (Quản lý User, Sản phẩm...)
+                // 4. XEM DANH SÁCH / CHI TIẾT ĐƠN HÀNG: USER, STAFF, ADMIN đều xem được
+                .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAnyRole("USER", "STAFF", "ADMIN")
+
+                // 5. DUYỆT & CẬP NHẬT TRẠNG THÁI ĐƠN (Xác nhận, giao hàng... dành cho Staff/Admin):
+                .requestMatchers(HttpMethod.PUT, "/api/orders/**").hasAnyRole("STAFF", "ADMIN")
+
+                // 6. CHỈ ROLE_ADMIN: Vào trang quản trị hệ thống
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
                 // Các API còn lại yêu cầu đăng nhập

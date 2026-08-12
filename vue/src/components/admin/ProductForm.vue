@@ -11,7 +11,7 @@
         </div>
 
         <form @submit.prevent="saveProduct" novalidate>
-          <div class="modal-body p-4">
+          <div class="modal-body p-4" style="max-height: 80vh; overflow-y: auto;">
             <div class="row g-3">
               <!-- ID (Chỉ hiển thị khi cập nhật) -->
               <div v-if="isEdit" class="col-md-2">
@@ -19,44 +19,89 @@
                 <input class="form-control bg-light" v-model="form.id" readonly>
               </div>
 
-              <!-- Tên sản phẩm -->
+              <!-- Tên sản phẩm (🔴 Bắt lỗi để trống) -->
               <div :class="isEdit ? 'col-md-10' : 'col-md-12'">
                 <label class="form-label fw-semibold">Tên sản phẩm <span class="text-danger">*</span></label>
-                <input v-model="form.name" class="form-control" placeholder="Ví dụ: Laptop Dell XPS 15" required>
+                <input 
+                  ref="inputName"
+                  v-model="form.name" 
+                  class="form-control" 
+                  :class="{ 'is-invalid': errors.name }"
+                  placeholder="Ví dụ: Laptop Dell XPS 15"
+                >
+                <div v-if="errors.name" class="invalid-feedback d-block fw-bold">
+                  {{ errors.name }}
+                </div>
               </div>
 
-              <!-- Danh mục -->
+              <!-- Danh mục (🔴 Bắt lỗi chưa chọn) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Danh mục <span class="text-danger">*</span></label>
-                <select class="form-select" v-model="form.category">
+                <select 
+                  ref="inputCategory"
+                  class="form-select" 
+                  :class="{ 'is-invalid': errors.category }"
+                  v-model="form.category"
+                >
                   <option :value="null">-- Chọn danh mục --</option>
                   <option v-for="item in categories" :key="item.id" :value="item">
                     {{ item.name }}
                   </option>
                 </select>
+                <div v-if="errors.category" class="invalid-feedback d-block fw-bold">
+                  {{ errors.category }}
+                </div>
               </div>
 
-              <!-- Thương hiệu -->
+              <!-- Thương hiệu (🔴 Bắt lỗi chưa chọn) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Thương hiệu <span class="text-danger">*</span></label>
-                <select class="form-select" v-model="form.brand">
+                <select 
+                  ref="inputBrand"
+                  class="form-select" 
+                  :class="{ 'is-invalid': errors.brand }"
+                  v-model="form.brand"
+                >
                   <option disabled value="">-- Chọn thương hiệu --</option>
                   <option v-for="brand in brands" :key="brand" :value="brand">
                     {{ brand }}
                   </option>
                 </select>
+                <div v-if="errors.brand" class="invalid-feedback d-block fw-bold">
+                  {{ errors.brand }}
+                </div>
               </div>
 
-              <!-- Giá bán -->
+              <!-- Giá bán (🔴 Bắt lỗi <= 0) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" v-model="form.price" placeholder="0">
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  :class="{ 'is-invalid': errors.price }"
+                  v-model="form.price" 
+                  placeholder="0"
+                >
+                <div v-if="errors.price" class="invalid-feedback d-block fw-bold">
+                  {{ errors.price }}
+                </div>
+                <div v-else class="form-text fs-8 text-muted">Giá bán phải lớn hơn 0 VNĐ.</div>
               </div>
 
-              <!-- Số lượng -->
+              <!-- Số lượng tồn (🔴 Bắt lỗi < 0) -->
               <div class="col-md-6">
                 <label class="form-label fw-semibold">Số lượng tồn <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" v-model="form.quantity" placeholder="0">
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  :class="{ 'is-invalid': errors.quantity }"
+                  v-model="form.quantity" 
+                  placeholder="0"
+                >
+                <div v-if="errors.quantity" class="invalid-feedback d-block fw-bold">
+                  {{ errors.quantity }}
+                </div>
+                <div v-else class="form-text fs-8 text-muted">Nhập 0 nếu sản phẩm tạm thời hết hàng.</div>
               </div>
 
               <!-- Chọn Ảnh -->
@@ -103,8 +148,9 @@
 </template>
 
 <script setup>
-import { reactive, watch, computed, ref, onMounted } from "vue"
+import { reactive, watch, computed, ref, onMounted, nextTick } from "vue"
 import CategoryService from "../../services/CategoryService"
+import ProductService from "../../services/ProductService"
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -119,6 +165,21 @@ const emit = defineEmits(["save", "close"])
 
 const categories = ref([])
 const previewImage = ref("")
+const selectedImageFile = ref(null)
+
+// Object lưu trữ thông báo lỗi cho từng ô input
+const errors = reactive({
+  name: "",
+  category: "",
+  brand: "",
+  price: "",
+  quantity: ""
+})
+
+// Khai báo Element Refs hỗ trợ tự cuộn & focus
+const inputName = ref(null)
+const inputCategory = ref(null)
+const inputBrand = ref(null)
 
 const brands = ["Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Asus", "Acer", "Dell", "HP", "Lenovo", "MSI", "Logitech", "Razer", "Corsair", "SteelSeries", "HyperX", "Kingston", "Baseus", "Anker", "UGREEN"]
 
@@ -145,7 +206,26 @@ const loadCategories = async () => {
   }
 }
 
+const clearErrors = () => {
+  errors.name = ""
+  errors.category = ""
+  errors.brand = ""
+  errors.price = ""
+  errors.quantity = ""
+}
+
+// Hàm cuộn mượt và focus vào element lỗi
+const focusElement = async (el) => {
+  await nextTick()
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (typeof el.focus === 'function') el.focus()
+  }
+}
+
 watch(() => props.product, (value) => {
+  clearErrors()
+
   Object.assign(form, {
     id: value?.id ?? null,
     name: value?.name ?? "",
@@ -164,32 +244,85 @@ watch(() => props.product, (value) => {
   } else {
     previewImage.value = ""
   }
+
+  selectedImageFile.value = null
 }, { immediate: true })
 
 const chooseImage = (event) => {
   const file = event.target.files[0]
   if (!file) return
+  selectedImageFile.value = file
   form.image = file.name
   previewImage.value = URL.createObjectURL(file)
 }
 
-const saveProduct = () => {
+// 🔴 THỰC HIỆN KIỂM TRA VALIDATE TOÀN BỘ FORM
+const saveProduct = async () => {
+  clearErrors()
+  let hasError = false
+
+  // 1. Kiểm tra Tên sản phẩm
   if (!String(form.name || '').trim()) {
-    notify('Vui lòng nhập tên sản phẩm.', 'warning')
+    errors.name = "Vui lòng nhập tên sản phẩm!"
+    hasError = true
+    focusElement(inputName.value)
     return
   }
+
+  // 2. Kiểm tra Danh mục
   if (!form.category) {
-    notify('Vui lòng chọn danh mục.', 'warning')
+    errors.category = "Vui lòng chọn danh mục sản phẩm!"
+    hasError = true
+    focusElement(inputCategory.value)
     return
   }
+
+  // 3. Kiểm tra Thương hiệu
   if (!String(form.brand || '').trim()) {
-    notify('Vui lòng chọn thương hiệu.', 'warning')
+    errors.brand = "Vui lòng chọn thương hiệu!"
+    hasError = true
+    focusElement(inputBrand.value)
     return
   }
-  emit("save", { ...form })
+
+  // Ép kiểu dữ liệu về dạng số
+  const numPrice = Number(form.price)
+  const numQuantity = Number(form.quantity)
+
+  // 4. Kiểm tra Giá bán
+  if (form.price === "" || form.price === null || isNaN(numPrice) || numPrice <= 0) {
+    errors.price = "Giá bán không được để trống và phải lớn hơn 0 VNĐ!"
+    hasError = true
+  }
+
+  // 5. Kiểm tra Số lượng tồn
+  if (form.quantity === "" || form.quantity === null || isNaN(numQuantity) || numQuantity < 0) {
+    errors.quantity = "Số lượng tồn không được để trống và không được là số âm!"
+    hasError = true
+  }
+
+  if (hasError) {
+    notify('Vui lòng kiểm tra lại thông tin nhập trong form!', 'warning')
+    return
+  }
+
+  if (selectedImageFile.value) {
+    try {
+      const uploadResult = await ProductService.uploadImage(selectedImageFile.value)
+      form.image = uploadResult?.fileName || form.image
+    } catch (error) {
+      console.error('Lỗi upload hình ảnh:', error)
+      notify(error.response?.data || 'Không thể upload hình ảnh sản phẩm!', 'danger')
+      return
+    }
+  }
+
+  emit("save", { ...form, price: numPrice, quantity: numQuantity })
 }
 
 const close = () => {
+  clearErrors()
+  selectedImageFile.value = null
   emit("close")
 }
 
@@ -201,4 +334,6 @@ onMounted(() => {
 <style scoped>
 .form-control, .form-select { border-radius: 8px; }
 .form-check-input { width: 2.5em; height: 1.25em; cursor: pointer; }
+.fs-8 { font-size: 11px; }
+.invalid-feedback { font-size: 12px; color: #dc3545; }
 </style>

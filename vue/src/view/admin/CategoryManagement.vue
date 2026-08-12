@@ -11,25 +11,39 @@
       </button>
     </div>
 
-    <!-- Thanh tìm kiếm -->
+    <!-- Thanh tìm kiếm & Thanh Lọc Trạng thái -->
     <div class="card shadow-sm border-0 mb-4">
       <div class="card-body">
-        <div class="row g-2">
-          <div class="col-md-8">
+        <div class="row g-2 align-items-center">
+          <!-- 🆕 NEW: Ô tìm kiếm tự động lọc ngay khi gõ -->
+          <div class="col-md-6">
             <input
               v-model="keyword"
               class="form-control"
               placeholder="Nhập tên danh mục cần tìm..."
-              @keyup.enter="searchCategory"
+              @input="handleFilter"
             >
           </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary w-100" @click="searchCategory">
-              <i class="bi bi-search me-1"></i> Tìm
-            </button>
+          
+          <!-- 🆕 NEW: Dropdown Lọc trạng thái kèm nhãn (đồng bộ giao diện User) -->
+          <div class="col-md-4">
+            <div class="d-flex align-items-center gap-2">
+              <label class="text-secondary small text-nowrap mb-0 fw-bold">Trạng thái:</label>
+              <select 
+                v-model="filterStatus" 
+                class="form-select fw-semibold border-secondary-subtle"
+                @change="handleFilter"
+              >
+                <option :value="null">Tất cả trạng thái</option>
+                <option :value="true">Đang bán</option>
+                <option :value="false">Bị khóa</option>
+              </select>
+            </div>
           </div>
+
+          <!-- 🆕 NEW: Nút làm mới gọn ở góc phải -->
           <div class="col-md-2">
-            <button class="btn btn-secondary w-100" @click="fetchCategories">
+            <button class="btn btn-secondary w-100" @click="resetFilter">
               Làm mới
             </button>
           </div>
@@ -73,8 +87,11 @@ import CategoryTable from '../../components/admin/CategoryTable.vue'
 import CategoryForm from '../../components/admin/CategoryForm.vue'
 import DeleteModal from '../../components/admin/DeleteModal.vue'
 
-const categories = ref([])
+// 🆕 NEW: Kho chứa danh mục gốc và danh sách hiển thị
+const allCategories = ref([]) 
+const categories = ref([])    
 const keyword = ref('')
+const filterStatus = ref(null) 
 const isEditing = ref(false)
 const loading = ref(false)
 const showModal = ref(false)
@@ -84,32 +101,41 @@ const selectedCategory = ref({})
 const showDeleteModal = ref(false)
 const categoryToDelete = ref(null)
 
-// Tải danh sách & Reset thanh tìm kiếm
+// 🆕 NEW: Tải danh sách tất cả danh mục ban đầu và lưu vào kho gốc
 const fetchCategories = async () => {
-  keyword.value = '' // Xóa trắng ô tìm kiếm khi bấm Làm mới
   try {
-    categories.value = await CategoryService.getAllCategories()
+    const data = await CategoryService.getAllCategories()
+    allCategories.value = Array.isArray(data) ? data : []
+    categories.value = [...allCategories.value]
   } catch (error) {
     console.error("Lỗi hiển thị danh mục:", error)
+    notify("Không thể tải danh sách danh mục", "danger")
   }
 }
 
-// Xử lý Tìm kiếm Danh mục
-const searchCategory = async () => {
-  if (keyword.value.trim() === '') {
-    fetchCategories()
-    return
+// 🆕 NEW: Hàm lọc trực tiếp trên mảng gốc cực kỳ mượt mà
+const handleFilter = () => {
+  let result = [...allCategories.value]
+
+  // 1. Lọc theo trạng thái
+  if (filterStatus.value !== null) {
+    result = result.filter(cat => cat.status === filterStatus.value)
   }
-  
-  try {
-    const allData = await CategoryService.getAllCategories()
-    const key = keyword.value.toLowerCase()
-    categories.value = allData.filter(cat => 
-      cat.name && cat.name.toLowerCase().includes(key)
-    )
-  } catch (error) {
-    console.error("Lỗi tìm kiếm danh mục:", error)
+
+  // 2. Lọc theo từ khóa
+  if (keyword.value.trim() !== '') {
+    const key = keyword.value.toLowerCase().trim()
+    result = result.filter(cat => cat.name && cat.name.toLowerCase().includes(key))
   }
+
+  categories.value = result
+}
+
+// 🆕 NEW: Làm mới bộ lọc và ô tìm kiếm
+const resetFilter = () => {
+  keyword.value = ''
+  filterStatus.value = null
+  categories.value = [...allCategories.value]
 }
 
 const openCreateModal = () => {
@@ -138,7 +164,8 @@ const handleSave = async (data) => {
       await CategoryService.createCategory(data)
       notify('Đã thêm danh mục mới thành công!', 'success')
     }
-    await fetchCategories()
+    await fetchCategories() 
+    handleFilter()          
     closeModal()
   } catch (error) {
     notify("Lỗi khi lưu danh mục: " + (error.response?.data?.message || error.message), 'danger')
@@ -151,7 +178,7 @@ const openDeleteModal = (catOrId) => {
   if (typeof catOrId === 'object' && catOrId !== null) {
     categoryToDelete.value = catOrId
   } else {
-    categoryToDelete.value = categories.value.find(c => c.id === catOrId) || { id: catOrId }
+    categoryToDelete.value = allCategories.value.find(c => c.id === catOrId) || { id: catOrId }
   }
   showDeleteModal.value = true
 }
@@ -163,6 +190,7 @@ const confirmDeleteCategory = async () => {
     await CategoryService.deleteCategory(id)
     notify('Đã xóa danh mục thành công!', 'success')
     await fetchCategories()
+    handleFilter()
   } catch (error) {
     notify(error.response?.data?.message || "Không thể xóa danh mục này do đã có Sản phẩm thuộc danh mục!", 'danger')
   } finally {

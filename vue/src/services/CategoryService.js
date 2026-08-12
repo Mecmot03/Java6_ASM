@@ -66,5 +66,19 @@ export default {
       console.error(`Lỗi xóa danh mục ID ${id}:`, error)
       throw error
     }
+  },
+
+  // ==========================================
+  // 🆕 NEW: Lọc danh mục theo trạng thái (Đang bán / Bị khóa)
+  // ==========================================
+  async filterCategories(status) {
+    try {
+      const url = status !== null ? `${API_URL}/filter?status=${status}` : API_URL
+      const response = await axios.get(url)
+      return response.data
+    } catch (error) {
+      console.error('Lỗi lọc danh mục:', error)
+      throw error
+    }
   }
 }
