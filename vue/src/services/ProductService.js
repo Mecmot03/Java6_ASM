@@ -5,6 +5,31 @@ const API_URL = "/api/products"
 
 export default {
 
+    async uploadImage(file) {
+        try {
+            const formData = new FormData()
+            formData.append("file", file)
+
+            const response = await requestWithOptionalAuth(
+                () => axios.post(`${API_URL}/upload-image`, formData, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                }),
+                () => axios.post(`${API_URL}/upload-image`, formData, {
+                    ...getAuthConfig(),
+                    headers: {
+                        ...(getAuthConfig().headers || {}),
+                        "Content-Type": "multipart/form-data"
+                    }
+                })
+            )
+
+            return response.data
+        } catch (error) {
+            console.error("Lỗi upload ảnh sản phẩm:", error)
+            throw error
+        }
+    },
+
     // =========================
     // Lấy tất cả sản phẩm
     // =========================

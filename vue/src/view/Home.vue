@@ -246,7 +246,8 @@ const appliedMinPrice = ref(0)
 const appliedMaxPrice = ref(100000000)
 const MAX_ALLOWED_PRICE = 100000000
 
-const availableBrands = ref(['Apple', 'Samsung', 'Xiaomi', 'Dell', 'Logitech', 'Sony', 'Razer', 'Asus', 'Anker'])
+const availableBrands = ref(["Apple", "Samsung", "Xiaomi", "Oppo", "Vivo", "Asus", "Acer", "Dell", "HP", "Lenovo", "MSI", "Logitech", "Razer", "Corsair", "SteelSeries", "HyperX", "Kingston", "Baseus", "Anker", "UGREEN"]
+)
 
 const isScrollingUp = ref(false)
 let lastScrollPos = 0

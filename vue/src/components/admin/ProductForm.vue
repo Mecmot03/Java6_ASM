@@ -150,6 +150,7 @@
 <script setup>
 import { reactive, watch, computed, ref, onMounted, nextTick } from "vue"
 import CategoryService from "../../services/CategoryService"
+import ProductService from "../../services/ProductService"
 import { notify } from '../../utils/notify'
 
 const props = defineProps({
@@ -164,6 +165,7 @@ const emit = defineEmits(["save", "close"])
 
 const categories = ref([])
 const previewImage = ref("")
+const selectedImageFile = ref(null)
 
 // Object lưu trữ thông báo lỗi cho từng ô input
 const errors = reactive({
@@ -242,17 +244,20 @@ watch(() => props.product, (value) => {
   } else {
     previewImage.value = ""
   }
+
+  selectedImageFile.value = null
 }, { immediate: true })
 
 const chooseImage = (event) => {
   const file = event.target.files[0]
   if (!file) return
+  selectedImageFile.value = file
   form.image = file.name
   previewImage.value = URL.createObjectURL(file)
 }
 
 // 🔴 THỰC HIỆN KIỂM TRA VALIDATE TOÀN BỘ FORM
-const saveProduct = () => {
+const saveProduct = async () => {
   clearErrors()
   let hasError = false
 
@@ -301,11 +306,23 @@ const saveProduct = () => {
     return
   }
 
+  if (selectedImageFile.value) {
+    try {
+      const uploadResult = await ProductService.uploadImage(selectedImageFile.value)
+      form.image = uploadResult?.fileName || form.image
+    } catch (error) {
+      console.error('Lỗi upload hình ảnh:', error)
+      notify(error.response?.data || 'Không thể upload hình ảnh sản phẩm!', 'danger')
+      return
+    }
+  }
+
   emit("save", { ...form, price: numPrice, quantity: numQuantity })
 }
 
 const close = () => {
   clearErrors()
+  selectedImageFile.value = null
   emit("close")
 }
 
