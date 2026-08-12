@@ -59,4 +59,15 @@ public class AuthController {
         User currentUser = (User) authentication.getPrincipal();
         return authenticationService.updateCurrentUser(currentUser.getId(), request);
     }
+    
+//    
+//    
+    @GetMapping("/me")
+    public UserResponse getCurrentUser(
+            org.springframework.security.core.Authentication authentication) {
+
+        User currentUser = (User) authentication.getPrincipal();
+        return authenticationService.getCurrentUser(currentUser.getId());
+    }
+    
 }
