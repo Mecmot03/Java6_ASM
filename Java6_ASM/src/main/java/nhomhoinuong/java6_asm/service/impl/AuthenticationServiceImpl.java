@@ -7,10 +7,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-<<<<<<< HEAD
-=======
+
 import org.springframework.web.client.RestTemplate;
->>>>>>> 3a2e9b9ebd372cce2d528afda0239ffe85fc073a
+
 
 import lombok.RequiredArgsConstructor;
 import nhomhoinuong.java6_asm.bean.Authority;
